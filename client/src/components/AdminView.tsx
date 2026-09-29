@@ -1,80 +1,123 @@
 import { useContext, useState } from "react";
 
 // components
-import { PageFooter, ConfirmationModal } from "@/components";
+import { ConfirmationModal } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
 import { ErrorType } from "@/context/types";
 
 // utils
-import { backendAPI, setErrorMessage } from "@/utils";
+import { backendAPI, setErrorMessage, setGameState } from "@/utils";
+
+type AdminActionType = "clear-booth" | "clear-inactive-booths" | "reset-world";
+
+const ADMIN_ACTIONS: {
+  [key in AdminActionType]: { title: string; message: string; confirmLabel: string };
+} = {
+  "clear-booth": {
+    title: "Clear this booth",
+    message:
+      "The owner will lose this booth and any decor placed in it. They keep their coins, XP, level, and all decor they've bought.",
+    confirmLabel: "Clear booth",
+  },
+  "clear-inactive-booths": {
+    title: "Clear inactive booths",
+    message:
+      "Every booth whose owner hasn't visited it in 14+ days will be released. Owners keep their coins, XP, level, and all decor they've bought.",
+    confirmLabel: "Clear inactive booths",
+  },
+  "reset-world": {
+    title: "Reset world",
+    message:
+      "Every booth in this world will be released. Players keep their coins, XP, level, and all decor they've bought. This can't be undone.",
+    confirmLabel: "Reset world",
+  },
+};
 
 export const AdminView = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { droppedAsset } = useContext(GlobalStateContext);
-  const imgSrc = droppedAsset?.topLayerURL || droppedAsset?.bottomLayerURL;
+  const { boothsFullAlert, targetBooth } = useContext(GlobalStateContext);
 
-  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [areButtonsDisabled, setAreButtonsDisabled] = useState(false);
+  const [pendingAction, setPendingAction] = useState<AdminActionType | null>(null);
+  const [isWorking, setIsWorking] = useState(false);
+  const [resultMessage, setResultMessage] = useState("");
 
-  const handleToggleShowConfirmationModal = () => {
-    setShowConfirmationModal(!showConfirmationModal);
-  };
+  const runAction = async (action: AdminActionType) => {
+    setIsWorking(true);
+    setResultMessage("");
+    setErrorMessage(dispatch, "");
 
-  const handleDropAsset = async () => {
-    setAreButtonsDisabled(true);
+    try {
+      const { data } = await backendAPI.post(`/admin/${action}`);
+      const cleared = data.clearedSceneDropIds.length;
+      const failed = data.failedSceneDropIds.length;
 
-    backendAPI
-      .post("/dropped-asset")
-      .then(() => {
-        backendAPI.put("/world/fire-toast", { title: "Asset successfully dropped!" });
-      })
-      .catch((error) => setErrorMessage(dispatch, error as ErrorType))
-      .finally(() => {
-        setAreButtonsDisabled(false);
-      });
-  };
+      setResultMessage(
+        `${cleared === 1 ? "1 booth" : `${cleared} booths`} cleared.` +
+          (failed ? ` ${failed === 1 ? "1 booth" : `${failed} booths`} couldn't be cleared — try again.` : ""),
+      );
 
-  const handleRemoveDroppedAssets = async () => {
-    setAreButtonsDisabled(true);
-
-    backendAPI
-      .post("/remove-dropped-assets")
-      .then(() => {
-        backendAPI.put("/world/fire-toast", {
-          title: "Dropped assets successfully removed!",
-          text: "All dropped assets with matching unique name have been removed from this world.",
-        });
-      })
-      .catch((error) => setErrorMessage(dispatch, error as ErrorType))
-      .finally(() => {
-        setAreButtonsDisabled(false);
-      });
+      const { data: gameState } = await backendAPI.get("/game-state");
+      setGameState(dispatch, gameState);
+    } catch (error) {
+      setErrorMessage(dispatch, error as ErrorType);
+    } finally {
+      setIsWorking(false);
+    }
   };
 
   return (
-    <div style={{ position: "relative" }}>
-      {imgSrc && <img className="w-96 h-96 object-cover rounded-2xl my-4" alt="preview" src={imgSrc} />}
-      <PageFooter>
-        <button className="btn mt-2" disabled={areButtonsDisabled} onClick={handleDropAsset}>
-          Drop Asset
-        </button>
-        <button
-          className="btn btn-danger mt-2"
-          disabled={areButtonsDisabled}
-          onClick={() => handleToggleShowConfirmationModal()}
-        >
-          Remove Dropped Assets
-        </button>
-      </PageFooter>
+    <div className="grid gap-4">
+      {boothsFullAlert && (
+        <div className="card danger" role="status">
+          <div className="card-details">
+            <h3 className="card-title h4">All booths are full</h3>
+            <p className="p2">
+              {boothsFullAlert.turnedAwayCount === 1
+                ? "1 player couldn't get a booth"
+                : `${boothsFullAlert.turnedAwayCount} players couldn't get a booth`}
+              , most recently on{" "}
+              <time dateTime={new Date(boothsFullAlert.lastTriggeredAt).toISOString()}>
+                {new Date(boothsFullAlert.lastTriggeredAt).toLocaleString()}
+              </time>
+              . Clearing inactive booths or adding booth scenes will make room.
+            </p>
+          </div>
+        </div>
+      )}
 
-      {showConfirmationModal && (
+      {targetBooth?.isClaimed && (
+        <button
+          type="button"
+          className="btn btn-danger-outline"
+          disabled={isWorking}
+          onClick={() => setPendingAction("clear-booth")}
+        >
+          Clear this booth ({targetBooth.ownerDisplayName})
+        </button>
+      )}
+      <button
+        type="button"
+        className="btn btn-danger-outline"
+        disabled={isWorking}
+        onClick={() => setPendingAction("clear-inactive-booths")}
+      >
+        Clear inactive booths (14+ days)
+      </button>
+      <button type="button" className="btn btn-danger" disabled={isWorking} onClick={() => setPendingAction("reset-world")}>
+        Reset world
+      </button>
+
+      <p className="p2" role="status">
+        {isWorking ? "Working..." : resultMessage}
+      </p>
+
+      {pendingAction && (
         <ConfirmationModal
-          title="Remove Dropped Assets"
-          message="Are you sure you want to remove all dropped assets? This action cannot be undone."
-          handleOnConfirm={handleRemoveDroppedAssets}
-          handleToggleShowConfirmationModal={handleToggleShowConfirmationModal}
+          {...ADMIN_ACTIONS[pendingAction]}
+          handleOnConfirm={() => runAction(pendingAction)}
+          handleToggleShowConfirmationModal={() => setPendingAction(null)}
         />
       )}
     </div>

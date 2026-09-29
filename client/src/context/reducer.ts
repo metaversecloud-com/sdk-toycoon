@@ -13,7 +13,11 @@ const globalReducer = (state: InitialState, action: ActionType) => {
         ...state,
         isAdmin: payload.isAdmin,
         visitorData: payload.visitorData,
-        droppedAsset: payload.droppedAsset,
+        ownsBoothInThisWorld: payload.ownsBoothInThisWorld,
+        ownedBoothSceneDropId: payload.ownedBoothSceneDropId,
+        targetBooth: payload.targetBooth,
+        availableBoothCount: payload.availableBoothCount,
+        boothsFullAlert: payload.boothsFullAlert,
         error: "",
       };
     case SET_ERROR:

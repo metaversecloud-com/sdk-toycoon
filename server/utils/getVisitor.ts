@@ -30,6 +30,8 @@ export const getVisitor = async (credentials: Credentials, shouldGetVisitorDetai
         { lock: { lockId, releaseLock: true } },
       );
     }
+    // TODO: replace with Angel's initializeVisitorData once it lands (must default placedDecorations: {})
+    const visitorData: VisitorDataObjectType = dataObject || {};
 
     await visitor.fetchInventoryItems();
     let visitorInventory: { [key: string]: { id: string; icon: string; name: string } } = {};
@@ -47,7 +49,7 @@ export const getVisitor = async (credentials: Credentials, shouldGetVisitorDetai
       }
     }
 
-    return { visitor, visitorInventory };
+    return { visitor, visitorData, visitorInventory };
   } catch (error) {
     throw standardizeError(error);
   }

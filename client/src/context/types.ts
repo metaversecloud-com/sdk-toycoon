@@ -1,5 +1,5 @@
-import { DroppedAssetInterface } from "@rtsdk/topia";
 import { VisitorDataObjectType } from "@shared/types/VisitorData";
+import { BoothsFullAlertType, TargetBoothType } from "@shared/types/BoothTypes";
 
 export const SET_HAS_INTERACTIVE_PARAMS = "SET_HAS_INTERACTIVE_PARAMS";
 export const SET_GAME_STATE = "SET_GAME_STATE";
@@ -24,7 +24,11 @@ export interface InitialState {
   error?: string;
   hasInteractiveParams?: boolean;
   visitorData?: VisitorDataObjectType;
-  droppedAsset?: DroppedAssetInterface;
+  ownsBoothInThisWorld?: boolean;
+  ownedBoothSceneDropId?: string | null;
+  targetBooth?: TargetBoothType | null;
+  availableBoothCount?: number;
+  boothsFullAlert?: BoothsFullAlertType | null;
 }
 
 export type ActionType = {

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: toycoon0-config
+  labels:
+    app.kubernetes.io/name: toycoon0
+data:
+  INSTANCE_DOMAIN: "api.topia.io"
+  INSTANCE_PROTOCOL: "https"
+  INTERACTIVE_KEY: "K3uLfObf7QP3KgOYo0tD"
+  NODE_ENV: "production"
+  PORT: "3000"

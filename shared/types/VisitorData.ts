@@ -8,12 +8,12 @@ export type VisitorWorldDataType = {
   lastActiveAt?: number; // ms timestamp, used by the 2-week inactive-booth admin clear
 };
 
-export type DecorationType = "material" | "toy" | "decoration";
+export type InventoryItemCategory = "material" | "toy" | "decoration";
 
 export type VisitorInventoryItemType = {
   id: string;
   ecosystemItemId: string;
-  type?: DecorationType;
+  type?: InventoryItemCategory;
   description: string;
   icon: string;
   name: string;

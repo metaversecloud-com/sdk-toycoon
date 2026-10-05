@@ -1,5 +1,16 @@
 import express from "express";
-import { handleGetGameState } from "./controllers/index.js";
+import {
+  handleClaimBooth,
+  handleClearBooth,
+  handleClearInactiveBooths,
+  handleGetGameState,
+  handleGetLeaderboard,
+  handleResetLeaderboard,
+  handleResetWorld,
+  handleTeleportToMainScene,
+  handleTeleportToMyBooth,
+} from "./controllers/index.js";
+import { requireAdmin } from "./middleware/requireAdmin.js";
 import { getVersion } from "@utils/getVersion.js";
 
 const router = express.Router();
@@ -24,5 +35,15 @@ router.get("/system/health", (req, res) => {
 });
 
 router.get("/game-state", handleGetGameState);
+router.get("/leaderboard", handleGetLeaderboard);
+router.post("/claim-booth", handleClaimBooth);
+router.post("/teleport/my-booth", handleTeleportToMyBooth);
+router.post("/teleport/main-scene", handleTeleportToMainScene);
+
+// Admin — every route here is gated by requireAdmin
+router.post("/admin/clear-booth", requireAdmin, handleClearBooth);
+router.post("/admin/clear-inactive-booths", requireAdmin, handleClearInactiveBooths);
+router.post("/admin/reset-world", requireAdmin, handleResetWorld);
+router.post("/admin/reset-leaderboard", requireAdmin, handleResetLeaderboard);
 
 export default router;

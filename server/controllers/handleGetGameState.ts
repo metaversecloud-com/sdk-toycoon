@@ -1,59 +1,78 @@
 import { Request, Response } from "express";
-import { errorHandler, getCredentials, getDroppedAsset, getVisitor, World } from "@utils/index.js";
-import axios from "axios";
+import {
+  errorHandler,
+  getBoothData,
+  getBoothIndex,
+  getCredentials,
+  getOwnedBoothSceneDropId,
+  getVisitor,
+} from "@utils/index.js";
+import { GameStateResponseType, TargetBoothType } from "@shared/types/BoothTypes.js";
 
+/**
+ * Resolves the relationship between the visiting player and every booth scene in this world:
+ * - does the visitor already own a booth here, and which one?
+ * - is the booth they clicked (if any) claimed, and by whom?
+ */
 export const handleGetGameState = async (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
-    const { assetId, displayName, interactiveNonce, interactivePublicKey, profileId, urlSlug, visitorId } = credentials;
+    const { profileId, sceneDropId, urlSlug } = credentials;
+    const forceRefreshBooths = req.query.forceRefreshBooths === "true";
 
-    const droppedAsset = await getDroppedAsset(credentials);
+    const [{ visitor, visitorData }, { booths, worldData }] = await Promise.all([
+      getVisitor(credentials, true),
+      getBoothIndex(credentials, forceRefreshBooths),
+    ]);
 
-    const world = World.create(urlSlug, { credentials });
-    world.triggerParticle({ name: "Sparkle", duration: 3, position: droppedAsset.position }).catch((error: any) =>
-      errorHandler({
-        error,
-        functionName: "handleGetGameState",
-        message: "Error triggering particle effects",
-      }),
-    );
+    const ownedBoothSceneDropId = getOwnedBoothSceneDropId({ booths, profileId, urlSlug, visitorData });
 
-    const { visitor } = await getVisitor(credentials, true);
-    const { isAdmin } = visitor;
+    let targetBooth: TargetBoothType | null = null;
+    const targetEntry = sceneDropId ? booths[sceneDropId] : undefined;
 
-    try {
-      await axios.post(
-        `${process.env.LEADERBOARD_BASE_URL || "http://v2lboard0-prod-topia.topia-rtsdk.com"}/api/dropped-asset/increment-player-stats?assetId=${assetId}&displayName=${displayName}&interactiveNonce=${interactiveNonce}&interactivePublicKey=${interactivePublicKey}&profileId=${profileId}&urlSlug=${urlSlug}&visitorId=${visitorId}`,
-        {
-          publicKey: interactivePublicKey,
-          secret: process.env.INTERACTIVE_SECRET,
-          profileId,
-          displayName,
-          incrementBy: 1,
-        },
-      );
-    } catch (error) {
-      errorHandler({
-        error,
-        functionName: "handleGetGameState",
-        message: "Error posting player stats to Leaderboard",
-      });
+    if (targetEntry) {
+      const { boothAsset, boothData } = await getBoothData(credentials, targetEntry.keyAssetId, sceneDropId);
+      const isOwnedByVisitor = !!boothData.ownerId && boothData.ownerId === profileId;
+
+      targetBooth = {
+        sceneDropId,
+        isClaimed: !!boothData.ownerId,
+        isOwnedByVisitor,
+        ownerDisplayName: boothData.ownerDisplayName,
+        level: boothData.level,
+        claimDate: boothData.claimDate,
+      };
+
+      // Owner opening their own booth counts as activity for the 14-day inactivity check
+      if (isOwnedByVisitor) {
+        boothAsset.updateDataObject({ lastInteractionTimestamp: Date.now() }).catch((error: any) =>
+          errorHandler({
+            error,
+            functionName: "handleGetGameState",
+            message: "Error updating booth lastInteractionTimestamp",
+          }),
+        );
+      }
     }
 
-    await world.fireToast({ title: "Nice Work!", text: "You've successfully completed the task!" }).catch((error) =>
-      errorHandler({
-        error,
-        functionName: "handleGetGameState",
-        message: "Error firing toast in world",
-      }),
-    );
+    const isAdmin = !!visitor.isAdmin;
 
-    return res.json({ droppedAsset, isAdmin, success: true });
+    const gameState: GameStateResponseType = {
+      visitorData,
+      ownsBoothInThisWorld: !!ownedBoothSceneDropId,
+      ownedBoothSceneDropId,
+      targetBooth,
+      availableBoothCount: Object.values(booths).filter(({ ownerId }) => !ownerId).length,
+      isAdmin,
+      boothsFullAlert: isAdmin ? worldData?.boothsFullAlert || null : null,
+    };
+
+    return res.json({ ...gameState, success: true });
   } catch (error) {
     return errorHandler({
       error,
-      functionName: "getDroppedAssetDetails",
-      message: "Error getting dropped asset instance and data object",
+      functionName: "handleGetGameState",
+      message: "Error getting game state",
       req,
       res,
     });

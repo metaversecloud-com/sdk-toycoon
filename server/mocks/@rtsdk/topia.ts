@@ -12,6 +12,10 @@ export class DroppedAssetFactory {
   constructor(_topia: any) {}
 }
 
+export class EcosystemFactory {
+  constructor(_topia: any) {}
+}
+
 export class UserFactory {
   constructor(_topia: any) {}
 }
@@ -26,6 +30,10 @@ export class WorldFactory {
     (__mock as any).lastWorldCreateArgs = { slug, opts };
     return { fireToast };
   }
+}
+
+export class WorldActivityFactory {
+  constructor(_topia: any) {}
 }
 
 export const __mock = {

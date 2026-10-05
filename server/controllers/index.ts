@@ -2,6 +2,8 @@ export * from "./handleClaimBooth.js";
 export * from "./handleClearBooth.js";
 export * from "./handleClearInactiveBooths.js";
 export * from "./handleGetGameState.js";
+export * from "./handleGetLeaderboard.js";
+export * from "./handleResetLeaderboard.js";
 export * from "./handleResetWorld.js";
 export * from "./handleTeleportToMainScene.js";
 export * from "./handleTeleportToMyBooth.js";

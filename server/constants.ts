@@ -29,3 +29,6 @@ export const INACTIVE_BOOTH_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000;
 
 // How many booths to clear in parallel during bulk admin operations
 export const CLEAR_BOOTHS_CONCURRENCY = 10;
+
+// How many players the leaderboard shows
+export const LEADERBOARD_SIZE = 25;

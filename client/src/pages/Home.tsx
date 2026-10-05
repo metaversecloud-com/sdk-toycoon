@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 
 // components
-import { BoothView, PageContainer, StartHere } from "@/components";
+import { BoothView, Leaderboard, PageContainer, StartHere } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
@@ -30,7 +30,10 @@ export const Home = () => {
 
   return (
     <PageContainer isLoading={isLoading} headerText="Toycoon">
-      {targetBooth ? <BoothView booth={targetBooth} /> : <StartHere />}
+      <div className="grid gap-6">
+        {targetBooth ? <BoothView booth={targetBooth} /> : <StartHere />}
+        <Leaderboard />
+      </div>
     </PageContainer>
   );
 };

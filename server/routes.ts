@@ -4,6 +4,8 @@ import {
   handleClearBooth,
   handleClearInactiveBooths,
   handleGetGameState,
+  handleGetLeaderboard,
+  handleResetLeaderboard,
   handleResetWorld,
   handleTeleportToMainScene,
   handleTeleportToMyBooth,
@@ -33,6 +35,7 @@ router.get("/system/health", (req, res) => {
 });
 
 router.get("/game-state", handleGetGameState);
+router.get("/leaderboard", handleGetLeaderboard);
 router.post("/claim-booth", handleClaimBooth);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);
@@ -41,5 +44,6 @@ router.post("/teleport/main-scene", handleTeleportToMainScene);
 router.post("/admin/clear-booth", requireAdmin, handleClearBooth);
 router.post("/admin/clear-inactive-booths", requireAdmin, handleClearInactiveBooths);
 router.post("/admin/reset-world", requireAdmin, handleResetWorld);
+router.post("/admin/reset-leaderboard", requireAdmin, handleResetLeaderboard);
 
 export default router;

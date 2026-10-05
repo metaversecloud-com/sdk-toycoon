@@ -10,7 +10,7 @@ import { ErrorType } from "@/context/types";
 // utils
 import { backendAPI, setErrorMessage, setGameState } from "@/utils";
 
-type AdminActionType = "clear-booth" | "clear-inactive-booths" | "reset-world";
+type AdminActionType = "clear-booth" | "clear-inactive-booths" | "reset-world" | "reset-leaderboard";
 
 const ADMIN_ACTIONS: {
   [key in AdminActionType]: { title: string; message: string; confirmLabel: string };
@@ -27,12 +27,32 @@ const ADMIN_ACTIONS: {
       "Every booth whose owner hasn't visited it in 14+ days will be released. Owners keep their coins, XP, level, and all decor they've bought.",
     confirmLabel: "Clear inactive booths",
   },
+  "reset-leaderboard": {
+    title: "Reset leaderboard",
+    message:
+      "Everyone will be removed from this world's leaderboard. Players keep their XP, level, coins, badges, and decor, and reappear as they keep playing. This can't be undone.",
+    confirmLabel: "Reset leaderboard",
+  },
   "reset-world": {
     title: "Reset world",
     message:
       "Every booth in this world will be released. Players keep their coins, XP, level, and all decor they've bought. This can't be undone.",
     confirmLabel: "Reset world",
   },
+};
+
+const describeResult = (
+  action: AdminActionType,
+  data: { clearedSceneDropIds?: string[]; failedSceneDropIds?: string[] },
+) => {
+  if (action === "reset-leaderboard") return "Leaderboard reset.";
+
+  const cleared = data.clearedSceneDropIds?.length || 0;
+  const failed = data.failedSceneDropIds?.length || 0;
+  return (
+    `${cleared === 1 ? "1 booth" : `${cleared} booths`} cleared.` +
+    (failed ? ` ${failed === 1 ? "1 booth" : `${failed} booths`} couldn't be cleared — try again.` : "")
+  );
 };
 
 export const AdminView = () => {
@@ -50,13 +70,7 @@ export const AdminView = () => {
 
     try {
       const { data } = await backendAPI.post(`/admin/${action}`);
-      const cleared = data.clearedSceneDropIds.length;
-      const failed = data.failedSceneDropIds.length;
-
-      setResultMessage(
-        `${cleared === 1 ? "1 booth" : `${cleared} booths`} cleared.` +
-          (failed ? ` ${failed === 1 ? "1 booth" : `${failed} booths`} couldn't be cleared — try again.` : ""),
-      );
+      setResultMessage(describeResult(action, data));
 
       const { data: gameState } = await backendAPI.get("/game-state");
       setGameState(dispatch, gameState);
@@ -104,6 +118,14 @@ export const AdminView = () => {
         onClick={() => setPendingAction("clear-inactive-booths")}
       >
         Clear inactive booths (14+ days)
+      </button>
+      <button
+        type="button"
+        className="btn btn-danger-outline"
+        disabled={isWorking}
+        onClick={() => setPendingAction("reset-leaderboard")}
+      >
+        Reset leaderboard
       </button>
       <button type="button" className="btn btn-danger" disabled={isWorking} onClick={() => setPendingAction("reset-world")}>
         Reset world

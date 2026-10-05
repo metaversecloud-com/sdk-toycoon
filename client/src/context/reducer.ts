@@ -13,6 +13,7 @@ const globalReducer = (state: InitialState, action: ActionType) => {
         ...state,
         isAdmin: payload.isAdmin,
         visitorData: payload.visitorData,
+        visitorInventory: payload.visitorInventory,
         ownsBoothInThisWorld: payload.ownsBoothInThisWorld,
         ownedBoothSceneDropId: payload.ownedBoothSceneDropId,
         targetBooth: payload.targetBooth,

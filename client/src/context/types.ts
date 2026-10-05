@@ -1,4 +1,4 @@
-import { VisitorDataObjectType } from "@shared/types/VisitorData";
+import { VisitorDataObjectType, VisitorInventoryType } from "@shared/types/VisitorData";
 import { BoothsFullAlertType, TargetBoothType } from "@shared/types/BoothTypes";
 
 export const SET_HAS_INTERACTIVE_PARAMS = "SET_HAS_INTERACTIVE_PARAMS";
@@ -24,6 +24,7 @@ export interface InitialState {
   error?: string;
   hasInteractiveParams?: boolean;
   visitorData?: VisitorDataObjectType;
+  visitorInventory?: VisitorInventoryType;
   ownsBoothInThisWorld?: boolean;
   ownedBoothSceneDropId?: string | null;
   targetBooth?: TargetBoothType | null;

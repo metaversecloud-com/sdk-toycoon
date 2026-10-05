@@ -5,6 +5,7 @@ import {
   handleClearInactiveBooths,
   handleGetGameState,
   handleGetLeaderboard,
+  handlePurchaseDecoration,
   handleResetLeaderboard,
   handleResetWorld,
   handleTeleportToMainScene,
@@ -37,6 +38,7 @@ router.get("/system/health", (req, res) => {
 router.get("/game-state", handleGetGameState);
 router.get("/leaderboard", handleGetLeaderboard);
 router.post("/claim-booth", handleClaimBooth);
+router.post("/purchase-decoration", handlePurchaseDecoration);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);
 

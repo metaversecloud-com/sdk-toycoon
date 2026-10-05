@@ -7,8 +7,9 @@ import { User } from "../topiaInit.js";
 
 /**
  * Releases a booth back to unclaimed without touching the previous owner's persistent inventory.
- * - Owner record: drops this world's boothIds entry and un-places this world's decor (placedDecorations[urlSlug]).
- *   unlockedDecor, coins, xp, level, badges, etc. are never modified — decor is owned globally and permanently.
+ * - Owner record: drops this world's boothIds entry and un-places this world's decor (every
+ *   placedDecorations[slot][urlSlug]), which returns those items to the owner's available count in every world.
+ *   Inventory (owned decor, coins, XP) and counters/badges are never modified — decor is owned globally and permanently.
  * - Booth: owner metadata reset. claimCount is intentionally preserved; it versions the claim lock, and resetting it
  *   would make a future claim reuse a lock id that's still held from an earlier claim.
  *
@@ -39,10 +40,15 @@ export const clearBooth = async ({
         const { [urlSlug]: _removedBooth, ...boothIds } = ownerData.boothIds || {};
         const update: Partial<VisitorDataObjectType> = { boothIds };
 
-        if (ownerData.placedDecorations?.[urlSlug]) {
-          const { [urlSlug]: _removedDecor, ...placedDecorations } = ownerData.placedDecorations;
-          update.placedDecorations = placedDecorations;
+        // placedDecorations is { [slot]: { [urlSlug]: decorationName } } — remove this world from every slot
+        const placedDecorations: VisitorDataObjectType["placedDecorations"] = {};
+        let hadPlacementsHere = false;
+        for (const [slot, placementsByWorld] of Object.entries(ownerData.placedDecorations || {})) {
+          const { [urlSlug]: removed, ...otherWorlds } = placementsByWorld;
+          if (removed !== undefined) hadPlacementsHere = true;
+          if (Object.keys(otherWorlds).length > 0) placedDecorations[slot] = otherWorlds;
         }
+        if (hadPlacementsHere) update.placedDecorations = placedDecorations;
 
         await owner.updateDataObject(update, {});
       }

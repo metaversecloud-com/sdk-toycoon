@@ -2,7 +2,7 @@
  * Shared types between client and server for booth ownership and game-state hydration
  */
 
-import { VisitorDataObjectType } from "./VisitorData.js";
+import { VisitorDataObjectType, VisitorInventoryType } from "./VisitorData.js";
 
 // Stored on the booth's key asset (uniqueName BOOTH_KEY_UNIQUE_NAME) data object — the source of truth for a booth
 export interface BoothDataObjectType {
@@ -46,6 +46,7 @@ export interface TargetBoothType {
 
 export interface GameStateResponseType {
   visitorData: VisitorDataObjectType;
+  visitorInventory: VisitorInventoryType;
   ownsBoothInThisWorld: boolean;
   ownedBoothSceneDropId: string | null;
   targetBooth: TargetBoothType | null; // null when the clicked asset isn't part of a booth scene (e.g. Main Scene)

@@ -2,26 +2,20 @@
  * Shared types between client and server for visitor data
  */
 
-export type VisitorWorldDataType = {
-  boothAssetId?: string; // unset = no booth claimed in this world
-  claimedAt?: number; // ms timestamp, shown as the booth's "start date"
-  lastActiveAt?: number; // ms timestamp, used by the 2-week inactive-booth admin clear
-};
-
 export type InventoryItemCategory = "material" | "toy" | "decoration";
 
 export type VisitorInventoryItemType = {
   id: string;
   ecosystemItemId: string;
   type?: InventoryItemCategory;
+  status?: string;
   description: string;
   icon: string;
   name: string;
   displayName: string;
   quantity: number; // owned
-  availableQuantity: number; // owned minus placed (decorations only)
+  availableQuantity: number; // owned minus placed across all worlds (decorations only)
   sortOrder: number;
-  rarity: string;
 
   // Economy
   cost: number; // decor price in coins
@@ -38,8 +32,8 @@ export type VisitorInventoryItemType = {
 };
 
 export type VisitorInventoryType = {
-  coins: number;
-  xp: number;
+  coins: number; // "Coins" inventory item
+  xp: number; // "Experience Points" inventory item
   level: number; // derived from xp, never stored
   materials: {
     [itemId: string]: VisitorInventoryItemType;
@@ -53,16 +47,15 @@ export type VisitorInventoryType = {
 };
 
 export type VisitorDataObjectType = {
-  totalCoinsEarned: number; // lifetime coins earned (leaderboard + first-time sentinel), only ever increments
-  totalToysCrafted: number;
-  rareToysCrafted: number; // leaderboard "Rare Bears Crafted"
+  totalCoinsEarned: number; // lifetime coins earned; only ever increments. Also the "has started playing" sentinel
+  totalToysCrafted: number; // all toy types; shown on the leaderboard
   badges: string[];
   placedDecorations: {
     [slot: string]: {
-      [urlSlug: string]: string; // decoration variant name currently shown in that world, e.g. "Blue Rug"
+      [urlSlug: string]: string; // decoration name currently shown on that slot's anchor in that world, e.g. "Blue Rug"
     };
   };
-  worlds: {
-    [urlSlug: string]: VisitorWorldDataType;
+  boothIds: {
+    [urlSlug: string]: string; // sceneDropId of this visitor's booth in that world (one booth per world)
   };
 };

@@ -5,7 +5,7 @@ import {
   getBoothIndex,
   getCredentials,
   getOwnedBoothSceneDropId,
-  getVisitor,
+  initializeVisitorData,
 } from "@utils/index.js";
 import { ClaimBoothResponseType } from "@shared/types/BoothTypes.js";
 import { MAX_CLAIM_ATTEMPTS } from "../constants.js";
@@ -20,8 +20,8 @@ export const handleClaimBooth = async (req: Request, res: Response) => {
     const credentials = getCredentials(req.query);
     const { profileId, urlSlug } = credentials;
 
-    const [{ visitor, visitorData }, { booths, world, worldData }] = await Promise.all([
-      getVisitor(credentials),
+    const [{ visitor, visitorData, visitorInventory }, { booths, world, worldData }] = await Promise.all([
+      initializeVisitorData(credentials),
       getBoothIndex(credentials),
     ]);
 
@@ -50,8 +50,8 @@ export const handleClaimBooth = async (req: Request, res: Response) => {
         credentials,
         keyAssetId,
         sceneDropId,
-        level: visitorData.level || 1,
-        badges: visitorData.badges || [],
+        level: visitorInventory.level,
+        badges: visitorData.badges,
       });
 
       if (claim.status === "claimed") {

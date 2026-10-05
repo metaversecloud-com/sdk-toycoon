@@ -3,6 +3,7 @@ export * from "./handleClearBooth.js";
 export * from "./handleClearInactiveBooths.js";
 export * from "./handleGetGameState.js";
 export * from "./handleGetLeaderboard.js";
+export * from "./handlePurchaseDecorations.js";
 export * from "./handleResetLeaderboard.js";
 export * from "./handleResetWorld.js";
 export * from "./handleTeleportToMainScene.js";

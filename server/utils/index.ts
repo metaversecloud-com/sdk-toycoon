@@ -7,6 +7,8 @@ export * from "./getCredentials.js";
 export * from "./getQueryString.js";
 export * from "./getVersion.js";
 export * from "./getVisitor.js";
+export * from "./initializeVisitorData.js";
+export * from "./inventory/index.js";
 export * from "./leaderboard/index.js";
 export * from "./standardizeError.js";
 export * from "./teleportVisitorToAsset.js";

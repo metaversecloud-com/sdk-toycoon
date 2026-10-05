@@ -2,22 +2,6 @@ export * from "@shared/types/VisitorData.js";
 export * from "./Credentials.js";
 export * from "./DroppedAssetTypes.js";
 
-export type WorldDataType = {
-  boothAssetId?: string;
-  claimedAt?: number;
-  lastActiveAt?: number;
-};
-
-export type VisitorDataObjectType = {
-  totalCoinsEarned: number;
-  totalToysCrafted: number;
-  rareToysCrafted: number;
-  badges: string[];
-  // slot -> urlSlug -> decoration variant name, e.g. { rug: { "my-world": "rug-blue" } }
-  placedDecorations: Record<string, Record<string, string>>;
-  worlds: Record<string, WorldDataType>;
-};
-
 export type VisitorInventoryType = {
   coins: number;
   xp: number;

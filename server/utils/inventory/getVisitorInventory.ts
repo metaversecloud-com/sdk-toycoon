@@ -5,9 +5,12 @@ import {
 } from "../index.js";
 import type { EcosystemItemCache } from "./structureVisitorInventoryItem.js";
 
+const COINS_ITEM_NAME = "Coins";
+const XP_ITEM_NAME = "XP";
+
 // ...inside getVisitorInventory, replace the for-loop with:
 
-await visitor.fetchInventoryItems();
+await Visitor.fetchInventoryItems();
 const allItems = visitor.inventoryItems || [];
 
 const cache: EcosystemItemCache = new Map();

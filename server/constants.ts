@@ -32,3 +32,14 @@ export const CLEAR_BOOTHS_CONCURRENCY = 10;
 
 // How many players the leaderboard shows
 export const LEADERBOARD_SIZE = 25;
+export const DEFAULT_VISITOR_DATA = {
+  totalCoinsEarned: 0,
+  totalToysCrafted: 0,
+  rareToysCrafted: 0,
+  badges: [],
+  materialCollectedAt: {}, // <-- add
+  placedDecorations: {},
+  worlds: {},
+};
+
+export const MATERIAL_BIN_CAP = 10;

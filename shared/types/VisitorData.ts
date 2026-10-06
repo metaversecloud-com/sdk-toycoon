@@ -57,6 +57,7 @@ export type VisitorDataObjectType = {
   totalToysCrafted: number;
   rareToysCrafted: number; // leaderboard "Rare Bears Crafted"
   badges: string[];
+  materialCollectedAt: { [materialName: string]: number };
   placedDecorations: {
     [slot: string]: {
       [urlSlug: string]: string; // decoration variant name currently shown in that world, e.g. "Blue Rug"

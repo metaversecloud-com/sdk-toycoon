@@ -1,5 +1,6 @@
 import { DroppedAsset, Visitor } from "./topiaInit.js";
-import { Credentials, PlotAssetDataObjectType, VisitorDataObjectType } from "../types/index.js";
+import { Credentials, BoothAssetDataObjectType } from "../types/index.js";
+import { VisitorDataObjectType } from "../../shared/index.js"; // adjust to your shared path
 import { DEFAULT_VISITOR_DATA, DEFAULT_VISITOR_WORLD_DATA } from "../constants.js";
 import { VisitorInterface } from "@rtsdk/topia";
 import { standardizeError } from "./standardizeError.js";
@@ -21,7 +22,7 @@ export const initializeVisitorData = async (credentials: Credentials) => {
     // Sentinel check: first-time visitor
     if (visitorData.totalCoinsEarned === undefined) {
       visitorData = {
-        ...DEFAULT_VISITOR_DATA,
+        ...structuredClone(DEFAULT_VISITOR_DATA),
         worlds: { [urlSlug]: { ...DEFAULT_VISITOR_WORLD_DATA } },
       };
       await visitor.setDataObject(visitorData, { lock: { lockId, releaseLock: true } });
@@ -30,6 +31,10 @@ export const initializeVisitorData = async (credentials: Credentials) => {
     if (!visitorData.placedDecorations) {
       shouldUpdate = true;
       visitorData.placedDecorations = {};
+    }
+    if (!visitorData.materialCollectedAt) {
+      shouldUpdate = true;
+      visitorData.materialCollectedAt = {};
     }
     if (!visitorData.worlds) {
       shouldUpdate = true;

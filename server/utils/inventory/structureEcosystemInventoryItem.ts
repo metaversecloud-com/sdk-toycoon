@@ -1,6 +1,6 @@
 import { InventoryItemInterface } from "@rtsdk/topia";
 import { getRarity } from "../../../shared/index.js";
-import { MetadataType } from "../../types/Types.js";
+import { MetadataType } from "../../types/Type.js";
 
 // Ecosystem metadata may arrive as strings, so coerce numeric fields defensively
 const num = (value: unknown, fallback = 0) => {

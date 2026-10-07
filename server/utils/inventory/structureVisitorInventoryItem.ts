@@ -29,16 +29,18 @@ export const structureVisitorInventoryItem = async (
   if (ecosystemItemId) {
     let lookup = cache?.get(ecosystemItemId);
     if (!lookup) {
-      lookup = getInventoryItem(credentials, { id: ecosystemItemId })
-        .then((rawItem) => structureEcosystemInventoryItem(rawItem))
+      const created = getInventoryItem(credentials, { id: ecosystemItemId })
+        .then((rawItem: any) => structureEcosystemInventoryItem(rawItem))
         .catch(() => {
-          console.warn(`Ecosystem item ${ecosystemItemId} (${itemName || name}) not found; falling back to visitor item data`);
+          console.warn(`Ecosystem item ${ecosystemItemId} (${itemName || name}) not found; falling back`);
           return undefined;
         });
-      cache?.set(ecosystemItemId, lookup);
+      cache?.set(ecosystemItemId, created);
+      lookup = created;
     }
     ecosystemItem = await lookup;
   }
+
 
   return {
     ...defaultVisitorInventoryItem,

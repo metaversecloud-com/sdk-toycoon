@@ -24,7 +24,7 @@ export const getVisitor = async (credentials: Credentials, shouldGetVisitorDetai
         },
         { lock: { lockId, releaseLock: true } },
       );
-    } else if (!dataObject[`${urlSlug}-${sceneDropId}`]) {
+    } else if (!(dataObject as Record<string, unknown>)[`${urlSlug}-${sceneDropId}`]) {
       await visitor.updateDataObject(
         { [`${urlSlug}-${sceneDropId}`]: { dateStarted: new Date().getTime() } },
         { lock: { lockId, releaseLock: true } },

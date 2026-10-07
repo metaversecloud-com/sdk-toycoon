@@ -1,0 +1,21 @@
+// shared/defaultVisitorInventoryItem.ts
+export const defaultVisitorInventoryItem = {
+  id: "",
+  ecosystemItemId: "",
+  type: undefined,
+  description: "",
+  icon: "",
+  name: "",
+  displayName: "",
+  quantity: 0,
+  availableQuantity: 0,
+  sortOrder: 0,
+  rarity: "Common",
+  cost: 0,
+  reward: 0,
+  xpReward: 0,
+  unlockLevel: 1,
+  spawnIntervalSeconds: 0,
+  slot: undefined,
+  layerUrl: undefined,
+};

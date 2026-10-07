@@ -43,3 +43,8 @@ export const DEFAULT_VISITOR_DATA = {
 };
 
 export const MATERIAL_BIN_CAP = 10;
+
+export const COINS_ITEM_NAME = "Coins";
+export const XP_ITEM_NAME = "Experience Points";
+export const LEVEL_XP_THRESHOLDS = [0, 100, 1000];
+export const DEFAULT_VISITOR_WORLD_DATA = {};

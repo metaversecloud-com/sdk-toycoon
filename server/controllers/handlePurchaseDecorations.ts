@@ -55,9 +55,9 @@ export const handlePurchaseDecoration = async (req: Request, res: Response) => {
     const existing = visitorInventory.decorations[decorationId];
     visitorInventory.decorations[decorationId] = {
       ...decorationConfig,
-      ecosystemItemId: decorationId,
       ...existing,
       ...itemResponse,
+      ecosystemItemId: decorationId,
       availableQuantity: (existing?.availableQuantity || 0) + 1,
     };
 

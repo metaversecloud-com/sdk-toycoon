@@ -53,17 +53,13 @@ export type VisitorInventoryType = {
 };
 
 export type VisitorDataObjectType = {
-  totalCoinsEarned: number; // lifetime coins earned (leaderboard + first-time sentinel), only ever increments
+  totalCoinsEarned: number; // lifetime, only increments, first-time sentinel
   totalToysCrafted: number;
-  rareToysCrafted: number; // leaderboard "Rare Bears Crafted"
+  rareToysCrafted: number;
   badges: string[];
   materialCollectedAt: { [materialName: string]: number };
-  placedDecorations: {
-    [slot: string]: {
-      [urlSlug: string]: string; // decoration variant name currently shown in that world, e.g. "Blue Rug"
-    };
-  };
-  worlds: {
-    [urlSlug: string]: VisitorWorldDataType;
-  };
+  placedDecorations: { [slot: string]: { [urlSlug: string]: string } };
+  boothIds?: { [urlSlug: string]: string }; // Amanda's: urlSlug -> booth scene drop ID
+  xp?: number; // display mirror of the XP inventory item
+  level?: number; // display mirror, derived from XP
 };

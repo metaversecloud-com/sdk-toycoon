@@ -1,3 +1,13 @@
+import { Request, Response } from "express";
+import {
+  errorHandler,
+  getCredentials,
+  getInventoryItems,
+  initializeVisitorData,
+  modifyVisitorInventoryItem,
+} from "../utils/index.js";
+import { getAvailableMaterial, MATERIAL_BIN_CAP } from "../../shared/index.js";
+
 // server/controllers/handleCollectMaterial.ts
 export const handleCollectMaterial = async (req: Request, res: Response) => {
   try {

@@ -1,36 +1,62 @@
-import {
-  standardizeError,
-  structureVisitorInventoryItem,
-  Visitor,
-} from "../index.js";
+import { VisitorInterface } from "@rtsdk/topia";
+import { Credentials, VisitorInventoryItemType, VisitorInventoryType } from "../../types/index.js";
+import { standardizeError, structureVisitorInventoryItem, Visitor } from "../index.js";
 import type { EcosystemItemCache } from "./structureVisitorInventoryItem.js";
+import { getLevel } from "../getLevel.js";
+import { COINS_ITEM_NAME, XP_ITEM_NAME } from "../../constants.js";
 
-const COINS_ITEM_NAME = "Coins";
-const XP_ITEM_NAME = "XP";
+type ItemMap = { [key: string]: VisitorInventoryItemType };
 
-// ...inside getVisitorInventory, replace the for-loop with:
+const sortItems = (items: ItemMap): ItemMap => {
+  const sorted: ItemMap = {};
+  Object.values(items)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+    .forEach((item) => {
+      sorted[item.ecosystemItemId] = item;
+    });
+  return sorted;
+};
 
-await Visitor.fetchInventoryItems();
-const allItems = visitor.inventoryItems || [];
+export const getVisitorInventory = async (credentials: Credentials): Promise<VisitorInventoryType> => {
+  try {
+    const { urlSlug, visitorId } = credentials;
+    const visitor = (await Visitor.create(visitorId, urlSlug, { credentials })) as VisitorInterface;
 
-const cache: EcosystemItemCache = new Map();
-const structured = await Promise.all(
-  allItems.map((visitorItem) => structureVisitorInventoryItem(visitorItem, credentials, cache)),
-);
+    await visitor.fetchInventoryItems();
+    const allItems = visitor.inventoryItems || [];
 
-let coins = 0;
-let xp = 0;
-const materials: ItemMap = {};
-const toys: ItemMap = {};
-const decorations: ItemMap = {};
+    const cache: EcosystemItemCache = new Map();
+    const structured = await Promise.all(
+      allItems.map((visitorItem) => structureVisitorInventoryItem(visitorItem, credentials, cache)),
+    );
 
-for (const itemData of structured) {
-  const { ecosystemItemId, name, status, quantity, type } = itemData;
-  if (status !== "ACTIVE" || !name) continue;
+    let coins = 0;
+    let xp = 0;
+    const materials: ItemMap = {};
+    const toys: ItemMap = {};
+    const decorations: ItemMap = {};
 
-  if (name === COINS_ITEM_NAME) coins = quantity || 0;
-  else if (name === XP_ITEM_NAME) xp = quantity || 0;
-  else if (type === "material") materials[ecosystemItemId] = itemData;
-  else if (type === "toy") toys[ecosystemItemId] = itemData;
-  else if (type === "decoration") decorations[ecosystemItemId] = itemData;
-}
+    for (const itemData of structured) {
+      const { ecosystemItemId, name, status, quantity, type } = itemData;
+      if (status !== "ACTIVE" || !name) continue;
+
+      if (name === COINS_ITEM_NAME) coins = quantity || 0;
+      else if (name === XP_ITEM_NAME) xp = quantity || 0;
+      else if (type === "material") materials[ecosystemItemId] = itemData;
+      else if (type === "toy") toys[ecosystemItemId] = itemData;
+      else if (type === "decoration") decorations[ecosystemItemId] = itemData;
+      else console.warn(`Inventory item "${name}" has no recognized type (${type}); skipped`);
+    }
+
+    return {
+      coins,
+      xp,
+      level: getLevel(xp),
+      materials: sortItems(materials),
+      toys: sortItems(toys),
+      decorations: sortItems(decorations),
+    };
+  } catch (error: any) {
+    throw standardizeError(error);
+  }
+};

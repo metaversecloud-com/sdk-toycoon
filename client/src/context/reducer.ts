@@ -1,4 +1,11 @@
-import { ActionType, InitialState, SET_ERROR, SET_GAME_STATE, SET_HAS_INTERACTIVE_PARAMS } from "./types";
+import {
+  ActionType,
+  InitialState,
+  MATERIAL_COLLECTED,
+  SET_ERROR,
+  SET_GAME_STATE,
+  SET_HAS_INTERACTIVE_PARAMS,
+} from "./types";
 
 const globalReducer = (state: InitialState, action: ActionType) => {
   const { type, payload } = action;
@@ -13,12 +20,20 @@ const globalReducer = (state: InitialState, action: ActionType) => {
         ...state,
         isAdmin: payload.isAdmin,
         visitorData: payload.visitorData,
+        visitorInventory: payload.visitorInventory,
+        ecosystemMaterials: payload.ecosystemMaterials,
         ownsBoothInThisWorld: payload.ownsBoothInThisWorld,
         ownedBoothSceneDropId: payload.ownedBoothSceneDropId,
         targetBooth: payload.targetBooth,
         availableBoothCount: payload.availableBoothCount,
         boothsFullAlert: payload.boothsFullAlert,
         error: "",
+      };
+    case MATERIAL_COLLECTED:
+      return {
+        ...state,
+        visitorData: payload.visitorData,
+        visitorInventory: payload.visitorInventory,
       };
     case SET_ERROR:
       return {

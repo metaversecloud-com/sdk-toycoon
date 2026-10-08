@@ -1,17 +1,17 @@
 import { UserInventoryItemInterface } from "@rtsdk/topia";
-import { defaultVisitorInventoryItem, getRarity } from "../../../shared/index.js";
-import { Credentials, InventoryItemType } from "../../types/index.js";
-import { getInventoryItem, structureEcosystemInventoryItem } from "../index.js";
+import { Credentials, InventoryItemType, VisitorInventoryItemType } from "../../types/index.js";
+import { getInventoryItem } from "./inventoryCache.js";
+import { structureEcosystemInventoryItem } from "./structureEcosystemInventoryItem.js";
 
-// Optional per-request cache so the same ecosystem item is only fetched once
-export type EcosystemItemCache = Map<string, Promise<InventoryItemType | undefined>>;
-
+/**
+ * Combines a visitor-owned item (quantity) with its ecosystem definition (game config from metadata)
+ */
 export const structureVisitorInventoryItem = async (
   visitorItem: UserInventoryItemInterface,
   credentials: Credentials,
-  cache?: EcosystemItemCache,
-): Promise<any> => {
+): Promise<VisitorInventoryItemType> => {
   const {
+    id,
     name,
     description = "",
     image_url = "",
@@ -24,37 +24,28 @@ export const structureVisitorInventoryItem = async (
 
   const { name: itemName, description: itemDescription = "", image_url: itemImageUrl = "" } = item || {};
 
-  // Look up the matching ecosystem item by ecosystemItemId
+  // Ecosystem definitions are cached, so this lookup doesn't hit the API per item
   let ecosystemItem: InventoryItemType | undefined;
   if (ecosystemItemId) {
-    let lookup = cache?.get(ecosystemItemId);
-    if (!lookup) {
-      const created = getInventoryItem(credentials, { id: ecosystemItemId })
-        .then((rawItem: any) => structureEcosystemInventoryItem(rawItem))
-        .catch(() => {
-          console.warn(`Ecosystem item ${ecosystemItemId} (${itemName || name}) not found; falling back`);
-          return undefined;
-        });
-      cache?.set(ecosystemItemId, created);
-      lookup = created;
+    try {
+      ecosystemItem = structureEcosystemInventoryItem(await getInventoryItem(credentials, { id: ecosystemItemId }));
+    } catch {
+      console.warn(`Ecosystem item ${ecosystemItemId} (${itemName || name}) not found; falling back to visitor item data`);
     }
-    ecosystemItem = await lookup;
   }
 
-
   return {
-    ...defaultVisitorInventoryItem,
+    id,
     ecosystemItemId,
     type: ecosystemItem?.type, // "material" | "toy" | "decoration"
     status,
     description: ecosystemItem?.description || itemDescription || description,
     icon: ecosystemItem?.icon || itemImageUrl || image_url || image_path,
-    name: itemName || name,
-    displayName: ecosystemItem?.displayName || itemName || name,
-    availableQuantity: quantity, // decorations get overwritten in initializeVisitorData
+    name: itemName || name || "",
+    displayName: ecosystemItem?.displayName || itemName || name || "",
     quantity,
+    availableQuantity: quantity, // decorations get overwritten in initializeVisitorData
     sortOrder: ecosystemItem?.sortOrder ?? 0,
-    rarity: ecosystemItem?.rarity ?? getRarity(0),
 
     // Economy
     cost: ecosystemItem?.cost ?? 0, // decor price in coins

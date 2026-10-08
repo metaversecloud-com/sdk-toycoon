@@ -13,16 +13,13 @@
   },
   "dependencies": {
     "axios": "^1.6.8",
-    "concurrently": "^8.2.2",
-    "tailwindcss": "4.3.3"
+    "concurrently": "^8.2.2"
   },
   "license": "BSD-3-Clause",
   "devDependencies": {
     "@types/axios": "^0.14.0",
     "@types/node": "^20.12.4",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "nodemon": "^1.14.10",
+    "nodemon": "^3.1.0",
     "prettier": "3.2.5",
     "typescript": "^5.4.3"
   },

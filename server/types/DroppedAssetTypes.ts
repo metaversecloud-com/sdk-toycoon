@@ -1,17 +1,10 @@
 import { DroppedAssetInterface } from "@rtsdk/topia";
+import { LeaderboardDataType } from "@shared/types/LeaderboardTypes.js";
 
-// Data object on the key asset (the Toycoon world asset): holds the leaderboard
+// Data object on the Main Scene key asset (toycoon_start): holds this world's leaderboard.
+// Booth records live on each booth's toycoon_booth asset — see BoothDataObjectType in shared/types/BoothTypes.ts.
 export interface IDroppedAsset extends DroppedAssetInterface {
   dataObject: {
-    leaderboard?: Record<string, string>; // { profileId: "displayName|totalTokens|level|rareBearsCount" }
+    leaderboard?: LeaderboardDataType; // { profileId: "displayName|totalXp|level|totalToysCrafted" }
   };
 }
-
-// Data object on each booth asset: read-only info other visitors can see
-export type BoothAssetDataObjectType = {
-  ownerId?: string; // profileId of the visitor who claimed this booth
-  ownerName?: string; // shown on the booth's read-only view
-  claimedAt?: number; // ms timestamp, matches VisitorWorldDataType.claimedAt
-  lastActiveAt?: number; // ms timestamp, used by the admin "clear inactive booths" action
-  level?: number; // optional, update when the owner levels up so visitors can see it
-};

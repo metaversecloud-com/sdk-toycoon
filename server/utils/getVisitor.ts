@@ -1,12 +1,19 @@
 import { VisitorInterface } from "@rtsdk/topia";
 import { Visitor } from "./topiaInit.js";
-import { Credentials } from "../types/index.js";
+import { Credentials, VisitorDataObjectType } from "../types/index.js";
+import { DEFAULT_VISITOR_DATA } from "../constants.js";
 import { standardizeError } from "./standardizeError.js";
-import { VisitorDataObjectType } from "@shared/types/VisitorData.js";
 
+/**
+ * Fetches the visitor and guarantees their data object has every default field before anything updates it.
+ * - Empty record (first visit): setDataObject with DEFAULT_VISITOR_DATA
+ * - Existing record missing fields: updateDataObject with only the missing defaults, so nothing already saved
+ *   (booth ownership, placed decor, counters) is overwritten — setDataObject would wipe the whole record
+ * Pass shouldGetVisitorDetails when you need visitor details such as isAdmin (uses Visitor.get).
+ */
 export const getVisitor = async (credentials: Credentials, shouldGetVisitorDetails = false) => {
   try {
-    const { sceneDropId, urlSlug, visitorId } = credentials;
+    const { profileId, urlSlug, visitorId } = credentials;
 
     let visitor: VisitorInterface;
     if (shouldGetVisitorDetails) visitor = await Visitor.get(visitorId, urlSlug, { credentials });
@@ -14,42 +21,22 @@ export const getVisitor = async (credentials: Credentials, shouldGetVisitorDetai
 
     if (!visitor) throw "Not in world";
 
-    const dataObject = (await visitor.fetchDataObject()) as VisitorDataObjectType;
+    const dataObject = ((await visitor.fetchDataObject()) || {}) as Partial<VisitorDataObjectType>;
+    const lockId = `visitor_data_init_${profileId}_${Math.floor(Date.now() / 60000) * 60000}`;
 
-    const lockId = `${sceneDropId}-${new Date(Math.round(new Date().getTime() / 60000) * 60000)}`;
-    if (!dataObject) {
-      await visitor.setDataObject(
-        {
-          [`${urlSlug}-${sceneDropId}`]: { dateStarted: new Date().getTime() },
-        },
-        { lock: { lockId, releaseLock: true } },
-      );
-    } else if (!(dataObject as Record<string, unknown>)[`${urlSlug}-${sceneDropId}`]) {
-      await visitor.updateDataObject(
-        { [`${urlSlug}-${sceneDropId}`]: { dateStarted: new Date().getTime() } },
-        { lock: { lockId, releaseLock: true } },
-      );
-    }
-    // TODO: replace with Angel's initializeVisitorData once it lands (must default placedDecorations: {})
-    const visitorData: VisitorDataObjectType = dataObject || {};
+    const missingDefaults = Object.fromEntries(
+      Object.entries(DEFAULT_VISITOR_DATA).filter(([key]) => dataObject[key as keyof VisitorDataObjectType] === undefined),
+    );
 
-    await visitor.fetchInventoryItems();
-    let visitorInventory: { [key: string]: { id: string; icon: string; name: string } } = {};
-
-    for (const visitorItem of visitor.inventoryItems) {
-      const { id, status, item } = visitorItem;
-      const { name, type, image_url = "" } = item || {};
-
-      if (status === "ACTIVE" && type === "BADGE") {
-        visitorInventory[name] = {
-          id,
-          icon: image_url,
-          name,
-        };
-      }
+    if (Object.keys(dataObject).length === 0) {
+      await visitor.setDataObject(DEFAULT_VISITOR_DATA, { lock: { lockId, releaseLock: true } });
+    } else if (Object.keys(missingDefaults).length > 0) {
+      await visitor.updateDataObject(missingDefaults, { lock: { lockId, releaseLock: true } });
     }
 
-    return { visitor, visitorData, visitorInventory };
+    const visitorData = { ...DEFAULT_VISITOR_DATA, ...dataObject } as VisitorDataObjectType;
+
+    return { visitor, visitorData };
   } catch (error) {
     throw standardizeError(error);
   }

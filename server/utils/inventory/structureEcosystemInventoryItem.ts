@@ -1,6 +1,5 @@
 import { InventoryItemInterface } from "@rtsdk/topia";
-import { getRarity } from "../../../shared/index.js";
-import { MetadataType } from "../../types/Type.js";
+import { InventoryItemType, MetadataType } from "../../types/index.js";
 
 // Ecosystem metadata may arrive as strings, so coerce numeric fields defensively
 const num = (value: unknown, fallback = 0) => {
@@ -8,14 +7,16 @@ const num = (value: unknown, fallback = 0) => {
   return value === undefined || value === null || value === "" || Number.isNaN(n) ? fallback : n;
 };
 
-export const structureEcosystemInventoryItem = async (item: InventoryItemInterface): Promise<any> => {
+/**
+ * Turns a raw ecosystem inventory item into the app's item shape, reading game config from its metadata
+ */
+export const structureEcosystemInventoryItem = (item: InventoryItemInterface): InventoryItemType => {
   const { id, name, description, image_path, metadata } = item;
 
   const {
     displayName,
     type,
     sortOrder,
-    rarity,
     cost,
     reward,
     xpReward,
@@ -33,7 +34,6 @@ export const structureEcosystemInventoryItem = async (item: InventoryItemInterfa
     description: description || "",
     type, // "material" | "toy" | "decoration"
     sortOrder: num(sortOrder),
-    rarity: getRarity(num(rarity)),
 
     // Economy
     cost: num(cost),

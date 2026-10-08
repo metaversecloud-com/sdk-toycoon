@@ -1,12 +1,15 @@
 import { Request, Response } from "express";
 import {
+  DroppedAsset,
   errorHandler,
   getBoothData,
   getBoothIndex,
   getCredentials,
+  getInventoryItems,
   getOwnedBoothSceneDropId,
-  getVisitor,
+  initializeVisitorData,
 } from "@utils/index.js";
+import { DroppedAssetInterface } from "@rtsdk/topia";
 import { GameStateResponseType, TargetBoothType } from "@shared/types/BoothTypes.js";
 
 /**
@@ -19,15 +22,19 @@ export const handleGetGameState = async (req: Request, res: Response) => {
     const credentials = getCredentials(req.query);
     const { profileId, sceneDropId, urlSlug } = credentials;
     const forceRefreshBooths = req.query.forceRefreshBooths === "true";
+    const forceRefreshInventory = req.query.forceRefreshInventory === "true";
 
-    const [{ visitor, visitorData }, { booths, worldData }] = await Promise.all([
-      getVisitor(credentials, true),
+    const [{ visitor, visitorData, visitorInventory }, { booths, worldData }] = await Promise.all([
+      initializeVisitorData(credentials, { forceRefreshInventory, shouldGetVisitorDetails: true }),
       getBoothIndex(credentials, forceRefreshBooths),
     ]);
+    // Cached (and already refreshed above if forced), so this doesn't cost an extra API call
+    const { ecosystemMaterials } = await getInventoryItems(credentials);
 
     const ownedBoothSceneDropId = getOwnedBoothSceneDropId({ booths, profileId, urlSlug, visitorData });
 
     let targetBooth: TargetBoothType | null = null;
+    let ownedBoothAsset: DroppedAssetInterface | null = null;
     const targetEntry = sceneDropId ? booths[sceneDropId] : undefined;
 
     if (targetEntry) {
@@ -43,22 +50,30 @@ export const handleGetGameState = async (req: Request, res: Response) => {
         claimDate: boothData.claimDate,
       };
 
-      // Owner opening their own booth counts as activity for the 14-day inactivity check
-      if (isOwnedByVisitor) {
-        boothAsset.updateDataObject({ lastInteractionTimestamp: Date.now() }).catch((error: any) =>
+      if (isOwnedByVisitor) ownedBoothAsset = boothAsset;
+    }
+
+    // Any app open by an owner (booth, Main Scene, gameplay drawer) counts as activity for their booth's 14-day
+    // inactivity check. Not awaited: the page shouldn't wait on it.
+    if (ownedBoothSceneDropId) {
+      const { keyAssetId } = booths[ownedBoothSceneDropId];
+      (ownedBoothAsset || DroppedAsset.create(keyAssetId, urlSlug, { credentials: { ...credentials, assetId: keyAssetId } }))
+        .updateDataObject({ lastInteractionTimestamp: Date.now() }, {})
+        .catch((error: any) =>
           errorHandler({
             error,
             functionName: "handleGetGameState",
             message: "Error updating booth lastInteractionTimestamp",
           }),
         );
-      }
     }
 
     const isAdmin = !!visitor.isAdmin;
 
     const gameState: GameStateResponseType = {
       visitorData,
+      visitorInventory,
+      ecosystemMaterials,
       ownsBoothInThisWorld: !!ownedBoothSceneDropId,
       ownedBoothSceneDropId,
       targetBooth,

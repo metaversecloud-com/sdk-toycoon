@@ -1,4 +1,5 @@
 import { BoothDataObjectType } from "@shared/types/BoothTypes.js";
+import { VisitorDataObjectType } from "@shared/types/VisitorData.js";
 
 // Every booth scene must contain exactly one asset with this unique name; its data object holds the BoothData
 export const BOOTH_KEY_UNIQUE_NAME = "toycoon_booth";
@@ -32,19 +33,18 @@ export const CLEAR_BOOTHS_CONCURRENCY = 10;
 
 // How many players the leaderboard shows
 export const LEADERBOARD_SIZE = 25;
-export const DEFAULT_VISITOR_DATA = {
-  totalCoinsEarned: 0,
-  totalToysCrafted: 0,
-  rareToysCrafted: 0,
-  badges: [],
-  materialCollectedAt: {}, // <-- add
-  placedDecorations: {},
-  worlds: {},
-};
 
-export const MATERIAL_BIN_CAP = 10;
-
+// Ecosystem inventory item names for currencies
 export const COINS_ITEM_NAME = "Coins";
 export const XP_ITEM_NAME = "Experience Points";
-export const LEVEL_XP_THRESHOLDS = [0, 100, 1000];
-export const DEFAULT_VISITOR_WORLD_DATA = {};
+
+// Written to a visitor's data object the first time they open the app. The object fields MUST be present as {} —
+// otherwise Firebase stores later dot-path updates (e.g. materialCollectedAt.Wood) as literal "a.b" keys at the root.
+export const DEFAULT_VISITOR_DATA: VisitorDataObjectType = {
+  totalCoinsEarned: 0,
+  totalToysCrafted: 0,
+  badges: [],
+  materialCollectedAt: {},
+  placedDecorations: {},
+  boothIds: {},
+};

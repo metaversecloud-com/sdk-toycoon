@@ -6,7 +6,7 @@ import {
   getInventoryItems,
   initializeVisitorData,
   modifyVisitorInventoryItem,
-} from "../utils/index.js";
+} from "@utils/index.js";
 import { COINS_ITEM_NAME } from "../constants.js";
 
 export const handlePurchaseDecoration = async (req: Request, res: Response) => {
@@ -52,12 +52,10 @@ export const handlePurchaseDecoration = async (req: Request, res: Response) => {
       throw grantError;
     }
 
+    // itemResponse is the fully structured item with its new total quantity; one more copy is now available to place
     const existing = visitorInventory.decorations[decorationId];
     visitorInventory.decorations[decorationId] = {
-      ...decorationConfig,
-      ...existing,
       ...itemResponse,
-      ecosystemItemId: decorationId,
       availableQuantity: (existing?.availableQuantity || 0) + 1,
     };
 

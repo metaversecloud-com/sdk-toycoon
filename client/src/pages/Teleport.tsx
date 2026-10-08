@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 // components
 import { PageContainer, StartHere, TeleportButton } from "@/components";
@@ -19,10 +20,14 @@ export const Teleport = () => {
 
   const [isLoading, setIsLoading] = useState(true);
 
+  // Lets Topia bust the server's ecosystem inventory cache when new items are uploaded
+  const [searchParams] = useSearchParams();
+  const forceRefreshInventory = searchParams.get("forceRefreshInventory") === "true";
+
   useEffect(() => {
     if (hasInteractiveParams) {
       backendAPI
-        .get("/game-state")
+        .get("/game-state", { params: { forceRefreshInventory } })
         .then((response) => setGameState(dispatch, response.data))
         .catch((error) => setErrorMessage(dispatch, error as ErrorType))
         .finally(() => setIsLoading(false));

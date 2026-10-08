@@ -3,7 +3,7 @@ import {
   errorHandler,
   getCredentials,
   getLeaderboardAsset,
-  getVisitor,
+  initializeVisitorData,
   rankLeaderboard,
   updateLeaderboardEntry,
 } from "@utils/index.js";
@@ -18,22 +18,23 @@ export const handleGetLeaderboard = async (req: Request, res: Response) => {
     const credentials = getCredentials(req.query);
     const { profileId } = credentials;
 
-    const [keyAsset, { visitorData }] = await Promise.all([getLeaderboardAsset(credentials), getVisitor(credentials)]);
+    const [keyAsset, { visitorData, visitorInventory }] = await Promise.all([
+      getLeaderboardAsset(credentials),
+      initializeVisitorData(credentials),
+    ]);
     const leaderboardData = { ...(keyAsset.dataObject?.leaderboard || {}) };
 
-    // Refresh the viewer's own row (catches display-name and level changes). totalCoinsEarned is the sentinel
-    // initializeVisitorData sets for players who've started playing, so brand-new visitors aren't added as empty rows.
-    if (visitorData.totalCoinsEarned !== undefined) {
+    // Refresh the viewer's own row (catches display-name and level changes). Players who haven't done anything yet
+    // (no XP, no toys) aren't added, so the board doesn't fill with empty rows.
+    if (visitorInventory.xp > 0 || visitorData.totalToysCrafted > 0) {
       try {
         leaderboardData[profileId] = await updateLeaderboardEntry({
           credentials,
           keyAsset,
-          // TODO (Angel): if XP ends up as an "Experience Points" inventory item (per .ai/rules.md) rather than
-          // visitorData.xp, read it from inventory here
           stats: {
-            totalXp: visitorData.xp || 0,
-            level: visitorData.level || 1,
-            totalToysCrafted: visitorData.totalToysCrafted || 0,
+            totalXp: visitorInventory.xp,
+            level: visitorInventory.level,
+            totalToysCrafted: visitorData.totalToysCrafted,
           },
         });
       } catch (error) {

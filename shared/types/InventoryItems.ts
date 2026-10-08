@@ -1,15 +1,14 @@
-import { InventoryItemCategory } from "./index.js";
+import { InventoryItemCategory } from "./VisitorData.js";
 
+// An ecosystem inventory item definition (what can be owned), structured from its metadata
 export type InventoryItemType = {
   id: string;
   name: string;
   displayName: string;
   type: InventoryItemCategory | undefined;
-  rarity: string;
   icon: string;
   description: string;
-  sortOrder?: number;
-  quantity?: number;
+  sortOrder: number;
   cost: number;
   reward: number;
   xpReward: number;

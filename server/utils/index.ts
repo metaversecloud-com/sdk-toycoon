@@ -10,6 +10,7 @@ export * from "./getVisitor.js";
 export * from "./initializeVisitorData.js";
 export * from "./inventory/index.js";
 export * from "./leaderboard/index.js";
+export * from "./materials/index.js";
 export * from "./standardizeError.js";
 export * from "./teleportVisitorToAsset.js";
 export * from "./topiaInit.js";

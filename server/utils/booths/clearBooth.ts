@@ -9,7 +9,7 @@ import { User } from "../topiaInit.js";
  * Releases a booth back to unclaimed without touching the previous owner's persistent inventory.
  * - Owner record: drops this world's boothIds entry and un-places this world's decor (every
  *   placedDecorations[slot][urlSlug]), which returns those items to the owner's available count in every world.
- *   Inventory (owned decor, coins, XP) and counters/badges are never modified — decor is owned globally and permanently.
+ *   Inventory (owned decor, Toy Tokens, XP) and counters/badges are never modified — decor is owned globally and permanently.
  * - Booth: owner metadata reset. claimCount is intentionally preserved; it versions the claim lock, and resetting it
  *   would make a future claim reuse a lock id that's still held from an earlier claim.
  *

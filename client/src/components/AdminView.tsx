@@ -18,25 +18,25 @@ const ADMIN_ACTIONS: {
   "clear-booth": {
     title: "Clear this booth",
     message:
-      "The owner will lose this booth and any decor placed in it. They keep their coins, XP, level, and all decor they've bought.",
+      "The owner will lose this booth and any decor placed in it. They keep their Toy Tokens, XP, level, and all decor they've bought.",
     confirmLabel: "Clear booth",
   },
   "clear-inactive-booths": {
     title: "Clear inactive booths",
     message:
-      "Every booth whose owner hasn't visited it in 14+ days will be released. Owners keep their coins, XP, level, and all decor they've bought.",
+      "Every booth whose owner hasn't visited it in 14+ days will be released. Owners keep their Toy Tokens, XP, level, and all decor they've bought.",
     confirmLabel: "Clear inactive booths",
   },
   "reset-leaderboard": {
     title: "Reset leaderboard",
     message:
-      "Everyone will be removed from this world's leaderboard. Players keep their XP, level, coins, badges, and decor, and reappear as they keep playing. This can't be undone.",
+      "Everyone will be removed from this world's leaderboard. Players keep their XP, level, Toy Tokens, badges, and decor, and reappear as they keep playing. This can't be undone.",
     confirmLabel: "Reset leaderboard",
   },
   "reset-world": {
     title: "Reset world",
     message:
-      "Every booth in this world will be released. Players keep their coins, XP, level, and all decor they've bought. This can't be undone.",
+      "Every booth in this world will be released. Players keep their Toy Tokens, XP, level, and all decor they've bought. This can't be undone.",
     confirmLabel: "Reset world",
   },
 };

@@ -3,12 +3,14 @@ import {
   handleClaimBooth,
   handleClearBooth,
   handleClearInactiveBooths,
+  handleCollectAllMaterials,
   handleCollectMaterial,
   handleGetGameState,
   handleGetLeaderboard,
   handlePurchaseDecoration,
   handleResetLeaderboard,
   handleResetWorld,
+  handleStartMaterial,
   handleTeleportToMainScene,
   handleTeleportToMyBooth,
 } from "./controllers/index.js";
@@ -40,7 +42,9 @@ router.get("/game-state", handleGetGameState);
 router.get("/leaderboard", handleGetLeaderboard);
 router.post("/claim-booth", handleClaimBooth);
 router.post("/purchase-decoration", handlePurchaseDecoration);
+router.post("/start-material", handleStartMaterial);
 router.post("/collect-material", handleCollectMaterial);
+router.post("/collect-all-materials", handleCollectAllMaterials);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);
 

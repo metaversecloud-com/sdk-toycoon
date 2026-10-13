@@ -34,17 +34,19 @@ export const CLEAR_BOOTHS_CONCURRENCY = 10;
 // How many players the leaderboard shows
 export const LEADERBOARD_SIZE = 25;
 
-// Ecosystem inventory item names for currencies
-export const COINS_ITEM_NAME = "Coins";
+// Ecosystem inventory item names for currencies (both type=CURRENCY in the ecosystem).
+// The in-game currency is "Toy Tokens"; internal field names (visitorInventory.coins, totalCoinsEarned) predate the
+// name and still refer to it.
+export const CURRENCY_ITEM_NAME = "Toy Tokens";
 export const XP_ITEM_NAME = "Experience Points";
 
 // Written to a visitor's data object the first time they open the app. The object fields MUST be present as {} —
-// otherwise Firebase stores later dot-path updates (e.g. materialCollectedAt.Wood) as literal "a.b" keys at the root.
+// otherwise Firebase stores later dot-path updates (e.g. materialGenerationStartedAt.Wood) as literal "a.b" keys at the root.
 export const DEFAULT_VISITOR_DATA: VisitorDataObjectType = {
   totalCoinsEarned: 0,
   totalToysCrafted: 0,
   badges: [],
-  materialCollectedAt: {},
+  materialGenerationStartedAt: {},
   placedDecorations: {},
   boothIds: {},
 };

@@ -26,3 +26,30 @@
 *::after {
   box-sizing: border-box;
 }
+
+/* Toycoon workshop palette (Materials page) */
+:root {
+  --tc-ink: #3b2a1a;
+  --tc-ink-soft: #6b5440;
+  --tc-cream: #fff8ec;
+  --tc-cream-edge: #e7d3b4;
+  --tc-wall: #ecdcc0;
+  --tc-wall-shade: #dcc59f;
+  --tc-floor-1: #b37c4b;
+  --tc-floor-2: #a26d3f;
+  --tc-floor-seam: #8b5a31;
+  --tc-wood: #a5683a;
+  --tc-wood-dark: #6e4224;
+  --tc-wood-light: #c99160;
+  --tc-crate: #c58f5a;
+  --tc-crate-dark: #9a6638;
+  --tc-green: #2f7d3a;
+  --tc-green-dark: #1f5a28;
+  --tc-gold: #f4c64f;
+  --tc-gold-dark: #c6922a;
+  --tc-gold-text: #7a4f0c; /* readable gold-brown on cream */
+  --tc-progress: #4a90d9;
+  --tc-muted: #8a7a6a;
+  --tc-shadow: 0 4px 10px rgba(59, 42, 26, 0.25);
+  --tc-shadow-soft: 0 2px 4px rgba(59, 42, 26, 0.2);
+}

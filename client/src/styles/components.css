@@ -27,3 +27,545 @@
  *
  * See `.ai/style-guide.md` for the full convention.
  */
+
+/* ===================== Toycoon: Materials workshop ===================== */
+
+.tc-workshop {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  color: var(--tc-ink);
+  /* Wall band on top, plank floor below */
+  background:
+    linear-gradient(to bottom, var(--tc-wall) 0, var(--tc-wall-shade) 150px, transparent 150px),
+    repeating-linear-gradient(
+      90deg,
+      var(--tc-floor-1) 0,
+      var(--tc-floor-1) 44px,
+      var(--tc-floor-seam) 44px,
+      var(--tc-floor-seam) 46px,
+      var(--tc-floor-2) 46px,
+      var(--tc-floor-2) 90px,
+      var(--tc-floor-seam) 90px,
+      var(--tc-floor-seam) 92px
+    );
+  box-shadow: var(--tc-shadow);
+}
+
+.tc-workshop__top {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 16px 12px 8px;
+}
+
+.tc-sign {
+  margin: 0;
+  padding: 8px 28px;
+  border-radius: 12px;
+  border: 3px solid var(--tc-wood-dark);
+  background: linear-gradient(var(--tc-wood-light), var(--tc-wood));
+  color: var(--tc-cream);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 0 var(--tc-wood-dark);
+  box-shadow: var(--tc-shadow);
+}
+
+.tc-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--tc-cream-edge);
+  background: var(--tc-cream);
+  font-weight: 700;
+  box-shadow: var(--tc-shadow-soft);
+}
+
+.tc-hint__icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--tc-green);
+  color: #fff;
+  font-size: 0.7rem;
+}
+
+/* Stations: a staggered two-column floor, so any number of materials fits without hand-placed positions */
+.tc-floor {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 12px;
+  row-gap: 8px;
+  margin: 0;
+  padding: 24px 12px 32px;
+  list-style: none;
+}
+
+.tc-floor > li:nth-child(even) {
+  margin-top: 56px;
+}
+
+.tc-station {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  padding-top: 44px; /* room for the status bubble */
+}
+
+.tc-station--locked .tc-station__art,
+.tc-station--locked .tc-crate {
+  filter: grayscale(0.7) brightness(0.85);
+}
+
+/* Placeholder art: a workbench with the material's emoji/icon on top. Real art replaces it via stationImageUrl. */
+.tc-station__art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 84px;
+}
+
+.tc-station__art img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.tc-bench {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 86%;
+  height: 64px;
+  border-radius: 8px 8px 4px 4px;
+  border: 3px solid var(--tc-wood-dark);
+  background: linear-gradient(var(--tc-wood-light), var(--tc-wood));
+  box-shadow: var(--tc-shadow-soft);
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.tc-bench::before,
+.tc-bench::after {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  width: 8px;
+  height: 14px;
+  background: var(--tc-wood-dark);
+  border-radius: 0 0 3px 3px;
+}
+
+.tc-bench::before {
+  left: 10px;
+}
+
+.tc-bench::after {
+  right: 10px;
+}
+
+.tc-bench img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.tc-crate {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 70%;
+  height: 46px;
+  margin-top: 10px;
+  border: 3px solid var(--tc-crate-dark);
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--tc-crate) 0,
+    var(--tc-crate) 12px,
+    var(--tc-crate-dark) 12px,
+    var(--tc-crate-dark) 14px
+  );
+  box-shadow: var(--tc-shadow-soft);
+}
+
+.tc-crate__label {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--tc-cream);
+  color: var(--tc-ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  transform: rotate(-4deg);
+}
+
+/* Status bubble above each station */
+.tc-bubble {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  box-shadow: var(--tc-shadow-soft);
+}
+
+.tc-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  border-right: inherit;
+  border-bottom: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+button.tc-bubble {
+  cursor: pointer;
+}
+
+button.tc-bubble:disabled {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+button.tc-bubble:focus-visible,
+.tc-collect-all:focus-visible {
+  outline: 3px solid var(--tc-ink);
+  outline-offset: 3px;
+}
+
+.tc-bubble--start {
+  background: var(--tc-green);
+  border-color: var(--tc-green-dark);
+  color: #fff;
+}
+
+.tc-bubble--start:hover:not(:disabled) {
+  background: var(--tc-green-dark);
+}
+
+.tc-bubble--collect {
+  background: var(--tc-gold);
+  border-color: var(--tc-gold-dark);
+  color: var(--tc-ink);
+  animation: tc-bounce 1.6s ease-in-out infinite;
+}
+
+.tc-bubble--timer,
+.tc-bubble--full,
+.tc-bubble--locked {
+  background: var(--tc-cream);
+  border-color: var(--tc-cream-edge);
+  color: var(--tc-ink);
+}
+
+.tc-bubble--timer {
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 12px 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tc-bubble--full,
+.tc-bubble--locked {
+  color: var(--tc-ink-soft);
+}
+
+.tc-progress {
+  display: block;
+  width: 64px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--tc-cream-edge);
+}
+
+.tc-progress__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tc-progress);
+  transition: width 1s linear;
+}
+
+/* Collect All + inventory bar stick to the bottom of the drawer */
+.tc-dock {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+.tc-collect-all {
+  justify-self: end;
+  padding: 8px 18px;
+  border-radius: 12px;
+  border: 3px solid var(--tc-gold-dark);
+  background: var(--tc-gold);
+  color: var(--tc-ink);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: var(--tc-shadow);
+  cursor: pointer;
+}
+
+.tc-collect-all:disabled {
+  border-color: var(--tc-cream-edge);
+  background: var(--tc-cream);
+  color: var(--tc-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.tc-inventory-bar {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 8px;
+  overflow-x: auto;
+  list-style: none;
+  border-radius: 14px;
+  border: 3px solid var(--tc-wood-dark);
+  background: linear-gradient(var(--tc-wood-light), var(--tc-wood));
+  box-shadow: var(--tc-shadow);
+}
+
+/* Slots share the bar's width (so 7+ materials fit a drawer) up to a comfortable max size */
+.tc-inventory-bar__item {
+  position: relative;
+  display: grid;
+  flex: 1 1 0;
+  place-items: center;
+  min-width: 38px;
+  max-width: 60px;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 2px solid var(--tc-cream-edge);
+  background: var(--tc-cream);
+  font-size: 1.3rem;
+}
+
+.tc-inventory-bar__item img {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+}
+
+.tc-inventory-bar__count {
+  position: absolute;
+  right: 2px;
+  bottom: 0;
+  color: var(--tc-ink);
+  font-size: 0.62rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.tc-inventory-bar__item--full {
+  border-color: var(--tc-gold-dark);
+  background: #fdeec4;
+}
+
+.tc-inventory-bar__item--full .tc-inventory-bar__count {
+  color: var(--tc-gold-text);
+}
+
+@keyframes tc-bounce {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tc-bubble--collect {
+    animation: none;
+  }
+
+  .tc-progress__fill {
+    transition: none;
+  }
+}
+
+/* ===================== Toycoon: Start Here welcome screen ===================== */
+
+.tc-welcome {
+  display: grid;
+  gap: 16px;
+  padding: 28px 12px 20px;
+}
+
+.tc-section-title {
+  margin: 0 0 8px;
+  color: var(--tc-cream);
+  font-size: 1.2rem; /* large-text size, so cream on the wood floor meets WCAG AA (3:1) */
+  font-weight: 800;
+  text-align: center;
+  text-shadow: 0 2px 0 var(--tc-wood-dark);
+}
+
+.tc-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tc-step {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 14px 8px 10px;
+  border-radius: 12px;
+  border: 2px solid var(--tc-cream-edge);
+  background: var(--tc-cream);
+  text-align: center;
+  box-shadow: var(--tc-shadow-soft);
+}
+
+.tc-step__number {
+  position: absolute;
+  top: -10px;
+  left: -6px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--tc-green-dark);
+  background: var(--tc-green);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.tc-step__art {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.tc-step__title {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.tc-step__text {
+  color: var(--tc-ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.tc-panel {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 3px solid var(--tc-wood-dark);
+  background: var(--tc-cream);
+  text-align: center;
+  box-shadow: var(--tc-shadow);
+}
+
+.tc-panel__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.tc-panel__title:focus {
+  outline: none;
+}
+
+.tc-panel__title:focus-visible {
+  outline: 3px solid var(--tc-ink);
+  outline-offset: 3px;
+}
+
+.tc-pill {
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 2px solid var(--tc-cream-edge);
+  background: #fdf3df;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.tc-muted {
+  margin: 0;
+  color: var(--tc-ink-soft);
+}
+
+/* Big primary call to action (Claim my booth, Go to my booth) */
+.tc-cta {
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 3px solid var(--tc-gold-dark);
+  background: var(--tc-gold);
+  color: var(--tc-ink);
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 800;
+  box-shadow: 0 4px 0 var(--tc-gold-dark), var(--tc-shadow-soft);
+  cursor: pointer;
+}
+
+.tc-cta:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.tc-cta:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--tc-gold-dark), var(--tc-shadow-soft);
+}
+
+.tc-cta:focus-visible {
+  outline: 3px solid var(--tc-ink);
+  outline-offset: 3px;
+}
+
+.tc-cta:disabled {
+  border-color: var(--tc-cream-edge);
+  background: #f1e6d3;
+  color: var(--tc-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tc-cta:active:not(:disabled) {
+    transform: none;
+  }
+}

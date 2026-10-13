@@ -34,7 +34,12 @@ export const errorHandler = ({
       );
     }
 
-    if (res && !res.headersSent) return res.status(error.status || 500).send({ error, message, success: false });
+    // Error instances serialize to {} in JSON, so send the message explicitly — the client shows error.message
+    // (e.g. "No materials found") instead of only the generic per-controller message
+    const errorMessage = typeof error === "string" ? error : error?.message;
+    if (res && !res.headersSent) {
+      return res.status(error?.status || 500).send({ error: { message: errorMessage }, message, success: false });
+    }
 
     return { error };
   } catch (e) {

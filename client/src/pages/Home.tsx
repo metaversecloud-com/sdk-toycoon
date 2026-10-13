@@ -34,11 +34,15 @@ export const Home = () => {
   }, [hasInteractiveParams]);
 
   return (
-    <PageContainer isLoading={isLoading} headerText="Toycoon">
-      <div className="grid gap-6">
-        {targetBooth ? <BoothView booth={targetBooth} /> : <StartHere />}
-        <Leaderboard />
-      </div>
+    <PageContainer isLoading={isLoading} headerText={targetBooth ? "Toycoon" : undefined}>
+      {targetBooth ? (
+        <div className="grid gap-6">
+          <BoothView booth={targetBooth} />
+          <Leaderboard />
+        </div>
+      ) : (
+        <StartHere />
+      )}
     </PageContainer>
   );
 };

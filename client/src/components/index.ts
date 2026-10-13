@@ -5,6 +5,7 @@ export * from "./BoothView.js";
 export * from "./ConfirmationModal.js";
 export * from "./Leaderboard.js";
 export * from "./Loading.js";
+export * from "./materials/index.js";
 export * from "./PageContainer.js";
 export * from "./PageFooter.js";
 export * from "./StartHere.js";

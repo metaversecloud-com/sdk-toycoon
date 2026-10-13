@@ -18,13 +18,14 @@ export type VisitorInventoryItemType = {
   sortOrder: number;
 
   // Economy
-  cost: number; // decor price in coins
-  reward: number; // coins earned when a toy is sold
-  xpReward: number; // XP earned when a toy is sold
+  cost: number; // decor price in Toy Tokens
+  reward: number; // Toy Tokens earned when a toy is sold (metadata: rewardTokens)
+  xpReward: number; // XP earned when a toy is sold (metadata: rewardXP)
   unlockLevel: number;
 
   // Materials
   spawnIntervalSeconds: number;
+  stationImageUrl?: string; // workstation art shown on the Materials page
 
   // Decorations
   slot?: string; // anchor asset unique name, e.g. "rug"
@@ -32,7 +33,7 @@ export type VisitorInventoryItemType = {
 };
 
 export type VisitorInventoryType = {
-  coins: number; // "Coins" inventory item
+  coins: number; // "Toy Tokens" currency balance
   xp: number; // "Experience Points" inventory item
   level: number; // derived from xp, never stored
   materials: {
@@ -47,11 +48,11 @@ export type VisitorInventoryType = {
 };
 
 export type VisitorDataObjectType = {
-  totalCoinsEarned: number; // lifetime coins earned; only ever increments. Also the "has started playing" sentinel
+  totalCoinsEarned: number; // lifetime Toy Tokens earned; only ever increments. Also the "has started playing" sentinel
   totalToysCrafted: number; // all toy types; shown on the leaderboard
   badges: string[];
-  materialCollectedAt: {
-    [materialName: string]: number; // ms timestamp the material's bin last started filling (see getAvailableMaterial)
+  materialGenerationStartedAt: {
+    [materialName: string]: number | null; // server ms timestamp the bin was started; null/missing = idle (see getMaterialBinState)
   };
   placedDecorations: {
     [slot: string]: {

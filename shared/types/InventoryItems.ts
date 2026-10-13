@@ -14,6 +14,7 @@ export type InventoryItemType = {
   xpReward: number;
   unlockLevel: number;
   spawnIntervalSeconds: number;
+  stationImageUrl?: string; // materials: the workstation art shown on the Materials page
   slot?: string;
   layerUrl?: string;
 };

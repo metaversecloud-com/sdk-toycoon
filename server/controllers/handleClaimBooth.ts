@@ -34,6 +34,10 @@ export const handleClaimBooth = async (req: Request, res: Response) => {
       return res.json({ ...response, success: true });
     }
 
+    if (Object.keys(booths).length === 0) {
+      return res.status(404).json({ success: false, message: "This world doesn't have any booths set up yet." });
+    }
+
     // Random order so simultaneous claimers spread across booths instead of colliding on the same one
     const openBoothIds = Object.keys(booths).filter((id) => !booths[id].ownerId);
     for (let i = openBoothIds.length - 1; i > 0; i--) {

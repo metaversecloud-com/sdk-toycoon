@@ -1,9 +1,10 @@
 import { VisitorInterface } from "@rtsdk/topia";
 import { getLevelFromXp } from "@shared/levels.js";
 import { Credentials, VisitorInventoryItemType, VisitorInventoryType } from "../../types/index.js";
-import { COINS_ITEM_NAME, XP_ITEM_NAME } from "../../constants.js";
+import { CURRENCY_ITEM_NAME, XP_ITEM_NAME } from "../../constants.js";
 import { standardizeError } from "../standardizeError.js";
 import { getInventoryItems } from "./inventoryCache.js";
+import { isActiveInventoryItem } from "./structureEcosystemInventoryItem.js";
 import { structureVisitorInventoryItem } from "./structureVisitorInventoryItem.js";
 
 type ItemMap = { [itemId: string]: VisitorInventoryItemType };
@@ -12,7 +13,7 @@ const sortByOrder = (items: ItemMap): ItemMap =>
   Object.fromEntries(Object.entries(items).sort(([, a], [, b]) => a.sortOrder - b.sortOrder));
 
 /**
- * Aggregates the visitor's coins, XP, level, materials, toys, and decorations into one client-ready object
+ * Aggregates the visitor's Toy Tokens (as `coins`), XP, level, materials, toys, and decorations into one client-ready object
  */
 export const getVisitorInventory = async ({
   credentials,
@@ -40,9 +41,9 @@ export const getVisitorInventory = async ({
 
     for (const itemData of structured) {
       const { ecosystemItemId, name, status, quantity, type } = itemData;
-      if (status !== "ACTIVE" || !name) continue;
+      if (!isActiveInventoryItem({ status }) || !name) continue;
 
-      if (name === COINS_ITEM_NAME) coins = quantity || 0;
+      if (name === CURRENCY_ITEM_NAME) coins = quantity || 0;
       else if (name === XP_ITEM_NAME) xp = quantity || 0;
       else if (type === "material") materials[ecosystemItemId] = itemData;
       else if (type === "toy") toys[ecosystemItemId] = itemData;

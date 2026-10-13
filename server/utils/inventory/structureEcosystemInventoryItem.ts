@@ -7,6 +7,23 @@ const num = (value: unknown, fallback = 0) => {
   return value === undefined || value === null || value === "" || Number.isNaN(n) ? fallback : n;
 };
 
+// Metadata is normally an object, but tolerate a JSON string (as typed into the ecosystem editor)
+const parseMetadata = (metadata: unknown): MetadataType => {
+  if (!metadata) return {};
+  if (typeof metadata === "string") {
+    try {
+      return JSON.parse(metadata) as MetadataType;
+    } catch {
+      return {};
+    }
+  }
+  return metadata as MetadataType;
+};
+
+// Items without a status are treated as active; only an explicit non-ACTIVE status hides an item
+export const isActiveInventoryItem = (item: { status?: string | null }) =>
+  !item.status || item.status.toUpperCase() === "ACTIVE";
+
 /**
  * Turns a raw ecosystem inventory item into the app's item shape, reading game config from its metadata
  */
@@ -18,13 +35,16 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
     type,
     sortOrder,
     cost,
+    rewardTokens,
+    rewardXP,
     reward,
     xpReward,
     unlockLevel,
     spawnIntervalSeconds,
+    stationImageUrl,
     slot,
     layerUrl,
-  } = (metadata as MetadataType) || {};
+  } = parseMetadata(metadata);
 
   return {
     id,
@@ -32,17 +52,18 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
     displayName: displayName || name || "Unknown",
     icon: image_path || "",
     description: description || "",
-    type, // "material" | "toy" | "decoration"
+    type: typeof type === "string" ? (type.toLowerCase() as MetadataType["type"]) : undefined, // "material" | "toy" | "decoration"
     sortOrder: num(sortOrder),
 
     // Economy
     cost: num(cost),
-    reward: num(reward),
-    xpReward: num(xpReward),
+    reward: num(rewardTokens ?? reward), // Lina's metadata uses rewardTokens / rewardXP
+    xpReward: num(rewardXP ?? xpReward),
     unlockLevel: num(unlockLevel, 1),
 
     // Materials
     spawnIntervalSeconds: num(spawnIntervalSeconds),
+    stationImageUrl,
 
     // Decorations
     slot,

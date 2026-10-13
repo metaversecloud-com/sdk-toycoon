@@ -1,1 +1,1 @@
-export * from "./getAvailableMaterial.js";
+export * from "./getMaterialBinState.js";

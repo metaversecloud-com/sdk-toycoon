@@ -4,7 +4,7 @@ import { getVisitorInventory } from "./inventory/getVisitorInventory.js";
 import { standardizeError } from "./standardizeError.js";
 
 /**
- * getVisitor (data object with defaults) + the visitor's inventory (coins, XP, level, materials, toys, decorations).
+ * getVisitor (data object with defaults) + the visitor's inventory (Toy Tokens, XP, level, materials, toys, decorations).
  * Decorations get availableQuantity = owned − placed across ALL worlds: decor is bought once into the global
  * inventory and can be placed in any world while any are available.
  */

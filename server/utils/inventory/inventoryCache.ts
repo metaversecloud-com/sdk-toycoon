@@ -2,7 +2,7 @@ import { InventoryItemInterface } from "@rtsdk/topia";
 import { Credentials, InventoryItemType } from "../../types/index.js";
 import { standardizeError } from "../standardizeError.js";
 import { Ecosystem } from "../topiaInit.js";
-import { structureEcosystemInventoryItem } from "./structureEcosystemInventoryItem.js";
+import { isActiveInventoryItem, structureEcosystemInventoryItem } from "./structureEcosystemInventoryItem.js";
 
 // Ecosystem item definitions rarely change, so cache them per interactive key for 6 hours.
 // Pass forceRefresh (from the forceRefreshInventory query param) to pick up newly uploaded items immediately.
@@ -29,14 +29,23 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
   const ecosystemToys: { [itemId: string]: InventoryItemType } = {};
   const ecosystemDecorations: { [itemId: string]: InventoryItemType } = {};
 
+  const uncategorized: string[] = [];
   for (const item of allItems) {
-    if (item.status !== "ACTIVE") continue;
+    if (!isActiveInventoryItem(item)) continue;
     const data = structureEcosystemInventoryItem(item);
 
     if (data.type === "material") ecosystemMaterials[data.id] = data;
     else if (data.type === "toy") ecosystemToys[data.id] = data;
     else if (data.type === "decoration") ecosystemDecorations[data.id] = data;
+    else uncategorized.push(`${data.name} (status: ${item.status ?? "none"}, metadata.type: ${data.type ?? "none"})`);
   }
+
+  // One line per fetch (every few hours, or on forceRefreshInventory) so misconfigured items are easy to spot
+  console.log(
+    `[inventory] ${allItems.length} ecosystem items: ${Object.keys(ecosystemMaterials).length} materials, ` +
+      `${Object.keys(ecosystemToys).length} toys, ${Object.keys(ecosystemDecorations).length} decorations` +
+      (uncategorized.length ? `; not a material/toy/decoration: ${uncategorized.join(", ")}` : ""),
+  );
 
   return {
     allItems,
@@ -72,7 +81,7 @@ export const getInventoryItem = async (credentials: Credentials, { id, name }: {
 
     const { allItems } = await getInventoryItems(credentials);
     const inventoryItem = allItems.find(
-      (item) => item.status === "ACTIVE" && (id ? item.id === id : item.name === name),
+      (item) => isActiveInventoryItem(item) && (id ? item.id === id : item.name === name),
     );
     if (!inventoryItem) throw `Inventory item ${id ? `with id ${id}` : `"${name}"`} not found in ecosystem`;
 

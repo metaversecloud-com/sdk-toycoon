@@ -1,7 +1,7 @@
 import {
   ActionType,
   InitialState,
-  MATERIAL_COLLECTED,
+  MATERIAL_UPDATED,
   SET_ERROR,
   SET_GAME_STATE,
   SET_HAS_INTERACTIVE_PARAMS,
@@ -29,7 +29,7 @@ const globalReducer = (state: InitialState, action: ActionType) => {
         boothsFullAlert: payload.boothsFullAlert,
         error: "",
       };
-    case MATERIAL_COLLECTED:
+    case MATERIAL_UPDATED:
       return {
         ...state,
         visitorData: payload.visitorData,

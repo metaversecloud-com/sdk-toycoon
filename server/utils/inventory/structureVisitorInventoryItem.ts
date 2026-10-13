@@ -48,13 +48,14 @@ export const structureVisitorInventoryItem = async (
     sortOrder: ecosystemItem?.sortOrder ?? 0,
 
     // Economy
-    cost: ecosystemItem?.cost ?? 0, // decor price in coins
-    reward: ecosystemItem?.reward ?? 0, // coins earned when a toy is sold
+    cost: ecosystemItem?.cost ?? 0, // decor price in Toy Tokens
+    reward: ecosystemItem?.reward ?? 0, // Toy Tokens earned when a toy is sold
     xpReward: ecosystemItem?.xpReward ?? 0, // XP earned when a toy is sold
     unlockLevel: ecosystemItem?.unlockLevel ?? 1,
 
     // Materials
     spawnIntervalSeconds: ecosystemItem?.spawnIntervalSeconds ?? 0,
+    stationImageUrl: ecosystemItem?.stationImageUrl,
 
     // Decorations
     slot: ecosystemItem?.slot, // anchor asset unique name, e.g. "rug"

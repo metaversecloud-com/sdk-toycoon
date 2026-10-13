@@ -3,7 +3,7 @@ import { clearBoothsWhere, errorHandler, getBoothIndex, getCredentials } from "@
 
 /**
  * Admin: releases every booth in the world and clears world-level alerts.
- * Players keep everything they own (coins, xp, level, unlocked decor) — only their booths in this world are released.
+ * Players keep everything they own (Toy Tokens, XP, level, owned decor) — only their booths in this world are released.
  * Leaderboard reset is a separate admin action.
  */
 export const handleResetWorld = async (req: Request, res: Response) => {

@@ -3,7 +3,7 @@ import { errorHandler, getCredentials, getLeaderboardAsset } from "@utils/index.
 
 /**
  * Admin: empties this world's leaderboard. Only the leaderboard map on the key asset is touched — players keep their
- * XP, level, toys crafted, coins, badges, and decor, and reappear as their stats next update.
+ * XP, level, toys crafted, Toy Tokens, badges, and decor, and reappear as their stats next update.
  */
 export const handleResetLeaderboard = async (req: Request, res: Response) => {
   try {

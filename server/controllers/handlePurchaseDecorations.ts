@@ -7,7 +7,7 @@ import {
   initializeVisitorData,
   modifyVisitorInventoryItem,
 } from "@utils/index.js";
-import { COINS_ITEM_NAME } from "../constants.js";
+import { CURRENCY_ITEM_NAME } from "../constants.js";
 
 export const handlePurchaseDecoration = async (req: Request, res: Response) => {
   try {
@@ -26,13 +26,13 @@ export const handlePurchaseDecoration = async (req: Request, res: Response) => {
     if (visitorInventory.level < decorationConfig.unlockLevel) throw "You haven't unlocked this decoration yet.";
     if ((visitorInventory.decorations[decorationId]?.availableQuantity || 0) > 0)
       throw "You already own an unplaced copy of this decoration.";
-    if (visitorInventory.coins < decorationConfig.cost) throw "Not enough coins.";
+    if (visitorInventory.coins < decorationConfig.cost) throw "Not enough Toy Tokens.";
 
-    // 1. Deduct coins
+    // 1. Deduct Toy Tokens
     const coinsResponse = await modifyVisitorInventoryItem({
       credentials,
       visitor,
-      name: COINS_ITEM_NAME,
+      name: CURRENCY_ITEM_NAME,
       quantity: -decorationConfig.cost,
     });
     visitorInventory.coins = coinsResponse.quantity;
@@ -45,7 +45,7 @@ export const handlePurchaseDecoration = async (req: Request, res: Response) => {
       const refund = await modifyVisitorInventoryItem({
         credentials,
         visitor,
-        name: COINS_ITEM_NAME,
+        name: CURRENCY_ITEM_NAME,
         quantity: decorationConfig.cost,
       });
       visitorInventory.coins = refund.quantity;

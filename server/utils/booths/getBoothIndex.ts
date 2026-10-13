@@ -10,6 +10,8 @@ const CONCURRENCY_LIMIT = 20;
  * Returns an index of every booth scene in the world (sceneDropId → key asset id + owner).
  * The index is cached on the World data object and only rebuilt from the world's scenes when it's missing,
  * when forced, or when the visitor clicked a booth asset the index doesn't know about yet (e.g. a newly dropped booth).
+ * A world with no booth scenes yet returns an empty index rather than failing, so non-booth pages (Materials, the
+ * Main Scene) still load.
  */
 export const getBoothIndex = async (
   credentials: Credentials,
@@ -50,14 +52,17 @@ export const getBoothIndex = async (
         );
       }
 
+      // Don't cache an empty index (no booths built yet) — rebuild until booths exist. Do overwrite a previously
+      // cached index, though, so removed booths drop out.
+      const hadCachedBooths = Object.keys(worldData?.booths || {}).length > 0;
+      if (Object.keys(rebuilt).length > 0 || hadCachedBooths) {
+        const lockId = `world_booths_${Math.floor(Date.now() / 60000) * 60000}`;
+        if (!worldData) await world.setDataObject({ booths: rebuilt }, { lock: { lockId, releaseLock: true } });
+        else await world.updateDataObject({ booths: rebuilt }, { lock: { lockId, releaseLock: true } });
+      }
+
       booths = rebuilt;
-
-      const lockId = `world_booths_${Math.floor(Date.now() / 60000) * 60000}`;
-      if (!worldData) await world.setDataObject({ booths }, { lock: { lockId, releaseLock: true } });
-      else await world.updateDataObject({ booths }, { lock: { lockId, releaseLock: true } });
     }
-
-    if (Object.keys(booths).length === 0) throw "No booth scenes found in this world.";
 
     return { booths, world, worldData };
   } catch (error) {

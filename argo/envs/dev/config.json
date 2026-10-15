@@ -1,5 +1,5 @@
 {
-  "app": "sdk-ai-boilerplate",
+  "app": "sdk-toycoon",
   "env": "dev",
   "targetRevision": "dev",
   "clusterName": "Topia-dev-SDK-Apps",
@@ -7,10 +7,10 @@
   "namespace": "sdk-apps-dev",
   "services": [
     {
-      "name": "ai-boilerplate0",
-      "image": "368076259134.dkr.ecr.us-east-1.amazonaws.com/sdk-example:sdk-ai-boilerplate",
+      "name": "toycoon0",
+      "image": "368076259134.dkr.ecr.us-east-1.amazonaws.com/sdk-example:sdk-toycoon",
       "hosts": [
-        "ai-boilerplate0-dev-topia.topia-rtsdk.com"
+        "toycoon0-dev-topia.topia-rtsdk.com"
       ],
       "health": "/api/system/health"
     }

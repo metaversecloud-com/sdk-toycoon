@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../services/toycoon0
+  - toycoon0-config.yaml
+  - toycoon0-sealedsecret.yaml
+  - toycoon0-httpscaledobject.yaml
+  - toycoon0-interceptor-ingress.yaml
+patches:
+  # Drop the direct ALB Ingress: dev is fronted through the KEDA interceptor.
+  - target:
+      kind: Ingress
+      name: toycoon0
+    patch: |
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: toycoon0
+images:
+  - name: toycoon0
+    newName: 368076259134.dkr.ecr.us-east-1.amazonaws.com/sdk-example
+    newTag: sdk-toycoon

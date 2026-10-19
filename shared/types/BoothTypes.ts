@@ -49,6 +49,7 @@ export interface GameStateResponseType {
   visitorData: VisitorDataObjectType;
   visitorInventory: VisitorInventoryType;
   ecosystemMaterials: { [itemId: string]: InventoryItemType }; // every collectable material, for the Materials page
+  ecosystemToys: { [itemId: string]: InventoryItemType }; // every craftable toy item (incl. color variants), for the Workshop
   ownsBoothInThisWorld: boolean;
   ownedBoothSceneDropId: string | null;
   targetBooth: TargetBoothType | null; // null when the clicked asset isn't part of a booth scene (e.g. Main Scene)

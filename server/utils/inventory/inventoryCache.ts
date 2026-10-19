@@ -1,4 +1,5 @@
 import { InventoryItemInterface } from "@rtsdk/topia";
+import { getMaterialCap } from "@shared/constants/index.js";
 import { Credentials, InventoryItemType } from "../../types/index.js";
 import { standardizeError } from "../standardizeError.js";
 import { Ecosystem } from "../topiaInit.js";
@@ -46,6 +47,16 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
       `${Object.keys(ecosystemToys).length} toys, ${Object.keys(ecosystemDecorations).length} decorations` +
       (uncategorized.length ? `; not a material/toy/decoration: ${uncategorized.join(", ")}` : ""),
   );
+  // What each material resolved to — a level/timer/cap of 1/0s/10 usually means its name didn't match a known material
+  if (Object.keys(ecosystemMaterials).length) {
+    console.log(
+      `[inventory] materials: ${Object.values(ecosystemMaterials)
+        .map(({ name, unlockLevel, spawnIntervalSeconds }) =>
+          `${name} (level ${unlockLevel}, ${spawnIntervalSeconds}s, cap ${getMaterialCap(name)})`,
+        )
+        .join(", ")}`,
+    );
+  }
 
   return {
     allItems,

@@ -1,7 +1,7 @@
 import {
   ActionType,
   InitialState,
-  MATERIAL_UPDATED,
+  INVENTORY_UPDATED,
   SET_ERROR,
   SET_GAME_STATE,
   SET_HAS_INTERACTIVE_PARAMS,
@@ -22,6 +22,7 @@ const globalReducer = (state: InitialState, action: ActionType) => {
         visitorData: payload.visitorData,
         visitorInventory: payload.visitorInventory,
         ecosystemMaterials: payload.ecosystemMaterials,
+        ecosystemToys: payload.ecosystemToys,
         ownsBoothInThisWorld: payload.ownsBoothInThisWorld,
         ownedBoothSceneDropId: payload.ownedBoothSceneDropId,
         targetBooth: payload.targetBooth,
@@ -29,7 +30,7 @@ const globalReducer = (state: InitialState, action: ActionType) => {
         boothsFullAlert: payload.boothsFullAlert,
         error: "",
       };
-    case MATERIAL_UPDATED:
+    case INVENTORY_UPDATED:
       return {
         ...state,
         visitorData: payload.visitorData,

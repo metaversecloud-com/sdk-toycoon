@@ -1,3 +1,5 @@
+import { toCanonicalMaterialName } from "@shared/constants";
+
 // Placeholder art until each material item gets a stationImageUrl (station) / icon (inventory bar) in its metadata
 const PLACEHOLDER_EMOJI: { [materialName: string]: string } = {
   Wood: "🪵",
@@ -15,7 +17,7 @@ const PLACEHOLDER_EMOJI: { [materialName: string]: string } = {
  */
 export const MaterialArt = ({ imageUrl, name }: { imageUrl?: string; name: string }) => {
   if (imageUrl) return <img src={imageUrl} alt="" aria-hidden="true" />;
-  return <span aria-hidden="true">{PLACEHOLDER_EMOJI[name] ?? "📦"}</span>;
+  return <span aria-hidden="true">{PLACEHOLDER_EMOJI[toCanonicalMaterialName(name)] ?? "📦"}</span>;
 };
 
 export default MaterialArt;

@@ -5,6 +5,7 @@ import {
   handleClearInactiveBooths,
   handleCollectAllMaterials,
   handleCollectMaterial,
+  handleCraftToy,
   handleGetGameState,
   handleGetLeaderboard,
   handlePurchaseDecoration,
@@ -45,6 +46,7 @@ router.post("/purchase-decoration", handlePurchaseDecoration);
 router.post("/start-material", handleStartMaterial);
 router.post("/collect-material", handleCollectMaterial);
 router.post("/collect-all-materials", handleCollectAllMaterials);
+router.post("/craft-toy", handleCraftToy);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);
 

@@ -5,7 +5,8 @@ import { InventoryItemType } from "@shared/types/InventoryItems";
 export const SET_HAS_INTERACTIVE_PARAMS = "SET_HAS_INTERACTIVE_PARAMS";
 export const SET_GAME_STATE = "SET_GAME_STATE";
 export const SET_ERROR = "SET_ERROR";
-export const MATERIAL_UPDATED = "MATERIAL_UPDATED";
+// Merges updated visitorData/visitorInventory after a gameplay action (collect, craft, …) without a full reload
+export const INVENTORY_UPDATED = "INVENTORY_UPDATED";
 
 export type InteractiveParams = {
   assetId: string;
@@ -28,6 +29,7 @@ export interface InitialState {
   visitorData?: VisitorDataObjectType;
   visitorInventory?: VisitorInventoryType;
   ecosystemMaterials?: { [itemId: string]: InventoryItemType };
+  ecosystemToys?: { [itemId: string]: InventoryItemType };
   ownsBoothInThisWorld?: boolean;
   ownedBoothSceneDropId?: string | null;
   targetBooth?: TargetBoothType | null;

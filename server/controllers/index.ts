@@ -1,6 +1,7 @@
 export * from "./handleClaimBooth.js";
 export * from "./handleClearBooth.js";
 export * from "./handleCollectMaterials.js";
+export * from "./handleCraftToy.js";
 export * from "./handleClearInactiveBooths.js";
 export * from "./handleCollectAllMaterials.js";
 export * from "./handleGetGameState.js";

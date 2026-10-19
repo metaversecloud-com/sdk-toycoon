@@ -2,11 +2,11 @@ import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 // components
-import { MaterialStation, MaterialsInventoryBar, PageContainer, TeleportButton } from "@/components";
+import { ClaimBoothFirst, MaterialStation, MaterialsInventoryBar, PageContainer } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
-import { ErrorType, MATERIAL_UPDATED } from "@/context/types";
+import { ErrorType, INVENTORY_UPDATED } from "@/context/types";
 
 // utils
 import { backendAPI, setErrorMessage, setGameState } from "@/utils";
@@ -49,11 +49,17 @@ export const Materials = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const materials = Object.values(ecosystemMaterials || {});
+  // Only materials the player's level has unlocked are shown (L1: Rocking Horse materials, L2: + Teddy Bear, L3: all)
+  const level = visitorInventory?.level || 1;
+  const allMaterials = Object.values(ecosystemMaterials || {});
+  const materials = allMaterials.filter(({ unlockLevel }) => unlockLevel <= level);
+  const lockedMaterials = allMaterials.filter(({ unlockLevel }) => unlockLevel > level);
+  const nextUnlockLevel = lockedMaterials.length ? Math.min(...lockedMaterials.map(({ unlockLevel }) => unlockLevel)) : null;
+  const nextUnlockCount = lockedMaterials.filter(({ unlockLevel }) => unlockLevel === nextUnlockLevel).length;
 
   const stations = materials.map((material) => {
     const owned = visitorInventory?.materials[material.id]?.quantity ?? 0;
-    const isLocked = (visitorInventory?.level || 1) < material.unlockLevel;
+    const isLocked = level < material.unlockLevel;
     const isFull = owned >= getMaterialCap(material.name);
     const { state, secondsRemaining } = getMaterialBinState(
       visitorData?.materialGenerationStartedAt?.[material.name],
@@ -68,7 +74,7 @@ export const Materials = () => {
   const applyResult = (timers: { [materialName: string]: number | null }, items: { [id: string]: VisitorInventoryItemType }) => {
     if (!visitorData || !visitorInventory) return;
     dispatch!({
-      type: MATERIAL_UPDATED,
+      type: INVENTORY_UPDATED,
       payload: {
         visitorData: {
           ...visitorData,
@@ -120,24 +126,7 @@ export const Materials = () => {
   if (!ownsBoothInThisWorld) {
     return (
       <PageContainer isLoading={isLoading}>
-        <div className="tc-workshop">
-          <div className="tc-workshop__top">
-            <h2 className="tc-sign">Materials</h2>
-          </div>
-          <div className="tc-welcome">
-            <div className="tc-panel">
-              <h3 className="tc-panel__title">
-                <span aria-hidden="true">🔒 </span>Claim a booth first
-              </h3>
-              <p className="p2">
-                The material stations open once you have your own booth. Head to Start Here to claim one — it's free!
-              </p>
-              <TeleportButton destination="main-scene" className="tc-cta">
-                Go to Start Here
-              </TeleportButton>
-            </div>
-          </div>
-        </div>
+        <ClaimBoothFirst pageTitle="Materials" unlocks="The material stations open once you have your own booth." />
       </PageContainer>
     );
   }
@@ -155,7 +144,7 @@ export const Materials = () => {
           </p>
         </div>
 
-        {materials.length === 0 ? (
+        {allMaterials.length === 0 ? (
           <p className="tc-hint mx-4 mb-6">No materials are set up yet.</p>
         ) : (
           <ul className="tc-floor" aria-label="Material stations">
@@ -174,6 +163,13 @@ export const Materials = () => {
               />
             ))}
           </ul>
+        )}
+
+        {nextUnlockLevel !== null && (
+          <p className="tc-hint tc-unlock-hint">
+            <span aria-hidden="true">🔒</span>
+            Reach level {nextUnlockLevel} to unlock {nextUnlockCount} more {nextUnlockCount === 1 ? "material" : "materials"}
+          </p>
         )}
       </div>
 

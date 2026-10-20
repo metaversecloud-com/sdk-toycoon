@@ -6,10 +6,10 @@ import { ClaimBoothFirst, LevelUpModal, PageContainer, PlayerStats, SellCard } f
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
-import { ErrorType, INVENTORY_UPDATED } from "@/context/types";
+import { ErrorType } from "@/context/types";
 
 // utils
-import { backendAPI, setErrorMessage, setGameState } from "@/utils";
+import { backendAPI, patchGame, setErrorMessage, setGameState } from "@/utils";
 import { countOwnedToys, getCraftedToyItem, TOY_RECIPES, ToyRecipeType, ToyTypeId } from "@shared/constants";
 
 /**
@@ -62,18 +62,10 @@ export const Sell = () => {
       const { data } = await backendAPI.post("/sell-toy", { recipeId: recipe.id, quantity });
       if (!isMounted.current) return;
 
-      dispatch!({
-        type: INVENTORY_UPDATED,
-        payload: {
-          visitorData: { ...visitorData, totalCoinsEarned: data.totalCoinsEarned, totalToysSold: data.totalToysSold },
-          visitorInventory: {
-            ...visitorInventory,
-            coins: data.tokens,
-            xp: data.xp,
-            level: data.level,
-            toys: { ...visitorInventory.toys, [data.toy.ecosystemItemId ?? data.toy.id]: data.toy },
-          },
-        },
+      patchGame(dispatch, {
+        visitorData: { totalCoinsEarned: data.totalCoinsEarned, totalToysSold: data.totalToysSold },
+        inventory: { coins: data.tokens, xp: data.xp, level: data.level },
+        toys: { [data.toy.ecosystemItemId ?? data.toy.id]: data.toy },
       });
       const sold = data.quantity === 1 ? `a ${toyName}` : `${data.quantity} ${toyName}s`;
       setStatusMessage(`Sold ${sold} for ${data.tokensEarned} Toy Tokens and ${data.xpEarned} XP.`);

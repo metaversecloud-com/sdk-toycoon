@@ -2,8 +2,10 @@ import { Request, Response } from "express";
 import { getCraftedToyItem, getToyRecipeById, LEVEL_UP_TOKEN_REWARDS, ToyTypeId } from "@shared/constants/index.js";
 import { getLevelFromXp } from "@shared/levels.js";
 import {
+  claimActionLock,
   DroppedAsset,
   errorHandler,
+  getBoothIndex,
   getCredentials,
   getInventoryItems,
   initializeVisitorData,
@@ -27,11 +29,12 @@ export const handleSellToy = async (req: Request, res: Response) => {
     const recipe = getToyRecipeById(req.body?.recipeId as ToyTypeId);
     if (!recipe) throw "Valid recipeId is required";
 
-    const [{ ecosystemToys }, { visitor, visitorData, visitorInventory }] = await Promise.all([
+    const [{ ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths }] = await Promise.all([
       getInventoryItems(credentials),
       initializeVisitorData(credentials),
+      getBoothIndex(credentials),
     ]);
-    const booth = await requireBoothInWorld(credentials, visitorData, "selling toys");
+    const booth = await requireBoothInWorld(credentials, visitorData, "selling toys", booths);
 
     const toy = getCraftedToyItem(recipe, Object.values(ecosystemToys));
     if (!toy) throw `The ${recipe.displayName} toy item isn't set up in the ecosystem.`;
@@ -45,22 +48,13 @@ export const handleSellToy = async (req: Request, res: Response) => {
     const tokensEarned = (toy.reward || recipe.sellTokens) * quantity;
     const xpEarned = (toy.xpReward || recipe.sellXp) * quantity;
 
-    // Claim this sale under a lock versioned by the sale count and never released: a double-click (or two tabs)
-    // reads the same count, so the same toy can't be sold twice.
-    const soldBefore = visitorData.totalToysSold || 0;
-    try {
-      await visitor.updateDataObject(
-        { totalToysSold: soldBefore + quantity },
-        { lock: { lockId: `sell_${profileId}_${soldBefore}`, releaseLock: false } },
-      );
-    } catch {
+    // One sale at a time: a double-click (or two tabs) can't sell the same toys twice
+    if (!(await claimActionLock({ action: "sell", profileId, visitor, visitorData }))) {
       return res.status(409).json({ success: false, message: "Already selling — try again in a moment." });
     }
 
     // Each completed step records how to undo it, so a failure partway leaves the player exactly where they started
-    const undo: (() => Promise<unknown>)[] = [
-      () => visitor.updateDataObject({ totalToysSold: soldBefore }, {}),
-    ];
+    const undo: (() => Promise<unknown>)[] = [];
     let toyItem, tokensItem, xpItem;
     try {
       toyItem = await modifyVisitorInventoryItem({ credentials, visitor, id: toy.id, quantity: -quantity });
@@ -99,10 +93,11 @@ export const handleSellToy = async (req: Request, res: Response) => {
     }
 
     const totalCoinsEarned = (visitorData.totalCoinsEarned || 0) + tokensEarned + levelUpTokens;
+    const totalToysSold = (visitorData.totalToysSold || 0) + quantity;
     const analytics = [{ analyticName: "toycoon_toy_sold", profileId, urlSlug, uniqueKey: profileId }];
     if (levelsGained.length) analytics.push({ analyticName: "toycoon_level_up", profileId, urlSlug, uniqueKey: profileId });
     await visitor
-      .updateDataObject({ totalCoinsEarned }, { analytics })
+      .updateDataObject({ totalCoinsEarned, totalToysSold }, { analytics })
       .catch((error: any) => errorHandler({ error, functionName: "handleSellToy", message: "Error saving lifetime earnings" }));
 
     if (levelsGained.length) {
@@ -136,7 +131,7 @@ export const handleSellToy = async (req: Request, res: Response) => {
       xp,
       level,
       totalCoinsEarned,
-      totalToysSold: soldBefore + quantity,
+      totalToysSold,
     });
   } catch (error) {
     return errorHandler({ error, functionName: "handleSellToy", message: "Error selling toy", req, res });

@@ -8,12 +8,21 @@ import { collectFromBin, errorHandler, getCredentials, getMaterialBin } from "@u
 export const handleCollectMaterial = async (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
-    const { generationStartedAt, material, state, visitor } = await getMaterialBin(credentials, req.body?.materialId);
+    const { generationStartedAt, material, state, visitor, visitorData } = await getMaterialBin(
+      credentials,
+      req.body?.materialId,
+    );
 
     if (state === "idle") throw `Start ${material.displayName} first.`;
     if (state === "generating") throw `${material.displayName} isn't ready yet.`;
 
-    const result = await collectFromBin({ credentials, generationStartedAt: generationStartedAt!, material, visitor });
+    const result = await collectFromBin({
+      credentials,
+      generationStartedAt: generationStartedAt!,
+      material,
+      visitor,
+      visitorData,
+    });
     if (result.status === "locked") {
       return res.status(409).json({ success: false, message: "Already collecting — try again in a moment." });
     }

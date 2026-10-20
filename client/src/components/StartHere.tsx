@@ -1,7 +1,7 @@
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
 // components
-import { TeleportButton } from "@/components";
+import { AbandonBoothButton, TeleportButton } from "@/components";
 
 // context
 import { GlobalStateContext } from "@/context/GlobalContext";
@@ -24,11 +24,12 @@ export const StartHere = () => {
   const { availableBoothCount = 0, ownsBoothInThisWorld } = useContext(GlobalStateContext);
   const { claimBooth, claimResult, isClaiming } = useClaimBooth();
   const resultRef = useRef<HTMLHeadingElement>(null);
+  const [hasAbandoned, setHasAbandoned] = useState(false);
 
-  // The claim button disappears once used, so move focus to the result instead of stranding keyboard users
+  // The claim/abandon buttons disappear once used, so move focus to the result instead of stranding keyboard users
   useEffect(() => {
-    if (claimResult) resultRef.current?.focus();
-  }, [claimResult]);
+    if (claimResult || hasAbandoned) resultRef.current?.focus();
+  }, [claimResult, hasAbandoned]);
 
   const renderAction = () => {
     if (claimResult === "allBoothsTaken") {
@@ -57,6 +58,7 @@ export const StartHere = () => {
           <TeleportButton destination="my-booth" className="tc-cta">
             Go to my booth
           </TeleportButton>
+          {!justClaimed && <AbandonBoothButton onAbandoned={() => setHasAbandoned(true)} />}
         </div>
       );
     }
@@ -64,6 +66,14 @@ export const StartHere = () => {
     const hasOpenBooths = availableBoothCount > 0;
     return (
       <div className="tc-panel">
+        {hasAbandoned && (
+          <div role="status">
+            <h3 ref={resultRef} tabIndex={-1} className="tc-panel__title">
+              You gave up your booth
+            </h3>
+            <p className="p2">Your toys and materials are still yours. Claim a new booth whenever you're ready.</p>
+          </div>
+        )}
         <p className="tc-pill">
           <span aria-hidden="true">🎪 </span>
           {availableBoothCount === 1 ? "1 booth open" : `${availableBoothCount} booths open`}

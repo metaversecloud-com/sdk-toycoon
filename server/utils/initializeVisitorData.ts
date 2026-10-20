@@ -1,10 +1,10 @@
 import { Credentials } from "../types/index.js";
-import { getVisitor } from "./getVisitor.js";
+import { ensureVisitorData, getVisitorInstance } from "./getVisitor.js";
 import { getVisitorInventory } from "./inventory/getVisitorInventory.js";
 import { standardizeError } from "./standardizeError.js";
 
 /**
- * getVisitor (data object with defaults) + the visitor's inventory (Toy Tokens, XP, level, materials, toys, decorations).
+ * The visitor's data object (with defaults, as in getVisitor) + their inventory (Toy Tokens, XP, level, materials, toys, decorations).
  * Decorations get availableQuantity = owned − placed across ALL worlds: decor is bought once into the global
  * inventory and can be placed in any world while any are available.
  */
@@ -13,8 +13,12 @@ export const initializeVisitorData = async (
   { forceRefreshInventory = false, shouldGetVisitorDetails = false } = {},
 ) => {
   try {
-    const { visitor, visitorData } = await getVisitor(credentials, shouldGetVisitorDetails);
-    const visitorInventory = await getVisitorInventory({ credentials, forceRefreshInventory, visitor });
+    const visitor = await getVisitorInstance(credentials, shouldGetVisitorDetails);
+    // The data object and inventory are separate Topia calls, so fetch them at the same time
+    const [visitorData, visitorInventory] = await Promise.all([
+      ensureVisitorData(visitor, credentials),
+      getVisitorInventory({ credentials, forceRefreshInventory, visitor }),
+    ]);
 
     for (const item of Object.values(visitorInventory.decorations)) {
       let placedCount = 0;

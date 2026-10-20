@@ -1,42 +1,47 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 // components
-import { AssemblyStageType, ClaimBoothFirst, PageContainer, PlayerStats, RecipeCard } from "@/components";
+import { ClaimBoothFirst, PageContainer, PlayerStats, RecipeCard } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
-import { ErrorType, INVENTORY_UPDATED } from "@/context/types";
+import { ErrorType } from "@/context/types";
+
+// hooks
+import { useServerNow } from "@/hooks/useServerNow";
 
 // utils
-import { backendAPI, setErrorMessage, setGameState } from "@/utils";
+import { backendAPI, patchGame, setErrorMessage, setGameState } from "@/utils";
 import {
   countOwnedToys,
   describeMissingMaterials,
   getCraftedToyItem,
   getMaterialCountsByName,
   getMissingMaterials,
+  toCanonicalMaterialName,
   TOY_RECIPES,
+  ToyRecipeType,
   ToyTypeId,
 } from "@shared/constants";
-
-const STAGE_MS = 450;
-const prefersReducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import { InventoryItemType } from "@shared/types/InventoryItems";
+import { VisitorInventoryItemType } from "@shared/types/VisitorData";
+import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
 
 /**
- * The Workshop: craft toys from materials. One card per toy the player's level has unlocked (L1 Rocking Horse,
- * L2 + Teddy Bear, L3 + Train). Crafting is a quick, satisfying tap — the server does the real work.
+ * The Workshop: craft toys from materials. One workbench per toy the player's level has unlocked (L1 Rocking Horse,
+ * L2 + Teddy Bear, L3 + Train), each crafting one at a time: Craft (materials used) → wait craftSeconds → Collect.
+ * Countdowns mirror the server's timer; taps update the screen immediately and are corrected (or undone) by the server.
  */
 export const Workshop = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { ecosystemToys, hasInteractiveParams, ownsBoothInThisWorld, visitorData, visitorInventory } =
+  const { ecosystemToys, hasInteractiveParams, ownsBoothInThisWorld, serverTimeOffset, visitorData, visitorInventory } =
     useContext(GlobalStateContext);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [assembly, setAssembly] = useState<{ recipeId: ToyTypeId; stage: AssemblyStageType } | null>(null);
+  const now = useServerNow();
+  const [busyRecipes, setBusyRecipes] = useState<Set<ToyTypeId>>(new Set());
   const [statusMessage, setStatusMessage] = useState("");
-  const isMounted = useRef(true);
 
   // Lets Topia bust the server's ecosystem inventory cache when new items are uploaded
   const [searchParams] = useSearchParams();
@@ -52,55 +57,88 @@ export const Workshop = () => {
     }
   }, [hasInteractiveParams, dispatch]);
 
-  useEffect(
-    () => () => {
-      isMounted.current = false;
-    },
-    [],
-  );
-
   const level = visitorInventory?.level || 1;
   const materialCounts = getMaterialCountsByName(visitorInventory?.materials);
   const toyItems = Object.values(ecosystemToys || {});
   const unlockedRecipes = TOY_RECIPES.filter(({ unlockLevel }) => unlockLevel <= level);
   const nextRecipe = TOY_RECIPES.find(({ unlockLevel }) => unlockLevel > level);
 
-  const handleCraft = async (recipeId: ToyTypeId, toyName: string) => {
-    if (assembly || !visitorData || !visitorInventory) return;
+  const setBusy = (recipeId: ToyTypeId, isBusy: boolean) =>
+    setBusyRecipes((current) => {
+      const next = new Set(current);
+      if (isBusy) next.add(recipeId);
+      else next.delete(recipeId);
+      return next;
+    });
+
+  // The player's material items after using a recipe's materials (for the instant update)
+  const materialsAfterCraft = (recipe: ToyRecipeType) => {
+    const updated: { [itemId: string]: VisitorInventoryItemType } = {};
+    for (const [name, needed] of Object.entries(recipe.materials)) {
+      const entry = Object.entries(visitorInventory?.materials || {}).find(
+        ([, item]) => toCanonicalMaterialName(item.name) === name,
+      );
+      if (entry) updated[entry[0]] = { ...entry[1], quantity: entry[1].quantity - needed };
+    }
+    return updated;
+  };
+
+  const handleCraft = async (recipe: ToyRecipeType, toyName: string) => {
+    if (busyRecipes.has(recipe.id)) return;
+    const previousMaterials = Object.fromEntries(
+      Object.keys(materialsAfterCraft(recipe)).map((itemId) => [itemId, visitorInventory!.materials[itemId]]),
+    );
+
+    // Start the timer and use the materials right away; the server's reply confirms (or corrects) both
+    patchGame(dispatch, { craftTimers: { [recipe.id]: Date.now() + (serverTimeOffset ?? 0) }, materials: materialsAfterCraft(recipe) });
+    setBusy(recipe.id, true);
     setStatusMessage("");
     setErrorMessage(dispatch, "");
-
-    const animate = !prefersReducedMotion();
-    setAssembly({ recipeId, stage: "loose" });
-
     try {
-      const request = backendAPI.post("/craft-toy", { recipeId });
-      if (animate) {
-        await wait(STAGE_MS);
-        if (isMounted.current) setAssembly({ recipeId, stage: "wip" });
-        await wait(STAGE_MS);
-      }
-      const { data } = await request;
-      if (!isMounted.current) return;
-
-      dispatch!({
-        type: INVENTORY_UPDATED,
-        payload: {
-          visitorData: { ...visitorData, totalToysCrafted: data.totalToysCrafted },
-          visitorInventory: {
-            ...visitorInventory,
-            materials: { ...visitorInventory.materials, ...data.materials },
-            toys: { ...visitorInventory.toys, [data.toy.ecosystemItemId]: data.toy },
-          },
-        },
-      });
-      setAssembly({ recipeId, stage: "done" });
-      setStatusMessage(`Crafted a ${toyName}!`);
-      await wait(animate ? 1400 : 0);
+      const { data } = await backendAPI.post("/craft-toy", { recipeId: recipe.id });
+      patchGame(dispatch, { craftTimers: { [recipe.id]: data.craftStartedAt }, materials: data.materials });
+      setStatusMessage(`Started making a ${toyName}.`);
     } catch (error) {
+      patchGame(dispatch, { craftTimers: { [recipe.id]: null }, materials: previousMaterials });
       setErrorMessage(dispatch, error as ErrorType);
     } finally {
-      if (isMounted.current) setAssembly(null);
+      setBusy(recipe.id, false);
+    }
+  };
+
+  const handleCollect = async (recipe: ToyRecipeType, toyItem: InventoryItemType) => {
+    if (busyRecipes.has(recipe.id)) return;
+    const previousTimer = visitorData?.toyCraftStartedAt?.[recipe.id] ?? null;
+    const previousToy =
+      visitorInventory?.toys[toyItem.id] ??
+      ({ ...toyItem, ecosystemItemId: toyItem.id, quantity: 0, availableQuantity: 0 } as VisitorInventoryItemType);
+    const previousCrafted = visitorData?.totalToysCrafted || 0;
+
+    // Put it on the shelf right away; the server's reply has the confirmed totals
+    patchGame(dispatch, {
+      craftTimers: { [recipe.id]: null },
+      toys: { [toyItem.id]: { ...previousToy, quantity: previousToy.quantity + 1 } },
+      visitorData: { totalToysCrafted: previousCrafted + 1 },
+    });
+    setBusy(recipe.id, true);
+    setStatusMessage("");
+    setErrorMessage(dispatch, "");
+    try {
+      const { data } = await backendAPI.post("/collect-toy", { recipeId: recipe.id });
+      patchGame(dispatch, {
+        toys: { [data.toy.ecosystemItemId ?? toyItem.id]: data.toy },
+        visitorData: { totalToysCrafted: data.totalToysCrafted },
+      });
+      setStatusMessage(`Your ${toyItem.displayName} is done!`);
+    } catch (error) {
+      patchGame(dispatch, {
+        craftTimers: { [recipe.id]: previousTimer },
+        toys: { [toyItem.id]: previousToy },
+        visitorData: { totalToysCrafted: previousCrafted },
+      });
+      setErrorMessage(dispatch, error as ErrorType);
+    } finally {
+      setBusy(recipe.id, false);
     }
   };
 
@@ -132,6 +170,11 @@ export const Workshop = () => {
             const toyItem = getCraftedToyItem(recipe, toyItems);
             const ownedToyCount = countOwnedToys(recipe, visitorInventory?.toys);
             const missing = getMissingMaterials(recipe, materialCounts);
+            const { state, secondsRemaining } = getMaterialBinState(
+              visitorData?.toyCraftStartedAt?.[recipe.id],
+              recipe.craftSeconds,
+              now,
+            );
 
             let blockedReason: string | null = null;
             if (!toyItem) blockedReason = `The ${recipe.displayName} isn't set up yet.`;
@@ -146,9 +189,11 @@ export const Workshop = () => {
                 materialCounts={materialCounts}
                 ownedToyCount={ownedToyCount}
                 blockedReason={blockedReason}
-                assemblyStage={assembly?.recipeId === recipe.id ? assembly.stage : null}
-                isDisabled={assembly !== null}
-                onCraft={() => handleCraft(recipe.id, toyItem?.displayName ?? recipe.displayName)}
+                craftState={state}
+                secondsRemaining={secondsRemaining}
+                isDisabled={busyRecipes.has(recipe.id)}
+                onCraft={() => handleCraft(recipe, toyItem?.displayName ?? recipe.displayName)}
+                onCollect={() => toyItem && handleCollect(recipe, toyItem)}
               />
             );
           })}

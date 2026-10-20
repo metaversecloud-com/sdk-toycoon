@@ -9,43 +9,48 @@ import {
   toCanonicalMaterialName,
   ToyTypeId,
 } from "@shared/constants/index.js";
+import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
+  claimActionLock,
   errorHandler,
+  getBoothIndex,
   getCredentials,
   getInventoryItems,
   initializeVisitorData,
   modifyVisitorInventoryItem,
   requireBoothInWorld,
-  updateLeaderboardEntry,
 } from "@utils/index.js";
 import { VisitorInventoryItemType } from "../types/index.js";
 
 /**
- * Crafts one toy from a recipe ({ recipeId: "rocking_horse" | "teddy_bear" | "train" }). Each recipe produces exactly one
- * item — Rocking Horse, Brown Teddy Bear, Black Train; other colors are decoration-only and can't be crafted.
- * Checks: owns a booth here, recipe unlocked at the visitor's level, has the materials, under the toy type's cap.
- * Materials are taken first, then the toy is granted; if anything fails, whatever was taken is given back.
+ * Step 1 of 2: starts crafting a toy ({ recipeId }). The recipe's materials are used up immediately (so they can't be
+ * spent twice) and a server-side timer starts; after the recipe's craftSeconds the toy is ready to collect
+ * (POST /collect-toy). One craft at a time per toy, and a toy being crafted counts toward its shelf cap.
+ * Each recipe produces exactly one item — Rocking Horse, Brown Teddy Bear, Black Train; other colors are
+ * decoration-only and can't be crafted.
  */
 export const handleCraftToy = async (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
-    const { profileId, urlSlug } = credentials;
+    const { profileId } = credentials;
+
     const recipe = getToyRecipeById(req.body?.recipeId as ToyTypeId);
     if (!recipe) throw "Valid recipeId is required";
 
-    const [{ ecosystemMaterials, ecosystemToys }, { visitor, visitorData, visitorInventory }] = await Promise.all([
-      getInventoryItems(credentials),
-      initializeVisitorData(credentials),
-    ]);
-    await requireBoothInWorld(credentials, visitorData, "crafting toys");
+    const [{ ecosystemMaterials, ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths }] =
+      await Promise.all([getInventoryItems(credentials), initializeVisitorData(credentials), getBoothIndex(credentials)]);
+    await requireBoothInWorld(credentials, visitorData, "crafting toys", booths);
 
     const toy = getCraftedToyItem(recipe, Object.values(ecosystemToys));
     if (!toy) throw `The ${recipe.displayName} toy item isn't set up in the ecosystem.`;
-    const toyItemId = toy.id;
 
     if (visitorInventory.level < recipe.unlockLevel) {
       throw `${recipe.displayName} unlocks at level ${recipe.unlockLevel}.`;
     }
+
+    const { state } = getMaterialBinState(visitorData.toyCraftStartedAt?.[recipe.id], recipe.craftSeconds);
+    if (state === "generating") throw `A ${recipe.displayName} is already being made.`;
+    if (state === "ready") throw `Your ${recipe.displayName} is ready — collect it first.`;
 
     const missing = getMissingMaterials(recipe, getMaterialCountsByName(visitorInventory.materials));
     if (Object.keys(missing).length > 0) {
@@ -64,56 +69,45 @@ export const handleCraftToy = async (req: Request, res: Response) => {
       return { id: material.id, quantity };
     });
 
-    // Claim this craft under a lock versioned by the craft count and never released: a double-click (or two tabs)
-    // reads the same count, so the second request can't craft from the same materials.
-    const craftedBefore = visitorData.totalToysCrafted || 0;
-    try {
-      await visitor.updateDataObject(
-        { totalToysCrafted: craftedBefore + 1 },
-        { lock: { lockId: `craft_${profileId}_${craftedBefore}`, releaseLock: false } },
-      );
-    } catch {
-      return res.status(409).json({ success: false, message: "Already crafting — try again in a moment." });
-    }
+    // Start the timer under a one-shot lock: a double-click (or two tabs) can't start this craft twice
+    const timerPath = `toyCraftStartedAt.${recipe.id}`;
+    const craftStartedAt = Date.now();
+    const claimed = await claimActionLock({
+      action: `craft_${recipe.id}`,
+      alsoWrite: { [timerPath]: craftStartedAt },
+      profileId,
+      visitor,
+      visitorData,
+    });
+    if (!claimed) return res.status(409).json({ success: false, message: "Already crafting — try again in a moment." });
 
     const taken: { id: string; quantity: number }[] = [];
     const materials: { [itemId: string]: VisitorInventoryItemType } = {};
-    let toyItem: VisitorInventoryItemType;
     try {
       for (const { id, quantity } of materialsToTake) {
         materials[id] = await modifyVisitorInventoryItem({ credentials, visitor, id, quantity: -quantity });
         taken.push({ id, quantity });
       }
-      toyItem = await modifyVisitorInventoryItem({ credentials, visitor, id: toyItemId, quantity: 1 });
     } catch (craftError) {
-      // Give back what was taken and undo the craft count, so a failed craft costs nothing
+      // Give back what was taken and clear the timer, so a failed start costs nothing
       for (const { id, quantity } of taken) {
         await modifyVisitorInventoryItem({ credentials, visitor, id, quantity }).catch((error) =>
           errorHandler({ error, functionName: "handleCraftToy", message: `Error refunding material ${id}` }),
         );
       }
       await visitor
-        .updateDataObject({ totalToysCrafted: craftedBefore }, {})
-        .catch((error: any) => errorHandler({ error, functionName: "handleCraftToy", message: "Error restoring craft count" }));
+        .updateDataObject({ [timerPath]: null }, {})
+        .catch((error: any) => errorHandler({ error, functionName: "handleCraftToy", message: "Error clearing craft timer" }));
       throw craftError;
     }
 
-    const totalToysCrafted = craftedBefore + 1;
-
-    // Analytics and leaderboard are best-effort — the craft already succeeded
-    const analytics = [{ analyticName: "toycoon_toy_crafted", profileId, urlSlug, uniqueKey: profileId }];
-    if (recipe.id === "teddy_bear") {
-      analytics.push({ analyticName: "toycoon_bear_crafted", profileId, urlSlug, uniqueKey: profileId });
-    }
-    visitor
-      .updateDataObject({}, { analytics })
-      .catch((error: any) => errorHandler({ error, functionName: "handleCraftToy", message: "Error tracking analytics" }));
-    updateLeaderboardEntry({
-      credentials,
-      stats: { totalXp: visitorInventory.xp, level: visitorInventory.level, totalToysCrafted },
-    }).catch((error) => errorHandler({ error, functionName: "handleCraftToy", message: "Error updating leaderboard" }));
-
-    return res.json({ success: true, toy: toyItem, materials, totalToysCrafted });
+    return res.json({
+      success: true,
+      recipeId: recipe.id,
+      craftStartedAt,
+      craftSeconds: recipe.craftSeconds,
+      materials,
+    });
   } catch (error) {
     return errorHandler({ error, functionName: "handleCraftToy", message: "Error crafting toy", req, res });
   }

@@ -56,6 +56,7 @@ export interface GameStateResponseType {
   availableBoothCount: number;
   isAdmin: boolean;
   boothsFullAlert: BoothsFullAlertType | null; // only populated for admins
+  serverTime: number; // server's Date.now() when this was built, so the client can correct for clock differences
 }
 
 export type ClaimBoothResultType = "claimed" | "alreadyOwned" | "allBoothsTaken";

@@ -4,6 +4,7 @@ import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
   collectFromBin,
   errorHandler,
+  getBoothIndex,
   getCredentials,
   getInventoryItems,
   initializeVisitorData,
@@ -20,11 +21,12 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
   try {
     const credentials = getCredentials(req.query);
 
-    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }] = await Promise.all([
+    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths }] = await Promise.all([
       getInventoryItems(credentials),
       initializeVisitorData(credentials),
+      getBoothIndex(credentials),
     ]);
-    await requireBoothInWorld(credentials, visitorData);
+    await requireBoothInWorld(credentials, visitorData, "collecting materials", booths);
 
     const now = Date.now();
     const readyBins = Object.values(ecosystemMaterials).filter((material) => {
@@ -48,6 +50,7 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
           generationStartedAt: visitorData.materialGenerationStartedAt[material.name]!,
           material,
           visitor,
+          visitorData,
         });
         if (result.status === "collected") collected[material.id] = result.item;
       } catch (error) {

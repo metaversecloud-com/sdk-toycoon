@@ -50,6 +50,7 @@ export type VisitorInventoryType = {
 export type VisitorDataObjectType = {
   totalCoinsEarned: number; // lifetime Toy Tokens earned; only ever increments. Also the "has started playing" sentinel
   totalToysCrafted: number; // all toy types; shown on the leaderboard
+  totalToysSold: number; // only ever increments; also versions the sell lock
   badges: string[];
   materialGenerationStartedAt: {
     [materialName: string]: number | null; // server ms timestamp the bin was started; null/missing = idle (see getMaterialBinState)

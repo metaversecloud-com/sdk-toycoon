@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { Route, Routes, useNavigate, useSearchParams } from "react-router-dom";
 
 // pages
-import { Error, Home, Materials, Teleport, Workshop } from "./pages";
+import { Error, Home, Materials, Sell, Teleport, Workshop } from "./pages";
 
 // context
 import { GlobalDispatchContext } from "./context/GlobalContext";
@@ -87,6 +87,7 @@ const App = () => {
       <Route path="/teleport" element={<Teleport />} />
       <Route path="/materials" element={<Materials />} />
       <Route path="/workshop" element={<Workshop />} />
+      <Route path="/sell" element={<Sell />} />
       <Route path="*" element={<Error />} />
     </Routes>
   );

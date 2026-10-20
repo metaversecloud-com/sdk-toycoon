@@ -740,3 +740,146 @@ button.tc-bubble:focus-visible,
     animation: none;
   }
 }
+
+/* ===================== Toycoon: player stats, selling, level-up ===================== */
+
+.tc-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 2px solid var(--tc-cream-edge);
+  background: var(--tc-cream);
+  box-shadow: var(--tc-shadow-soft);
+}
+
+.tc-stats__level {
+  flex: 0 0 auto;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--tc-green);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.tc-stats__xp {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tc-stats__label {
+  color: var(--tc-ink-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tc-stats__bar {
+  width: 100%;
+}
+
+.tc-stats__tokens {
+  flex: 0 0 auto;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.tc-levelup {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.tc-levelup__confetti {
+  font-size: 2.4rem;
+  animation: tc-pop 0.6s ease-out;
+}
+
+.tc-levelup__unlocks {
+  display: grid;
+  gap: 2px;
+}
+
+.tc-levelup__unlocks p {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tc-levelup__confetti {
+    animation: none;
+  }
+}
+
+.tc-sell-price {
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: #fdf3df;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Sell quantity picker */
+.tc-qty {
+  display: grid;
+  gap: 4px;
+}
+
+.tc-qty__controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tc-qty__step,
+.tc-qty__all {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid var(--tc-wood-dark);
+  background: #fff;
+  color: var(--tc-ink);
+  font-family: inherit;
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tc-qty__all {
+  margin-left: auto;
+  padding: 0 12px;
+  font-size: 0.85rem;
+}
+
+.tc-qty__input {
+  width: 64px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid var(--tc-cream-edge);
+  background: #fff;
+  color: var(--tc-ink);
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tc-qty__step:disabled,
+.tc-qty__all:disabled {
+  border-color: var(--tc-cream-edge);
+  color: var(--tc-muted);
+  cursor: not-allowed;
+}
+
+.tc-qty__step:focus-visible,
+.tc-qty__all:focus-visible,
+.tc-qty__input:focus-visible {
+  outline: 3px solid var(--tc-ink);
+  outline-offset: 2px;
+}

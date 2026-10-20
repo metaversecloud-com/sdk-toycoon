@@ -45,6 +45,7 @@ export const XP_ITEM_NAME = "Experience Points";
 export const DEFAULT_VISITOR_DATA: VisitorDataObjectType = {
   totalCoinsEarned: 0,
   totalToysCrafted: 0,
+  totalToysSold: 0,
   badges: [],
   materialGenerationStartedAt: {},
   placedDecorations: {},

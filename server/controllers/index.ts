@@ -9,6 +9,7 @@ export * from "./handleGetLeaderboard.js";
 export * from "./handlePurchaseDecorations.js";
 export * from "./handleResetLeaderboard.js";
 export * from "./handleResetWorld.js";
+export * from "./handleSellToy.js";
 export * from "./handleStartMaterial.js";
 export * from "./handleTeleportToMainScene.js";
 export * from "./handleTeleportToMyBooth.js";

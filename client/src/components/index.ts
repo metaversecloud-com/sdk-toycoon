@@ -9,6 +9,8 @@ export * from "./Loading.js";
 export * from "./materials/index.js";
 export * from "./PageContainer.js";
 export * from "./PageFooter.js";
+export * from "./PlayerStats.js";
+export * from "./sell/index.js";
 export * from "./StartHere.js";
 export * from "./TeleportButton.js";
 export * from "./workshop/index.js";

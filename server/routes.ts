@@ -11,6 +11,7 @@ import {
   handlePurchaseDecoration,
   handleResetLeaderboard,
   handleResetWorld,
+  handleSellToy,
   handleStartMaterial,
   handleTeleportToMainScene,
   handleTeleportToMyBooth,
@@ -47,6 +48,7 @@ router.post("/start-material", handleStartMaterial);
 router.post("/collect-material", handleCollectMaterial);
 router.post("/collect-all-materials", handleCollectAllMaterials);
 router.post("/craft-toy", handleCraftToy);
+router.post("/sell-toy", handleSellToy);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);
 

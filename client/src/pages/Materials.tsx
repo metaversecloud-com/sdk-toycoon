@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 // components
-import { ClaimBoothFirst, MaterialStation, MaterialsInventoryBar, PageContainer } from "@/components";
+import { ClaimBoothFirst, MaterialStation, MaterialsInventoryBar, PageContainer, PlayerStats } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
@@ -142,6 +142,7 @@ export const Materials = () => {
             </span>
             Start a station, wait, then collect!
           </p>
+          <PlayerStats visitorInventory={visitorInventory} />
         </div>
 
         {allMaterials.length === 0 ? (

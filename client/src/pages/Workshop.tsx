@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 // components
-import { AssemblyStageType, ClaimBoothFirst, PageContainer, RecipeCard } from "@/components";
+import { AssemblyStageType, ClaimBoothFirst, PageContainer, PlayerStats, RecipeCard } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
@@ -123,6 +123,7 @@ export const Workshop = () => {
             </span>
             Turn your materials into toys!
           </p>
+          <PlayerStats visitorInventory={visitorInventory} />
         </div>
 
         <ul className="tc-recipes" aria-label="Toys you can craft">
@@ -134,7 +135,7 @@ export const Workshop = () => {
 
             let blockedReason: string | null = null;
             if (!toyItem) blockedReason = `The ${recipe.displayName} isn't set up yet.`;
-            else if (ownedToyCount >= recipe.cap) blockedReason = "Your shelf is full — sell some first.";
+            else if (ownedToyCount >= recipe.cap) blockedReason = "Your shelf is full — sell some at the Sell counter.";
             else if (Object.keys(missing).length) blockedReason = `Need ${describeMissingMaterials(missing)}.`;
 
             return (

@@ -24,6 +24,7 @@ const PLACEHOLDER_TOY_EMOJI: { [id in ToyTypeId]: string } = {
 
 /**
  * One toy recipe at the Workshop: its materials (have/need), shelf space, rewards, and the Craft button.
+ * Crafted toys are sold at the separate Sell counter.
  * While crafting, the card plays the Loose Parts → Work in Progress → Completed moment.
  */
 export const RecipeCard = ({
@@ -115,6 +116,7 @@ export const RecipeCard = ({
           {blockedReason}
         </p>
       )}
+
     </li>
   );
 };

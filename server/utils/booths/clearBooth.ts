@@ -31,7 +31,11 @@ export const clearBooth = async ({
     const { ownerId: previousOwnerId, sceneDropId } = boothData;
 
     if (previousOwnerId) {
-      const owner = await User.create({ credentials: { ...credentials, profileId: previousOwnerId } });
+      // profileId must be top-level: the SDK's data-object methods read it from there, not from credentials
+      const owner = User.create({
+        profileId: previousOwnerId,
+        credentials: { ...credentials, profileId: previousOwnerId },
+      });
       const ownerData = (await owner.fetchDataObject()) as VisitorDataObjectType | null;
       const recordedBoothId = ownerData?.boothIds?.[urlSlug];
 

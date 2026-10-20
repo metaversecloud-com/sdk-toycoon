@@ -81,6 +81,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       availableBoothCount: Object.values(booths).filter(({ ownerId }) => !ownerId).length,
       isAdmin,
       boothsFullAlert: isAdmin ? worldData?.boothsFullAlert || null : null,
+      serverTime: Date.now(),
     };
 
     return res.json({ ...gameState, success: true });

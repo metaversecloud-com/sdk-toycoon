@@ -6,11 +6,15 @@ import { ClaimBoothFirst, MaterialStation, MaterialsInventoryBar, PageContainer,
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
-import { ErrorType, INVENTORY_UPDATED } from "@/context/types";
+import { ErrorType } from "@/context/types";
+
+// hooks
+import { useServerNow } from "@/hooks/useServerNow";
 
 // utils
-import { backendAPI, setErrorMessage, setGameState } from "@/utils";
+import { backendAPI, patchGame, setErrorMessage, setGameState } from "@/utils";
 import { getMaterialCap } from "@shared/constants";
+import { InventoryItemType } from "@shared/types/InventoryItems";
 import { VisitorInventoryItemType } from "@shared/types/VisitorData";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
 
@@ -19,15 +23,24 @@ import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
  * only needs the item (plus a stationImageUrl in its metadata for real art). Each station is two steps:
  * Start → wait spawnIntervalSeconds → Collect (one unit). Countdowns here only mirror the server's timer for display;
  * the server decides when a station is ready. Each material is capped (Wood 20, Fabric 10, …).
+ * Taps update the screen immediately (optimistic) and are corrected by the server's reply — or undone if it refuses.
  */
 export const Materials = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { ecosystemMaterials, hasInteractiveParams, ownsBoothInThisWorld, visitorData, visitorInventory } =
-    useContext(GlobalStateContext);
+  const {
+    ecosystemMaterials,
+    hasInteractiveParams,
+    ownsBoothInThisWorld,
+    serverTimeOffset,
+    visitorData,
+    visitorInventory,
+  } = useContext(GlobalStateContext);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [now, setNow] = useState(Date.now());
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const now = useServerNow();
+  // Stations with a request in flight ("all" while Collect All runs). Each station is independent, so several can be
+  // started back to back without waiting for each other.
+  const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [statusMessage, setStatusMessage] = useState("");
 
   // Lets Topia bust the server's ecosystem inventory cache when new items are uploaded
@@ -43,11 +56,6 @@ export const Materials = () => {
         .finally(() => setIsLoading(false));
     }
   }, [hasInteractiveParams, dispatch]);
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Only materials the player's level has unlocked are shown (L1: Rocking Horse materials, L2: + Teddy Bear, L3: all)
   const level = visitorInventory?.level || 1;
@@ -70,58 +78,106 @@ export const Materials = () => {
   });
   const readyCount = stations.filter(({ canCollect }) => canCollect).length;
 
-  // Mirror a server result into client state: which stations reset/started and the new material counts
-  const applyResult = (timers: { [materialName: string]: number | null }, items: { [id: string]: VisitorInventoryItemType }) => {
-    if (!visitorData || !visitorInventory) return;
-    dispatch!({
-      type: INVENTORY_UPDATED,
-      payload: {
-        visitorData: {
-          ...visitorData,
-          materialGenerationStartedAt: { ...visitorData.materialGenerationStartedAt, ...timers },
-        },
-        visitorInventory: { ...visitorInventory, materials: { ...visitorInventory.materials, ...items } },
-      },
+  const setBusy = (key: string, isBusy: boolean) =>
+    setBusyIds((current) => {
+      const next = new Set(current);
+      if (isBusy) next.add(key);
+      else next.delete(key);
+      return next;
     });
-  };
 
-  const runAction = async (busyKey: string, request: () => Promise<void>) => {
-    if (busyId) return;
-    setBusyId(busyKey);
+  // The player's item for a material, or a zero-quantity stand-in if they've never collected any
+  const ownedItem = (material: InventoryItemType): VisitorInventoryItemType =>
+    visitorInventory?.materials[material.id] ??
+    ({ ...material, ecosystemItemId: material.id, quantity: 0, availableQuantity: 0 } as VisitorInventoryItemType);
+  const withQuantity = (item: VisitorInventoryItemType, quantity: number) => ({ ...item, quantity, availableQuantity: quantity });
+
+  const handleStart = async (material: InventoryItemType) => {
+    const { id, name, displayName } = material;
+    if (busyIds.has(id) || busyIds.has("all")) return;
+    const previousTimer = visitorData?.materialGenerationStartedAt?.[name] ?? null;
+
+    // Start the countdown right away; the server's reply confirms (or corrects) the start time
+    patchGame(dispatch, { materialTimers: { [name]: Date.now() + (serverTimeOffset ?? 0) } });
+    setBusy(id, true);
     setStatusMessage("");
     setErrorMessage(dispatch, "");
     try {
-      await request();
+      const { data } = await backendAPI.post("/start-material", { materialId: id });
+      patchGame(dispatch, { materialTimers: { [name]: data.generationStartedAt } });
+      setStatusMessage(`Started making ${displayName}.`);
     } catch (error) {
+      patchGame(dispatch, { materialTimers: { [name]: previousTimer } });
       setErrorMessage(dispatch, error as ErrorType);
     } finally {
-      setBusyId(null);
+      setBusy(id, false);
     }
   };
 
-  const handleStart = (materialId: string, displayName: string) =>
-    runAction(materialId, async () => {
-      const { data } = await backendAPI.post("/start-material", { materialId });
-      applyResult({ [data.materialName]: data.generationStartedAt }, {});
-      setStatusMessage(`Started making ${displayName}.`);
-    });
+  const handleCollect = async (material: InventoryItemType) => {
+    const { id, name, displayName } = material;
+    if (busyIds.has(id) || busyIds.has("all")) return;
+    const previousTimer = visitorData?.materialGenerationStartedAt?.[name] ?? null;
+    const previousItem = ownedItem(material);
 
-  const handleCollect = (materialId: string, displayName: string) =>
-    runAction(materialId, async () => {
-      const { data } = await backendAPI.post("/collect-material", { materialId });
-      applyResult({ [data.materialName]: null }, { [materialId]: data.item });
+    // Count it and reset the station right away; the server's reply has the confirmed total
+    patchGame(dispatch, {
+      materialTimers: { [name]: null },
+      materials: { [id]: withQuantity(previousItem, previousItem.quantity + 1) },
+    });
+    setBusy(id, true);
+    setStatusMessage("");
+    setErrorMessage(dispatch, "");
+    try {
+      const { data } = await backendAPI.post("/collect-material", { materialId: id });
+      patchGame(dispatch, { materials: { [id]: data.item } });
       setStatusMessage(`Collected 1 ${displayName}.`);
-    });
+    } catch (error) {
+      patchGame(dispatch, { materialTimers: { [name]: previousTimer }, materials: { [id]: previousItem } });
+      setErrorMessage(dispatch, error as ErrorType);
+    } finally {
+      setBusy(id, false);
+    }
+  };
 
-  const handleCollectAll = () =>
-    runAction("all", async () => {
+  const handleCollectAll = async () => {
+    if (busyIds.size > 0) return;
+    const ready = stations.filter(({ canCollect }) => canCollect).map(({ material }) => material);
+    if (ready.length === 0) return;
+    const previous = ready.map((material) => ({
+      material,
+      timer: visitorData?.materialGenerationStartedAt?.[material.name] ?? null,
+      item: ownedItem(material),
+    }));
+
+    patchGame(dispatch, {
+      materialTimers: Object.fromEntries(ready.map(({ name }) => [name, null])),
+      materials: Object.fromEntries(previous.map(({ material, item }) => [material.id, withQuantity(item, item.quantity + 1)])),
+    });
+    setBusy("all", true);
+    setStatusMessage("");
+    setErrorMessage(dispatch, "");
+    try {
       const { data } = await backendAPI.post("/collect-all-materials");
       const collected: { [id: string]: VisitorInventoryItemType } = data.collected;
-      const timers = Object.fromEntries(Object.values(collected).map(({ name }) => [name, null]));
-      applyResult(timers, collected);
+      // Anything the server skipped (e.g. collected in another tab) goes back to how it was
+      const skipped = previous.filter(({ material }) => !collected[material.id]);
+      patchGame(dispatch, {
+        materials: { ...Object.fromEntries(skipped.map(({ material, item }) => [material.id, item])), ...collected },
+        materialTimers: Object.fromEntries(skipped.map(({ material, timer }) => [material.name, timer])),
+      });
       const names = Object.values(collected).map(({ displayName, name }) => displayName || name);
       setStatusMessage(`Collected ${names.join(", ")}.`);
-    });
+    } catch (error) {
+      patchGame(dispatch, {
+        materialTimers: Object.fromEntries(previous.map(({ material, timer }) => [material.name, timer])),
+        materials: Object.fromEntries(previous.map(({ material, item }) => [material.id, item])),
+      });
+      setErrorMessage(dispatch, error as ErrorType);
+    } finally {
+      setBusy("all", false);
+    }
+  };
 
   if (!ownsBoothInThisWorld) {
     return (
@@ -157,10 +213,10 @@ export const Materials = () => {
                 secondsRemaining={secondsRemaining}
                 isLocked={isLocked}
                 isFull={isFull}
-                isBusy={busyId === material.id}
-                isDisabled={busyId !== null}
-                onStart={() => handleStart(material.id, material.displayName)}
-                onCollect={() => handleCollect(material.id, material.displayName)}
+                isBusy={false}
+                isDisabled={busyIds.has(material.id) || busyIds.has("all")}
+                onStart={() => handleStart(material)}
+                onCollect={() => handleCollect(material)}
               />
             ))}
           </ul>
@@ -183,10 +239,10 @@ export const Materials = () => {
           <button
             type="button"
             className="tc-collect-all"
-            disabled={readyCount === 0 || busyId !== null}
+            disabled={readyCount === 0 || busyIds.size > 0}
             onClick={handleCollectAll}
           >
-            {busyId === "all" ? "Collecting..." : readyCount > 0 ? `Collect All (${readyCount})` : "Collect All"}
+            {busyIds.has("all") ? "Collecting..." : readyCount > 0 ? `Collect All (${readyCount})` : "Collect All"}
           </button>
           <MaterialsInventoryBar materials={materials} visitorInventory={visitorInventory} />
         </div>

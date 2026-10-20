@@ -50,10 +50,18 @@ export type VisitorInventoryType = {
 export type VisitorDataObjectType = {
   totalCoinsEarned: number; // lifetime Toy Tokens earned; only ever increments. Also the "has started playing" sentinel
   totalToysCrafted: number; // all toy types; shown on the leaderboard
-  totalToysSold: number; // only ever increments; also versions the sell lock
+  totalToysSold: number; // only ever increments
   badges: string[];
   materialGenerationStartedAt: {
     [materialName: string]: number | null; // server ms timestamp the bin was started; null/missing = idle (see getMaterialBinState)
+  };
+  toyCraftStartedAt: {
+    [recipeId: string]: number | null; // server ms timestamp a craft started; null/missing = no craft in progress
+  };
+  // Versions for one-shot action locks (see claimActionLock). Only ever increase — even when an action fails — so a
+  // lock held by an earlier attempt can never block the next one.
+  lockVersions: {
+    [action: string]: number;
   };
   placedDecorations: {
     [slot: string]: {

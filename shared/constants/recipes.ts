@@ -14,8 +14,11 @@ export interface ToyRecipeType {
   // Fixed sell price (V1 has no order-matching). Ecosystem metadata rewardTokens / rewardXP override these per item.
   sellTokens: number;
   sellXp: number;
-  // Max finished toys of this type a player can hold unsold
+  // Max finished toys of this type a player can hold unsold (a toy being crafted counts too)
   cap: number;
+  // How long crafting takes. ~2/3 of the recipe's material bottleneck time (economy model: Rocking Horse 45s,
+  // Teddy Bear 100s, Train 300s), so materials can be gathered while a toy is being made and the model's rates hold.
+  craftSeconds: number;
   // Crafting always produces this one item. Other colors of a toy (e.g. White Teddy Bear, Silver Train) are decoration
   // variants only, never crafted. Set when the toy item's name carries a color.
   craftedColor?: string;
@@ -30,6 +33,7 @@ export const TOY_RECIPES: ToyRecipeType[] = [
     sellTokens: 3,
     sellXp: 10,
     cap: 10,
+    craftSeconds: 30,
   },
   {
     id: "teddy_bear",
@@ -39,6 +43,7 @@ export const TOY_RECIPES: ToyRecipeType[] = [
     sellTokens: 5,
     sellXp: 25,
     cap: 8,
+    craftSeconds: 60,
     craftedColor: "Brown",
   },
   {
@@ -49,6 +54,7 @@ export const TOY_RECIPES: ToyRecipeType[] = [
     sellTokens: 20,
     sellXp: 100,
     cap: 5,
+    craftSeconds: 180,
     craftedColor: "Black",
   },
 ];

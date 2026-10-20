@@ -48,6 +48,8 @@ export const DEFAULT_VISITOR_DATA: VisitorDataObjectType = {
   totalToysSold: 0,
   badges: [],
   materialGenerationStartedAt: {},
+  toyCraftStartedAt: {},
+  lockVersions: {},
   placedDecorations: {},
   boothIds: {},
 };

@@ -699,11 +699,11 @@ button.tc-bubble:focus-visible,
   color: var(--tc-ink);
 }
 
-.tc-recipe--wip .tc-recipe__art {
+.tc-recipe--generating .tc-recipe__art {
   animation: tc-wobble 0.45s ease-in-out infinite;
 }
 
-.tc-recipe--done .tc-recipe__art {
+.tc-recipe--ready .tc-recipe__art {
   animation: tc-pop 0.5s ease-out;
   border-color: var(--tc-gold-dark);
   box-shadow: 0 0 0 4px var(--tc-gold);
@@ -735,8 +735,8 @@ button.tc-bubble:focus-visible,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tc-recipe--wip .tc-recipe__art,
-  .tc-recipe--done .tc-recipe__art {
+  .tc-recipe--generating .tc-recipe__art,
+  .tc-recipe--ready .tc-recipe__art {
     animation: none;
   }
 }
@@ -882,4 +882,16 @@ button.tc-bubble:focus-visible,
 .tc-qty__input:focus-visible {
   outline: 3px solid var(--tc-ink);
   outline-offset: 2px;
+}
+
+/* Workshop craft timer */
+.tc-craft-timer {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+
+.tc-craft-timer__bar {
+  width: 100%;
+  height: 10px;
 }

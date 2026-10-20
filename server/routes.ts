@@ -1,10 +1,12 @@
 import express from "express";
 import {
+  handleAbandonBooth,
   handleClaimBooth,
   handleClearBooth,
   handleClearInactiveBooths,
   handleCollectAllMaterials,
   handleCollectMaterial,
+  handleCollectToy,
   handleCraftToy,
   handleGetGameState,
   handleGetLeaderboard,
@@ -43,11 +45,13 @@ router.get("/system/health", (req, res) => {
 router.get("/game-state", handleGetGameState);
 router.get("/leaderboard", handleGetLeaderboard);
 router.post("/claim-booth", handleClaimBooth);
+router.post("/abandon-booth", handleAbandonBooth);
 router.post("/purchase-decoration", handlePurchaseDecoration);
 router.post("/start-material", handleStartMaterial);
 router.post("/collect-material", handleCollectMaterial);
 router.post("/collect-all-materials", handleCollectAllMaterials);
 router.post("/craft-toy", handleCraftToy);
+router.post("/collect-toy", handleCollectToy);
 router.post("/sell-toy", handleSellToy);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);

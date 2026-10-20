@@ -2,6 +2,7 @@ import { getMaterialCap } from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import { Credentials } from "../../types/index.js";
 import { initializeVisitorData } from "../initializeVisitorData.js";
+import { getBoothIndex } from "../booths/getBoothIndex.js";
 import { getInventoryItems } from "../inventory/inventoryCache.js";
 import { standardizeError } from "../standardizeError.js";
 import { requireBoothInWorld } from "./requireBoothInWorld.js";
@@ -15,12 +16,16 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
   try {
     if (!materialId) throw "Valid materialId is required";
 
-    const { ecosystemMaterials } = await getInventoryItems(credentials);
+    // Independent Topia calls run in parallel so a Start/Collect tap waits on one round-trip, not three
+    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths }] = await Promise.all([
+      getInventoryItems(credentials),
+      initializeVisitorData(credentials),
+      getBoothIndex(credentials),
+    ]);
     const material = ecosystemMaterials[materialId];
     if (!material) throw "Invalid material";
 
-    const { visitor, visitorData, visitorInventory } = await initializeVisitorData(credentials);
-    await requireBoothInWorld(credentials, visitorData);
+    await requireBoothInWorld(credentials, visitorData, "collecting materials", booths);
     if (visitorInventory.level < material.unlockLevel) throw "Material not unlocked yet.";
 
     const owned = visitorInventory.materials[materialId]?.quantity ?? 0;
@@ -30,7 +35,7 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
     const generationStartedAt = visitorData.materialGenerationStartedAt?.[material.name] ?? null;
     const { state } = getMaterialBinState(generationStartedAt, material.spawnIntervalSeconds);
 
-    return { cap, generationStartedAt, material, owned, state, visitor };
+    return { cap, generationStartedAt, material, owned, state, visitor, visitorData };
   } catch (error) {
     throw standardizeError(error);
   }

@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef } from "react";
 
 // components
-import { TeleportButton } from "@/components";
+import { AbandonBoothButton, TeleportButton } from "@/components";
 
 // context
 import { GlobalStateContext } from "@/context/GlobalContext";
@@ -27,7 +27,7 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
   }, [claimResult]);
 
   const renderMyBoothAction = () => {
-    if (isOwnedByVisitor) return null;
+    if (isOwnedByVisitor) return <AbandonBoothButton teleportToMainScene />;
     if (ownsBoothInThisWorld) return <TeleportButton destination="my-booth">Go to my booth</TeleportButton>;
     if (claimResult === "allBoothsTaken") {
       return (

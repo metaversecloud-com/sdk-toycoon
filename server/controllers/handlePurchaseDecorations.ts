@@ -77,7 +77,7 @@ export const handlePurchaseDecoration = async (req: Request, res: Response) => {
       .fireToast({
         groupId: "handlePurchaseDecoration",
         title: "You purchased a new decoration!",
-        text: `You can now place ${decorationConfig.displayName} in your booth.`,
+        text: `You can now place ${decorationConfig.displayName} on your display.`,
       })
       .catch((error: AxiosError) =>
         errorHandler({ error, functionName: "handlePurchaseDecoration", message: "Error firing toast" }),

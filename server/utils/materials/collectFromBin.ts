@@ -10,20 +10,24 @@ import { standardizeError } from "../standardizeError.js";
  * The reset happens first, under a one-shot action lock (see claimActionLock): a double-click, a second tab, or Collect
  * All racing a single collect can't collect the same unit twice. If granting fails, the bin is put back to ready so the
  * unit isn't lost.
+ * alongsideGrant (e.g. the collect's XP) runs at the same time as the grant, once the lock is held, so it doesn't add
+ * another round trip. It must not throw (awardBonusXp doesn't).
  */
-export const collectFromBin = async ({
+export const collectFromBin = async <T = undefined>({
+  alongsideGrant,
   credentials,
   generationStartedAt,
   material,
   visitor,
   visitorData,
 }: {
+  alongsideGrant?: () => Promise<T>;
   credentials: Credentials;
   generationStartedAt: number;
   material: InventoryItemType;
   visitor: VisitorInterface;
   visitorData: VisitorDataObjectType;
-}): Promise<{ status: "collected"; item: VisitorInventoryItemType } | { status: "locked" }> => {
+}): Promise<{ status: "collected"; item: VisitorInventoryItemType; alongside?: T } | { status: "locked" }> => {
   try {
     const timerPath = `materialGenerationStartedAt.${material.name}`;
 
@@ -37,8 +41,11 @@ export const collectFromBin = async ({
     if (!claimed) return { status: "locked" };
 
     try {
-      const item = await modifyVisitorInventoryItem({ credentials, visitor, id: material.id, quantity: 1 });
-      return { status: "collected", item };
+      const [item, alongside] = await Promise.all([
+        modifyVisitorInventoryItem({ credentials, visitor, id: material.id, quantity: 1 }),
+        alongsideGrant?.(),
+      ]);
+      return { status: "collected", item, alongside };
     } catch (grantError) {
       await visitor
         .updateDataObject({ [timerPath]: generationStartedAt }, {})

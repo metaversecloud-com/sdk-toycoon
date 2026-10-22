@@ -87,17 +87,6 @@
   box-shadow: var(--tc-shadow-soft);
 }
 
-.tc-hint__icon {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--tc-green);
-  color: #fff;
-  font-size: 0.7rem;
-}
-
 /* Stations: a staggered two-column floor, so any number of materials fits without hand-placed positions */
 .tc-floor {
   display: grid;
@@ -443,6 +432,7 @@ button.tc-bubble:focus-visible,
 .tc-step {
   position: relative;
   display: grid;
+  grid-template-rows: auto auto 1fr auto; /* art, title, text (grows), Go-to button at the bottom */
   justify-items: center;
   gap: 2px;
   padding: 14px 8px 10px;
@@ -474,6 +464,12 @@ button.tc-bubble:focus-visible,
   line-height: 1.2;
 }
 
+.tc-step__art img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
 .tc-step__title {
   font-size: 0.95rem;
   font-weight: 800;
@@ -483,6 +479,35 @@ button.tc-bubble:focus-visible,
   color: var(--tc-ink-soft);
   font-size: 0.8rem;
   line-height: 1.3;
+}
+
+/* "Go to <station>" on each Start Here step, pinned to the bottom of its card so a row's buttons line up */
+.tc-step__go {
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 2px solid var(--tc-gold-dark);
+  background: var(--tc-gold);
+  color: var(--tc-ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tc-step__go:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.tc-step__go:focus-visible {
+  outline: 3px solid var(--tc-ink);
+  outline-offset: 2px;
+}
+
+.tc-step__go:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .tc-panel {
@@ -527,7 +552,7 @@ button.tc-bubble:focus-visible,
   color: var(--tc-ink-soft);
 }
 
-/* Big primary call to action (Claim my booth, Go to my booth) */
+/* Big primary call to action (Claim my display, Go to the Materials Box) */
 .tc-cta {
   width: 100%;
   padding: 12px 18px;
@@ -816,50 +841,104 @@ button.tc-bubble:focus-visible,
   }
 }
 
-.tc-sell-price {
-  margin: 0;
-  padding: 6px 12px;
-  border-radius: 10px;
-  background: #fdf3df;
-  font-weight: 800;
-  text-align: center;
+/* Cashier cards: compact, since the drawer is narrow */
+.tc-sell-card {
+  gap: 10px;
+  padding: 12px;
 }
 
-/* Sell quantity picker */
-.tc-qty {
+.tc-sell-card .tc-recipe__art {
+  width: 48px;
+  height: 48px;
+  border-width: 2px;
+  border-radius: 10px;
+  font-size: 1.6rem;
+}
+
+.tc-sell-card .tc-recipe__title {
+  flex: 1;
+  font-size: 1.1rem;
+}
+
+.tc-sell-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tc-sell-card__payout {
   display: grid;
-  gap: 4px;
+  justify-items: end;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.tc-sell-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tc-sell-card__sell {
+  flex: 1;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid var(--tc-gold-dark);
+  background: var(--tc-gold);
+  color: var(--tc-ink);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 3px 0 var(--tc-gold-dark);
+  cursor: pointer;
+}
+
+.tc-sell-card__sell:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.tc-sell-card__sell:disabled {
+  border-color: var(--tc-cream-edge);
+  background: #f1e6d3;
+  color: var(--tc-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.tc-sell-card__sell:focus-visible {
+  outline: 3px solid var(--tc-ink);
+  outline-offset: 2px;
+}
+
+.tc-sell-card .tc-recipe__blocked {
+  font-size: 0.8rem;
 }
 
 .tc-qty__controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
-.tc-qty__step,
-.tc-qty__all {
-  min-width: 40px;
-  height: 40px;
+.tc-qty__step {
+  min-width: 38px;
+  height: 38px;
   border-radius: 10px;
   border: 2px solid var(--tc-wood-dark);
   background: #fff;
   color: var(--tc-ink);
   font-family: inherit;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 800;
   cursor: pointer;
 }
 
-.tc-qty__all {
-  margin-left: auto;
-  padding: 0 12px;
-  font-size: 0.85rem;
-}
-
 .tc-qty__input {
-  width: 64px;
-  height: 40px;
+  width: 48px;
+  height: 38px;
   border-radius: 10px;
   border: 2px solid var(--tc-cream-edge);
   background: #fff;
@@ -868,18 +947,60 @@ button.tc-bubble:focus-visible,
   font-size: 1.1rem;
   font-weight: 800;
   text-align: center;
+  appearance: textfield; /* − / + already step it, so hide the browser's own spinner */
 }
 
-.tc-qty__step:disabled,
-.tc-qty__all:disabled {
+.tc-qty__input::-webkit-inner-spin-button,
+.tc-qty__input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.tc-qty__step:disabled {
   border-color: var(--tc-cream-edge);
   color: var(--tc-muted);
   cursor: not-allowed;
 }
 
 .tc-qty__step:focus-visible,
-.tc-qty__all:focus-visible,
 .tc-qty__input:focus-visible {
+  outline: 3px solid var(--tc-ink);
+  outline-offset: 2px;
+}
+
+/* Why a tap didn't work, pinned in the bottom dock so it's visible while scrolled */
+.tc-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px 8px 14px;
+  border-radius: 12px;
+  border: 2px solid var(--tc-red);
+  background: var(--tc-red-bg);
+  color: var(--tc-red);
+  font-weight: 700;
+  box-shadow: var(--tc-shadow-soft);
+}
+
+.tc-alert__text {
+  flex: 1;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.tc-alert__close {
+  min-width: 32px;
+  min-height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tc-alert__close:focus-visible {
   outline: 3px solid var(--tc-ink);
   outline-offset: 2px;
 }

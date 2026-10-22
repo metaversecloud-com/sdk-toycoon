@@ -15,3 +15,4 @@ export * from "./handleSellToy.js";
 export * from "./handleStartMaterial.js";
 export * from "./handleTeleportToMainScene.js";
 export * from "./handleTeleportToMyBooth.js";
+export * from "./handleTeleportToStation.js";

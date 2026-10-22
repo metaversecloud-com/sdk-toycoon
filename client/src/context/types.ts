@@ -51,6 +51,7 @@ export interface InitialState {
   // Server clock minus client clock (ms), measured when game state loads; added to Date.now() for countdowns
   serverTimeOffset?: number;
   serverTime?: number;
+  ecosystemDecorations?: { [itemId: string]: InventoryItemType }
 }
 
 export type ActionType = {

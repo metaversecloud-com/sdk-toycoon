@@ -1,3 +1,4 @@
+
 export type MetadataType = {
   displayName?: string;
   type?: "material" | "toy" | "decoration";

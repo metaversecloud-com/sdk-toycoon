@@ -1,3 +1,4 @@
+//client/src/components/sell/SellCard.tsx
 import { useEffect, useId, useState } from "react";
 
 // types

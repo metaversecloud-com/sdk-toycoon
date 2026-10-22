@@ -1,6 +1,7 @@
 import { InventoryItemInterface } from "@rtsdk/topia";
 import { getMaterialSpawnSeconds, getMaterialUnlockLevel } from "@shared/constants/index.js";
 import { InventoryItemType, MetadataType } from "../../types/index.js";
+import { getDecorUnlockLevel } from "@shared/constants/decorations.js";
 
 // Ecosystem metadata may arrive as strings, so coerce numeric fields defensively
 const num = (value: unknown, fallback = 0) => {
@@ -50,6 +51,7 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
   const itemType = typeof type === "string" ? (type.toLowerCase() as MetadataType["type"]) : undefined;
   const isMaterial = itemType === "material";
   const materialName = name || displayName || "";
+  const isDecoration = itemType === "decoration";
 
   return {
     id,
@@ -65,7 +67,10 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
     reward: num(rewardTokens ?? reward), // Lina's metadata uses rewardTokens / rewardXP
     xpReward: num(rewardXP ?? xpReward),
     // Materials fall back to the brief's per-material unlock level / generation time when metadata doesn't set them
-    unlockLevel: num(unlockLevel, isMaterial ? getMaterialUnlockLevel(materialName) : 1),
+    unlockLevel: num(
+    unlockLevel,
+    isMaterial ? getMaterialUnlockLevel(materialName) : isDecoration ? getDecorUnlockLevel(materialName) : 1,
+  ),
 
     // Materials
     spawnIntervalSeconds: num(spawnIntervalSeconds, isMaterial ? getMaterialSpawnSeconds(materialName) : 0),

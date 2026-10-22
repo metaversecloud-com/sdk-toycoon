@@ -1,3 +1,4 @@
+//client/src/components/index.ts
 export * from "./AbandonBoothButton.js";
 export * from "./Accordion.js";
 export * from "./AdminView.js";

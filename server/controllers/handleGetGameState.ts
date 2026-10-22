@@ -29,7 +29,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       getBoothIndex(credentials, forceRefreshBooths),
     ]);
     // Cached (and already refreshed above if forced), so this doesn't cost an extra API call
-    const { ecosystemMaterials, ecosystemToys } = await getInventoryItems(credentials);
+    const { ecosystemDecorations, ecosystemMaterials, ecosystemToys } = await getInventoryItems(credentials);
 
     const ownedBoothSceneDropId = getOwnedBoothSceneDropId({ booths, profileId, urlSlug, visitorData });
 

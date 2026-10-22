@@ -54,3 +54,4 @@ export const getMaterialSpawnSeconds = (materialName: string) =>
 
 export * from "./recipes.js";
 export * from "./materialNames.js";
+export * from "./decorations.js";

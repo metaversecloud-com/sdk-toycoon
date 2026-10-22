@@ -45,15 +45,11 @@ export const clearBooth = async ({
         const update: Partial<VisitorDataObjectType> = { boothIds };
 
         // placedDecorations is { [slot]: { [urlSlug]: decorationName } } — remove this world from every slot
-        const placedDecorations: VisitorDataObjectType["placedDecorations"] = {};
-        let hadPlacementsHere = false;
-        for (const [slot, placementsByWorld] of Object.entries(ownerData.placedDecorations || {})) {
-          const { [urlSlug]: removed, ...otherWorlds } = placementsByWorld;
-          if (removed !== undefined) hadPlacementsHere = true;
-          if (Object.keys(otherWorlds).length > 0) placedDecorations[slot] = otherWorlds;
-        }
-        if (hadPlacementsHere) update.placedDecorations = placedDecorations;
+        const update: { [path: string]: unknown } = { boothIds: boothIds };
 
+        for (const [slot, placementsByWorld] of Object.entries(ownerData.placedDecorations || {})) {
+          if (placementsByWorld?.[urlSlug] !== undefined) update[`placedDecorations.${slot}.${urlSlug}`] = null;
+        }
         await owner.updateDataObject(update, {});
       }
     }

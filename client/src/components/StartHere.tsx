@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { ReactNode, useContext, useEffect, useRef, useState } from "react";
 
 // components
 import { AbandonBoothButton, TeleportButton } from "@/components";
@@ -9,19 +9,18 @@ import { GlobalStateContext } from "@/context/GlobalContext";
 // hooks
 import { useClaimBooth } from "@/hooks/useClaimBooth";
 
-const HOW_IT_WORKS = [
-  { emoji: "🪵", title: "Collect materials", text: "Start a station, wait, then collect wood, fabric, and more." },
-  { emoji: "🧸", title: "Craft toys", text: "Turn materials into teddy bears, rocking horses, and trains." },
-  { emoji: "🪙", title: "Sell for Toy Tokens", text: "Every toy you sell earns Toy Tokens and XP." },
-  { emoji: "🎀", title: "Decorate your booth", text: "Spend Toy Tokens on rugs, displays, and lights." },
-];
+// utils
+import { getMaterialIcons, WORLD_OBJECTS } from "@/utils";
+import { getCraftedToyItem, TOY_RECIPES } from "@shared/constants";
 
 /**
  * The welcome screen on the Main Scene's "Start Here" asset — the first thing a new player sees.
- * New players learn the loop and claim a booth; returning players go straight to theirs.
+ * New players learn the loop step by step (each step names the in-world object to walk to) and claim a display.
+ * Once they have a display, each step gets a button that teleports them to that step's station.
  */
 export const StartHere = () => {
-  const { availableBoothCount = 0, ownsBoothInThisWorld } = useContext(GlobalStateContext);
+  const { availableBoothCount = 0, ecosystemMaterials, ecosystemToys, ownsBoothInThisWorld, visitorInventory } =
+    useContext(GlobalStateContext);
   const { claimBooth, claimResult, isClaiming } = useClaimBooth();
   const resultRef = useRef<HTMLHeadingElement>(null);
   const [hasAbandoned, setHasAbandoned] = useState(false);
@@ -31,14 +30,48 @@ export const StartHere = () => {
     if (claimResult || hasAbandoned) resultRef.current?.focus();
   }, [claimResult, hasAbandoned]);
 
+  // The same art the game uses (ecosystem item images); emoji only where there's no item or it has no image yet
+  const woodIcon = getMaterialIcons(ecosystemMaterials).Wood;
+  const firstToy = TOY_RECIPES[0];
+  const firstToyIcon = getCraftedToyItem(firstToy, Object.values(ecosystemToys || {}))?.icon;
+  const howItWorks: {
+    art: ReactNode;
+    title: string;
+    text: string;
+    station: "materials" | "assembly" | "cashier" | "shop";
+  }[] = [
+    {
+      station: "materials",
+      art: woodIcon ? <img src={woodIcon} alt="" /> : "🪵",
+      title: "Collect materials",
+      text: `Go to the ${WORLD_OBJECTS.materials}. Press Start, wait for the timer, then Collect.`,
+    },
+    {
+      station: "assembly",
+      art: firstToyIcon ? <img src={firstToyIcon} alt="" /> : "🐴",
+      title: "Craft toys",
+      text: `Take your materials to ${WORLD_OBJECTS.assembly} and craft a ${firstToy.displayName}.`,
+    },
+    {
+      station: "cashier",
+      art: "🪙",
+      title: "Sell toys",
+      text: `Sell your toys at the ${WORLD_OBJECTS.cashier} for Toy Tokens. Every step earns XP!`,
+    },
+    { station: "shop", art: "🛍️", title: "Go shopping", text: "Spend Toy Tokens on decorations for your display." },
+  ];
+  const hasStarted = (visitorInventory?.xp ?? 0) > 0;
+
   const renderAction = () => {
     if (claimResult === "allBoothsTaken") {
       return (
         <div className="tc-panel" role="status">
           <h3 ref={resultRef} tabIndex={-1} className="tc-panel__title">
-            All booths are taken
+            All displays are taken
           </h3>
-          <p className="p2">Every booth in this world is claimed right now. We've let the world admin know — check back soon!</p>
+          <p className="p2">
+            Every display in this world is claimed right now. We've let the world admin know — check back soon!
+          </p>
         </div>
       );
     }
@@ -48,15 +81,15 @@ export const StartHere = () => {
       return (
         <div className="tc-panel" role="status">
           <h3 ref={resultRef} tabIndex={-1} className="tc-panel__title">
-            {justClaimed ? "🎉 Your booth is ready!" : "Welcome back!"}
+            {justClaimed ? "🎉 Your display is ready!" : "Welcome back!"}
           </h3>
           <p className="p2">
-            {justClaimed
-              ? "Head over and start collecting materials for your first toy."
-              : "Your booth is waiting for you."}
+            {hasStarted
+              ? "Jump to any station with the buttons above."
+              : `Start with step 1: go to the ${WORLD_OBJECTS.materials} and collect Wood and Fabric for your first ${firstToy.displayName}.`}
           </p>
-          <TeleportButton destination="my-booth" className="tc-cta">
-            Go to my booth
+          <TeleportButton destination="my-booth" className="btn btn-outline">
+            Go to my display
           </TeleportButton>
           {!justClaimed && <AbandonBoothButton onAbandoned={() => setHasAbandoned(true)} />}
         </div>
@@ -69,19 +102,22 @@ export const StartHere = () => {
         {hasAbandoned && (
           <div role="status">
             <h3 ref={resultRef} tabIndex={-1} className="tc-panel__title">
-              You gave up your booth
+              You gave up your display
             </h3>
-            <p className="p2">Your toys and materials are still yours. Claim a new booth whenever you're ready.</p>
+            <p className="p2">Your toys and materials are still yours. Claim a new display whenever you're ready.</p>
           </div>
         )}
         <p className="tc-pill">
           <span aria-hidden="true">🎪 </span>
-          {availableBoothCount === 1 ? "1 booth open" : `${availableBoothCount} booths open`}
+          {availableBoothCount === 1 ? "1 display open" : `${availableBoothCount} displays open`}
         </p>
         <button type="button" className="tc-cta" disabled={isClaiming || !hasOpenBooths} onClick={() => claimBooth()}>
-          {isClaiming ? "Claiming..." : hasOpenBooths ? "Claim my booth" : "No booths open"}
+          {isClaiming ? "Claiming..." : hasOpenBooths ? "Claim my display" : "No displays open"}
         </button>
-        <p className="p3 tc-muted">One booth per player in each world. It's yours to keep and decorate.</p>
+        <p className="p3 tc-muted">
+          Your display is where you show off your toys at the craft fair. One per player in each world — it's yours to
+          keep and decorate.
+        </p>
       </div>
     );
   };
@@ -90,12 +126,7 @@ export const StartHere = () => {
     <div className="tc-workshop">
       <div className="tc-workshop__top">
         <h2 className="tc-sign">Toycoon</h2>
-        <p className="tc-hint">
-          <span className="tc-hint__icon" aria-hidden="true">
-            ▶
-          </span>
-          Run your own toy workshop!
-        </p>
+        <p className="tc-hint">Run your own toy workshop!</p>
       </div>
 
       <div className="tc-welcome">
@@ -104,16 +135,23 @@ export const StartHere = () => {
             How it works
           </h3>
           <ol className="tc-steps">
-            {HOW_IT_WORKS.map(({ emoji, title, text }, index) => (
+            {howItWorks.map(({ art, station, title, text }, index) => (
               <li key={title} className="tc-step">
                 <span className="tc-step__number" aria-hidden="true">
                   {index + 1}
                 </span>
                 <span className="tc-step__art" aria-hidden="true">
-                  {emoji}
+                  {art}
                 </span>
                 <span className="tc-step__title">{title}</span>
                 <span className="tc-step__text">{text}</span>
+                {/* Stations open once you have a display, so new players see the steps and the claim button */}
+                {ownsBoothInThisWorld && (
+                  <TeleportButton destination={station} className="tc-step__go">
+                    Go to {station === "assembly" ? "" : "the "}
+                    {WORLD_OBJECTS[station]}
+                  </TeleportButton>
+                )}
               </li>
             ))}
           </ol>

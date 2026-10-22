@@ -2,18 +2,18 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 // components
-import { ClaimBoothFirst, LevelUpModal, PageContainer, PlayerStats, SellCard } from "@/components";
+import { ActionAlert, ClaimBoothFirst, LevelUpModal, PageContainer, PlayerStats, SellCard } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
 import { ErrorType } from "@/context/types";
 
 // utils
-import { backendAPI, patchGame, setErrorMessage, setGameState } from "@/utils";
+import { backendAPI, getErrorText, patchGame, setErrorMessage, setGameState, WORLD_OBJECTS } from "@/utils";
 import { countOwnedToys, getCraftedToyItem, TOY_RECIPES, ToyRecipeType, ToyTypeId } from "@shared/constants";
 
 /**
- * The Sell counter: sell crafted toys for a fixed price in Toy Tokens + XP. Crossing an XP threshold levels the player
+ * The Cashier (Sell page): sell crafted toys for a fixed price in Toy Tokens + XP. Crossing an XP threshold levels the player
  * up, which pays a bonus and unlocks the next toy and its materials.
  */
 export const Sell = () => {
@@ -24,6 +24,7 @@ export const Sell = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sellingRecipeId, setSellingRecipeId] = useState<ToyTypeId | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
+  const [actionError, setActionError] = useState("");
   const [levelUp, setLevelUp] = useState<{ level: number; bonusTokens: number; levelsGained: number[] } | null>(null);
   const isMounted = useRef(true);
 
@@ -52,11 +53,12 @@ export const Sell = () => {
   const toyItems = Object.values(ecosystemToys || {});
   const unlockedRecipes = TOY_RECIPES.filter(({ unlockLevel }) => unlockLevel <= level);
 
-  const handleSell = async (recipe: ToyRecipeType, toyName: string, quantity: number) => {
+  const handleSell = async (recipe: ToyRecipeType, quantity: number) => {
+    const toyName = recipe.displayName;
     if (sellingRecipeId || !visitorData || !visitorInventory) return;
     setSellingRecipeId(recipe.id);
     setStatusMessage("");
-    setErrorMessage(dispatch, "");
+    setActionError("");
 
     try {
       const { data } = await backendAPI.post("/sell-toy", { recipeId: recipe.id, quantity });
@@ -73,7 +75,7 @@ export const Sell = () => {
         setLevelUp({ level: data.level, bonusTokens: data.levelUpTokens, levelsGained: data.levelsGained });
       }
     } catch (error) {
-      setErrorMessage(dispatch, error as ErrorType);
+      if (isMounted.current) setActionError(getErrorText(error as ErrorType));
     } finally {
       if (isMounted.current) setSellingRecipeId(null);
     }
@@ -82,7 +84,10 @@ export const Sell = () => {
   if (!ownsBoothInThisWorld && !isLoading) {
     return (
       <PageContainer isLoading={isLoading}>
-        <ClaimBoothFirst pageTitle="Sell Toys" unlocks="The Sell counter opens once you have your own booth." />
+        <ClaimBoothFirst
+          pageTitle={WORLD_OBJECTS.cashier}
+          unlocks={`The ${WORLD_OBJECTS.cashier} opens once you have your own display.`}
+        />
       </PageContainer>
     );
   }
@@ -91,13 +96,8 @@ export const Sell = () => {
     <PageContainer isLoading={isLoading}>
       <div className="tc-workshop">
         <div className="tc-workshop__top">
-          <h2 className="tc-sign">Sell Toys</h2>
-          <p className="tc-hint">
-            <span className="tc-hint__icon" aria-hidden="true">
-              ▶
-            </span>
-            Sell toys for Toy Tokens and XP!
-          </p>
+          <h2 className="tc-sign">{WORLD_OBJECTS.cashier}</h2>
+          <p className="tc-hint">Sell toys for Toy Tokens and XP!</p>
           <PlayerStats visitorInventory={visitorInventory} />
         </div>
 
@@ -112,7 +112,7 @@ export const Sell = () => {
                 ownedCount={countOwnedToys(recipe, visitorInventory?.toys)}
                 isBusy={sellingRecipeId === recipe.id}
                 isDisabled={sellingRecipeId !== null}
-                onSell={(quantity) => handleSell(recipe, toyItem?.displayName ?? recipe.displayName, quantity)}
+                onSell={(quantity) => handleSell(recipe, quantity)}
               />
             );
           })}
@@ -122,6 +122,10 @@ export const Sell = () => {
       <p className="sr-only" role="status">
         {statusMessage}
       </p>
+
+      <div className="tc-dock">
+        <ActionAlert message={actionError} onDismiss={() => setActionError("")} />
+      </div>
 
       {levelUp && (
         <LevelUpModal

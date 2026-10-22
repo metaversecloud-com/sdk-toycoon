@@ -26,14 +26,14 @@ export const handleAbandonBooth = async (req: Request, res: Response) => {
 
     const sceneDropId = getOwnedBoothSceneDropId({ booths, profileId, urlSlug, visitorData });
     if (!sceneDropId) {
-      return res.status(404).json({ success: false, message: "You don't have a booth in this world." });
+      return res.status(404).json({ success: false, message: "You don't have a display in this world." });
     }
 
     // Re-read the booth itself (the index can be stale) so a player can only ever release a booth they still own
     const { boothAsset, boothData } = await getBoothData(credentials, booths[sceneDropId].keyAssetId, sceneDropId);
     if (boothData.ownerId !== profileId) {
       await world.updateDataObject({ [`booths.${sceneDropId}.ownerId`]: boothData.ownerId ?? null });
-      return res.status(404).json({ success: false, message: "You don't have a booth in this world." });
+      return res.status(404).json({ success: false, message: "You don't have a display in this world." });
     }
 
     await clearBooth({ boothAsset, boothData, credentials, world });

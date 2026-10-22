@@ -26,14 +26,15 @@ const formatTime = (totalSeconds: number) =>
   `${Math.floor(totalSeconds / 60)}:${(totalSeconds % 60).toString().padStart(2, "0")}`;
 
 /**
- * One toy's workbench: materials (have/need), shelf space, rewards, and the craft timer.
- * Loose Parts (Craft) → Work in Progress (countdown) → Completed (Collect). Crafted toys are sold at the Sell counter.
+ * One toy's workbench: materials (have/need), shelf space, and the craft timer.
+ * Loose Parts (Craft) → Work in Progress (countdown) → Completed (Collect). Crafted toys are sold at the Cashier.
  */
 export const RecipeCard = ({
   blockedReason,
   craftState,
   isDisabled,
   materialCounts,
+  materialIcons,
   onCollect,
   onCraft,
   ownedToyCount,
@@ -45,6 +46,8 @@ export const RecipeCard = ({
   craftState: MaterialBinStateType;
   isDisabled: boolean;
   materialCounts: { [materialName: string]: number };
+  // The in-game icon for each material (same art as the Materials Box)
+  materialIcons: { [materialName: string]: string };
   onCollect: () => void;
   onCraft: () => void;
   ownedToyCount: number;
@@ -54,9 +57,8 @@ export const RecipeCard = ({
   toyItem?: InventoryItemType;
 }) => {
   const id = useId();
-  const toyName = toyItem?.displayName ?? recipe.displayName;
-  const sellTokens = toyItem?.reward || recipe.sellTokens;
-  const sellXp = toyItem?.xpReward || recipe.sellXp;
+  // Always the toy type ("Teddy Bear"), not the crafted item's full name ("Brown Teddy Bear")
+  const toyName = recipe.displayName;
   const percentDone = Math.round(((recipe.craftSeconds - secondsRemaining) / recipe.craftSeconds) * 100);
   const isCrafting = craftState !== "idle";
 
@@ -118,10 +120,10 @@ export const RecipeCard = ({
         </span>
         <div>
           <h3 id={`${id}-title`} className="tc-recipe__title">
-            {recipe.displayName}
+            {toyName}
           </h3>
           <p className="tc-recipe__meta">
-            Takes {formatTime(recipe.craftSeconds)} · Sells for {sellTokens} Toy Tokens · {sellXp} XP
+            Takes {formatTime(recipe.craftSeconds)}
           </p>
         </div>
       </div>
@@ -133,7 +135,7 @@ export const RecipeCard = ({
             const hasEnough = have >= needed;
             return (
               <li key={name} className={`tc-recipe__material${hasEnough ? "" : " tc-recipe__material--short"}`}>
-                <MaterialArt name={name} />
+                <MaterialArt imageUrl={materialIcons[name]} name={name} />
                 <span>
                   {name} {Math.min(have, needed)}/{needed}
                 </span>

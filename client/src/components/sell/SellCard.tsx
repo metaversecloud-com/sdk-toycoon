@@ -4,6 +4,9 @@ import { useEffect, useId, useState } from "react";
 import { ToyRecipeType, ToyTypeId } from "@shared/constants";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 
+// utils
+import { WORLD_OBJECTS } from "@/utils";
+
 // Placeholder toy art until toy items have images
 const PLACEHOLDER_TOY_EMOJI: { [id in ToyTypeId]: string } = {
   rocking_horse: "🐴",
@@ -14,8 +17,9 @@ const PLACEHOLDER_TOY_EMOJI: { [id in ToyTypeId]: string } = {
 const plural = (count: number, name: string) => `${count} ${name}${count === 1 ? "" : "s"}`;
 
 /**
- * One crafted toy on the Sell counter: how many you have, a quantity picker (1 up to how many you have), the payout for
- * that many, and the Sell button.
+ * One crafted toy at the Cashier, compact for the drawer: name and the payout for the picked amount on top, then a
+ * quantity picker (1 up to how many you have, starting at all of them) beside the Sell button. Toys you have none of
+ * just say how to get one.
  */
 export const SellCard = ({
   isBusy,
@@ -33,47 +37,53 @@ export const SellCard = ({
   toyItem?: InventoryItemType;
 }) => {
   const id = useId();
-  const [quantity, setQuantity] = useState(1);
+  // Starts at everything you have; − lowers it
+  const [quantity, setQuantity] = useState(Math.max(ownedCount, 1));
 
-  // Keep the picked amount within what the player has (e.g. after selling some)
+  // Back to "all of them" whenever the count changes (a sale, or a newly crafted toy)
   useEffect(() => {
-    setQuantity((current) => Math.min(Math.max(current, 1), Math.max(ownedCount, 1)));
+    setQuantity(Math.max(ownedCount, 1));
   }, [ownedCount]);
 
-  const name = toyItem?.displayName ?? recipe.displayName;
+  // Always the toy type ("Teddy Bear"), not the crafted item's full name ("Brown Teddy Bear")
+  const name = recipe.displayName;
   const tokensEach = toyItem?.reward || recipe.sellTokens;
   const xpEach = toyItem?.xpReward || recipe.sellXp;
   const canSell = !!toyItem && ownedCount > 0;
   const reason = !toyItem
     ? `The ${recipe.displayName} isn't set up yet.`
     : ownedCount < 1
-      ? `Craft a ${recipe.displayName} at the Workshop first.`
+      ? `Craft a ${recipe.displayName} at ${WORLD_OBJECTS.assembly} first.`
       : null;
 
   const setClamped = (value: number) => setQuantity(Math.min(Math.max(Math.round(value) || 1, 1), ownedCount));
 
   return (
-    <li className="tc-recipe" aria-labelledby={`${id}-title`}>
-      <div className="tc-recipe__header">
+    <li className="tc-recipe tc-sell-card" aria-labelledby={`${id}-title`}>
+      <div className="tc-sell-card__header">
         <span className="tc-recipe__art" aria-hidden="true">
           {toyItem?.icon ? <img src={toyItem.icon} alt="" /> : PLACEHOLDER_TOY_EMOJI[recipe.id]}
         </span>
-        <div>
-          <h3 id={`${id}-title`} className="tc-recipe__title">
-            {name}
-          </h3>
-          <p className="tc-recipe__meta">
-            You have {ownedCount} · {tokensEach} Toy Tokens + {xpEach} XP each
+        <h3 id={`${id}-title`} className="tc-recipe__title">
+          {name}
+        </h3>
+        {canSell && (
+          <p className="tc-sell-card__payout" aria-live="polite">
+            <span>
+              <span aria-hidden="true">🪙 </span>+{tokensEach * quantity}
+              <span className="sr-only"> Toy Tokens</span>
+            </span>
+            <span>+{xpEach * quantity} XP</span>
           </p>
-        </div>
+        )}
       </div>
 
-      {canSell && (
-        <div className="tc-qty">
-          <label htmlFor={`${id}-qty`} className="tc-recipe__meta">
-            How many?
-          </label>
+      {canSell ? (
+        <div className="tc-sell-card__actions">
           <div className="tc-qty__controls">
+            <label htmlFor={`${id}-qty`} className="sr-only">
+              How many to sell
+            </label>
             <button
               type="button"
               className="tc-qty__step"
@@ -103,36 +113,19 @@ export const SellCard = ({
             >
               +
             </button>
-            <button
-              type="button"
-              className="tc-qty__all"
-              disabled={isDisabled || quantity === ownedCount}
-              onClick={() => setQuantity(ownedCount)}
-            >
-              All ({ownedCount})
-            </button>
           </div>
+          <button
+            type="button"
+            className="tc-sell-card__sell"
+            disabled={isDisabled}
+            aria-label={`Sell ${plural(quantity, name)}`}
+            onClick={() => onSell(quantity)}
+          >
+            {isBusy ? "Selling..." : `Sell ${quantity}`}
+          </button>
         </div>
-      )}
-
-      <p className="tc-sell-price" aria-live="polite">
-        <span aria-hidden="true">🪙 </span>+{tokensEach * (canSell ? quantity : 1)} Toy Tokens · +
-        {xpEach * (canSell ? quantity : 1)} XP
-      </p>
-
-      <button
-        type="button"
-        className="tc-cta"
-        disabled={isDisabled || !canSell}
-        aria-describedby={reason ? `${id}-reason` : undefined}
-        onClick={() => onSell(quantity)}
-      >
-        {isBusy ? "Selling..." : canSell ? `Sell ${plural(quantity, name)}` : `Sell a ${name}`}
-      </button>
-      {reason && (
-        <p id={`${id}-reason`} className="tc-recipe__blocked">
-          {reason}
-        </p>
+      ) : (
+        <p className="tc-recipe__blocked">{reason}</p>
       )}
     </li>
   );

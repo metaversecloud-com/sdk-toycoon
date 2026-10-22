@@ -1,6 +1,9 @@
 // components
 import { TeleportButton } from "@/components";
 
+// utils
+import { WORLD_OBJECTS } from "@/utils";
+
 /**
  * Shown on gameplay pages (Materials, Workshop) to players who haven't claimed a booth in this world yet.
  * The server enforces the same rule, so this is just the friendly version.
@@ -13,11 +16,11 @@ export const ClaimBoothFirst = ({ pageTitle, unlocks }: { pageTitle: string; unl
     <div className="tc-welcome">
       <div className="tc-panel">
         <h3 className="tc-panel__title">
-          <span aria-hidden="true">🔒 </span>Claim a booth first
+          <span aria-hidden="true">🔒 </span>Claim a display first
         </h3>
-        <p className="p2">{unlocks} Head to Start Here to claim one — it's free!</p>
+        <p className="p2">{unlocks} Head to the {WORLD_OBJECTS.start} to claim one — it's free!</p>
         <TeleportButton destination="main-scene" className="tc-cta">
-          Go to Start Here
+          Go to the {WORLD_OBJECTS.start}
         </TeleportButton>
       </div>
     </div>

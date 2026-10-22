@@ -52,14 +52,14 @@ export const AbandonBoothButton = ({
         disabled={isAbandoning}
         onClick={() => setIsConfirming(true)}
       >
-        {isAbandoning ? "Giving up booth..." : "Abandon my booth"}
+        {isAbandoning ? "Giving up display..." : "Abandon my display"}
       </button>
 
       {isConfirming && (
         <ConfirmationModal
-          title="Abandon your booth?"
-          message="Your booth will open up for someone else to claim, and any decorations in it go back to your inventory. You keep your materials, toys, Toy Tokens, and XP, and you can claim a new booth any time."
-          confirmLabel="Abandon booth"
+          title="Abandon your display?"
+          message="Your display will open up for someone else to claim, and any decorations on it go back to your inventory. You keep your materials, toys, Toy Tokens, and XP, and you can claim a new display any time."
+          confirmLabel="Abandon display"
           handleOnConfirm={abandonBooth}
           handleToggleShowConfirmationModal={() => setIsConfirming(false)}
         />

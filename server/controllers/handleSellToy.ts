@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { getCraftedToyItem, getToyRecipeById, LEVEL_UP_TOKEN_REWARDS, ToyTypeId } from "@shared/constants/index.js";
-import { getLevelFromXp } from "@shared/levels.js";
+import { getCraftedToyItem, getToyRecipeById, ToyTypeId } from "@shared/constants/index.js";
 import {
+  awardXp,
+  AwardXpResultType,
   claimActionLock,
-  DroppedAsset,
   errorHandler,
   getBoothIndex,
   getCredentials,
@@ -11,9 +11,8 @@ import {
   initializeVisitorData,
   modifyVisitorInventoryItem,
   requireBoothInWorld,
-  updateLeaderboardEntry,
 } from "@utils/index.js";
-import { CURRENCY_ITEM_NAME, XP_ITEM_NAME } from "../constants.js";
+import { CURRENCY_ITEM_NAME } from "../constants.js";
 
 /**
  * Sells crafted toys ({ recipeId, quantity = 1 }) at a fixed price each in Toy Tokens + XP (item metadata
@@ -55,7 +54,7 @@ export const handleSellToy = async (req: Request, res: Response) => {
 
     // Each completed step records how to undo it, so a failure partway leaves the player exactly where they started
     const undo: (() => Promise<unknown>)[] = [];
-    let toyItem, tokensItem, xpItem;
+    let toyItem, tokensItem, xpResult: AwardXpResultType;
     try {
       toyItem = await modifyVisitorInventoryItem({ credentials, visitor, id: toy.id, quantity: -quantity });
       undo.push(() => modifyVisitorInventoryItem({ credentials, visitor, id: toy.id, quantity }));
@@ -63,7 +62,15 @@ export const handleSellToy = async (req: Request, res: Response) => {
       tokensItem = await modifyVisitorInventoryItem({ credentials, visitor, name: CURRENCY_ITEM_NAME, quantity: tokensEarned });
       undo.push(() => modifyVisitorInventoryItem({ credentials, visitor, name: CURRENCY_ITEM_NAME, quantity: -tokensEarned }));
 
-      xpItem = await modifyVisitorInventoryItem({ credentials, visitor, name: XP_ITEM_NAME, quantity: xpEarned });
+      // Also pays any level-up bonus, updates the booth's level, and refreshes the leaderboard
+      xpResult = await awardXp({
+        amount: xpEarned,
+        boothKeyAssetId: booth.keyAssetId,
+        credentials,
+        saveLevelUpStats: false,
+        visitor,
+        visitorData,
+      });
     } catch (sellError) {
       for (const step of undo.reverse()) {
         await step().catch((error) =>
@@ -73,24 +80,8 @@ export const handleSellToy = async (req: Request, res: Response) => {
       throw sellError;
     }
 
-    // Level-ups: pay each new level's Toy Token bonus. The sale already succeeded, so these are best-effort.
-    const levelBefore = visitorInventory.level;
-    const xp = xpItem.quantity;
-    const level = getLevelFromXp(xp);
-    const levelsGained = Array.from({ length: Math.max(0, level - levelBefore) }, (_, i) => levelBefore + i + 1);
-    let levelUpTokens = 0;
-    let tokens = tokensItem.quantity;
-    for (const newLevel of levelsGained) {
-      const bonus = LEVEL_UP_TOKEN_REWARDS[newLevel] ?? 0;
-      if (!bonus) continue;
-      try {
-        tokens = (await modifyVisitorInventoryItem({ credentials, visitor, name: CURRENCY_ITEM_NAME, quantity: bonus }))
-          .quantity;
-        levelUpTokens += bonus;
-      } catch (error) {
-        errorHandler({ error, functionName: "handleSellToy", message: `Error paying level ${newLevel} bonus` });
-      }
-    }
+    const { levelsGained, levelUpTokens, xp, level } = xpResult;
+    const tokens = xpResult.tokens ?? tokensItem.quantity;
 
     const totalCoinsEarned = (visitorData.totalCoinsEarned || 0) + tokensEarned + levelUpTokens;
     const totalToysSold = (visitorData.totalToysSold || 0) + quantity;
@@ -99,25 +90,6 @@ export const handleSellToy = async (req: Request, res: Response) => {
     await visitor
       .updateDataObject({ totalCoinsEarned, totalToysSold }, { analytics })
       .catch((error: any) => errorHandler({ error, functionName: "handleSellToy", message: "Error saving lifetime earnings" }));
-
-    if (levelsGained.length) {
-      // The booth shows its owner's level to visitors
-      DroppedAsset.create(booth.keyAssetId, urlSlug, { credentials: { ...credentials, assetId: booth.keyAssetId } })
-        .updateDataObject({ level }, {})
-        .catch((error: any) => errorHandler({ error, functionName: "handleSellToy", message: "Error updating booth level" }));
-      visitor
-        .fireToast({
-          groupId: "toycoon-level-up",
-          title: `Level ${level}!`,
-          text: levelUpTokens ? `You earned ${levelUpTokens} bonus Toy Tokens and unlocked new toys.` : "You unlocked new toys.",
-        })
-        .catch((error: any) => errorHandler({ error, functionName: "handleSellToy", message: "Error firing level-up toast" }));
-    }
-
-    updateLeaderboardEntry({
-      credentials,
-      stats: { totalXp: xp, level, totalToysCrafted: visitorData.totalToysCrafted || 0 },
-    }).catch((error) => errorHandler({ error, functionName: "handleSellToy", message: "Error updating leaderboard" }));
 
     return res.json({
       success: true,

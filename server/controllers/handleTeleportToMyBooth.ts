@@ -25,7 +25,7 @@ export const handleTeleportToMyBooth = async (req: Request, res: Response) => {
 
     const ownedBoothSceneDropId = getOwnedBoothSceneDropId({ booths, profileId, urlSlug, visitorData });
     if (!ownedBoothSceneDropId) {
-      return res.status(404).json({ success: false, message: "You don't have a booth in this world yet." });
+      return res.status(404).json({ success: false, message: "You don't have a display in this world yet." });
     }
 
     const { keyAssetId } = booths[ownedBoothSceneDropId];
@@ -38,7 +38,7 @@ export const handleTeleportToMyBooth = async (req: Request, res: Response) => {
       credentials,
       droppedAsset: boothAsset,
       sceneDropId: ownedBoothSceneDropId,
-      title: "My Booth",
+      title: "My Display",
       visitor,
     });
 

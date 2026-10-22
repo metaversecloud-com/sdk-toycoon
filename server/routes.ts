@@ -17,6 +17,7 @@ import {
   handleStartMaterial,
   handleTeleportToMainScene,
   handleTeleportToMyBooth,
+  handleTeleportToStation,
 } from "./controllers/index.js";
 import { requireAdmin } from "./middleware/requireAdmin.js";
 import { getVersion } from "@utils/getVersion.js";
@@ -55,6 +56,7 @@ router.post("/collect-toy", handleCollectToy);
 router.post("/sell-toy", handleSellToy);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);
+router.post("/teleport/:station(materials|assembly|cashier|shop)", handleTeleportToStation);
 
 // Admin — every route here is gated by requireAdmin
 router.post("/admin/clear-booth", requireAdmin, handleClearBooth);

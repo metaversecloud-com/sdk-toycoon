@@ -1,8 +1,16 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 // components
-import { ClaimBoothFirst, MaterialStation, MaterialsInventoryBar, PageContainer, PlayerStats } from "@/components";
+import {
+  ActionAlert,
+  ClaimBoothFirst,
+  LevelUpModal,
+  MaterialStation,
+  MaterialsInventoryBar,
+  PageContainer,
+  PlayerStats,
+} from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
@@ -12,8 +20,18 @@ import { ErrorType } from "@/context/types";
 import { useServerNow } from "@/hooks/useServerNow";
 
 // utils
-import { backendAPI, patchGame, setErrorMessage, setGameState } from "@/utils";
-import { getMaterialCap } from "@shared/constants";
+import {
+  applyXpResult,
+  backendAPI,
+  getErrorText,
+  patchGame,
+  setErrorMessage,
+  setGameState,
+  WORLD_OBJECTS,
+  XpResultType,
+} from "@/utils";
+import { getMaterialCap, MATERIAL_COLLECT_XP } from "@shared/constants";
+import { getLevelFromXp } from "@shared/levels";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 import { VisitorInventoryItemType } from "@shared/types/VisitorData";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
@@ -23,7 +41,8 @@ import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
  * only needs the item (plus a stationImageUrl in its metadata for real art). Each station is two steps:
  * Start → wait spawnIntervalSeconds → Collect (one unit). Countdowns here only mirror the server's timer for display;
  * the server decides when a station is ready. Each material is capped (Wood 20, Fabric 10, …).
- * Taps update the screen immediately (optimistic) and are corrected by the server's reply — or undone if it refuses.
+ * Taps update the screen immediately (optimistic) and are corrected by the server's reply — or undone if it refuses,
+ * with the reason shown right above the dock. Each unit collected earns MATERIAL_COLLECT_XP.
  */
 export const Materials = () => {
   const dispatch = useContext(GlobalDispatchContext);
@@ -41,7 +60,13 @@ export const Materials = () => {
   // Stations with a request in flight ("all" while Collect All runs). Each station is independent, so several can be
   // started back to back without waiting for each other.
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+  // Collects still waiting on the server, by material id. A collect doesn't lock its station: the player can tap Start
+  // straight away, and that start waits here for the collect to land first (the server only starts an emptied bin).
+  // Resolves false if the collect failed.
+  const collectsInFlight = useRef<{ [materialId: string]: Promise<boolean> }>({});
   const [statusMessage, setStatusMessage] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [levelUp, setLevelUp] = useState<XpResultType>(null);
 
   // Lets Topia bust the server's ecosystem inventory cache when new items are uploaded
   const [searchParams] = useSearchParams();
@@ -92,6 +117,14 @@ export const Materials = () => {
     ({ ...material, ecosystemItemId: material.id, quantity: 0, availableQuantity: 0 } as VisitorInventoryItemType);
   const withQuantity = (item: VisitorInventoryItemType, quantity: number) => ({ ...item, quantity, availableQuantity: quantity });
 
+  // XP shown right away for collecting; the server's reply has the confirmed total (and any level-up)
+  const previousXp = visitorInventory?.xp ?? 0;
+  const xpPatch = (xp: number) => ({ inventory: { xp, level: getLevelFromXp(xp) } });
+  const applyCollectXp = (xpResult: XpResultType) => {
+    applyXpResult(dispatch, xpResult);
+    if (xpResult?.levelsGained.length) setLevelUp(xpResult);
+  };
+
   const handleStart = async (material: InventoryItemType) => {
     const { id, name, displayName } = material;
     if (busyIds.has(id) || busyIds.has("all")) return;
@@ -101,14 +134,19 @@ export const Materials = () => {
     patchGame(dispatch, { materialTimers: { [name]: Date.now() + (serverTimeOffset ?? 0) } });
     setBusy(id, true);
     setStatusMessage("");
-    setErrorMessage(dispatch, "");
+    setActionError("");
     try {
+      // If this station's collect is still on its way, start once it lands. If it failed, the collect already put the
+      // station back to Collect! and showed why, so there's nothing to start.
+      const collected = await (collectsInFlight.current[id] ?? true);
+      if (!collected) return;
+
       const { data } = await backendAPI.post("/start-material", { materialId: id });
       patchGame(dispatch, { materialTimers: { [name]: data.generationStartedAt } });
       setStatusMessage(`Started making ${displayName}.`);
     } catch (error) {
       patchGame(dispatch, { materialTimers: { [name]: previousTimer } });
-      setErrorMessage(dispatch, error as ErrorType);
+      setActionError(getErrorText(error as ErrorType));
     } finally {
       setBusy(id, false);
     }
@@ -116,27 +154,36 @@ export const Materials = () => {
 
   const handleCollect = async (material: InventoryItemType) => {
     const { id, name, displayName } = material;
-    if (busyIds.has(id) || busyIds.has("all")) return;
+    if (busyIds.has(id) || busyIds.has("all") || id in collectsInFlight.current) return;
     const previousTimer = visitorData?.materialGenerationStartedAt?.[name] ?? null;
     const previousItem = ownedItem(material);
+    let finishCollect: (collected: boolean) => void = () => undefined;
+    collectsInFlight.current[id] = new Promise((resolve) => (finishCollect = resolve));
 
     // Count it and reset the station right away; the server's reply has the confirmed total
     patchGame(dispatch, {
       materialTimers: { [name]: null },
       materials: { [id]: withQuantity(previousItem, previousItem.quantity + 1) },
+      ...xpPatch(previousXp + MATERIAL_COLLECT_XP),
     });
-    setBusy(id, true);
     setStatusMessage("");
-    setErrorMessage(dispatch, "");
+    setActionError("");
     try {
       const { data } = await backendAPI.post("/collect-material", { materialId: id });
       patchGame(dispatch, { materials: { [id]: data.item } });
-      setStatusMessage(`Collected 1 ${displayName}.`);
+      applyCollectXp(data.xpResult);
+      setStatusMessage(`Collected 1 ${displayName}. +${MATERIAL_COLLECT_XP} XP`);
+      finishCollect(true);
     } catch (error) {
-      patchGame(dispatch, { materialTimers: { [name]: previousTimer }, materials: { [id]: previousItem } });
-      setErrorMessage(dispatch, error as ErrorType);
+      patchGame(dispatch, {
+        materialTimers: { [name]: previousTimer },
+        materials: { [id]: previousItem },
+        ...xpPatch(previousXp),
+      });
+      setActionError(getErrorText(error as ErrorType));
+      finishCollect(false);
     } finally {
-      setBusy(id, false);
+      delete collectsInFlight.current[id];
     }
   };
 
@@ -153,10 +200,11 @@ export const Materials = () => {
     patchGame(dispatch, {
       materialTimers: Object.fromEntries(ready.map(({ name }) => [name, null])),
       materials: Object.fromEntries(previous.map(({ material, item }) => [material.id, withQuantity(item, item.quantity + 1)])),
+      ...xpPatch(previousXp + MATERIAL_COLLECT_XP * ready.length),
     });
     setBusy("all", true);
     setStatusMessage("");
-    setErrorMessage(dispatch, "");
+    setActionError("");
     try {
       const { data } = await backendAPI.post("/collect-all-materials");
       const collected: { [id: string]: VisitorInventoryItemType } = data.collected;
@@ -166,14 +214,17 @@ export const Materials = () => {
         materials: { ...Object.fromEntries(skipped.map(({ material, item }) => [material.id, item])), ...collected },
         materialTimers: Object.fromEntries(skipped.map(({ material, timer }) => [material.name, timer])),
       });
+      if (data.xpResult) applyCollectXp(data.xpResult);
+      else patchGame(dispatch, xpPatch(previousXp));
       const names = Object.values(collected).map(({ displayName, name }) => displayName || name);
-      setStatusMessage(`Collected ${names.join(", ")}.`);
+      setStatusMessage(`Collected ${names.join(", ")}. +${MATERIAL_COLLECT_XP * names.length} XP`);
     } catch (error) {
       patchGame(dispatch, {
         materialTimers: Object.fromEntries(previous.map(({ material, timer }) => [material.name, timer])),
         materials: Object.fromEntries(previous.map(({ material, item }) => [material.id, item])),
+        ...xpPatch(previousXp),
       });
-      setErrorMessage(dispatch, error as ErrorType);
+      setActionError(getErrorText(error as ErrorType));
     } finally {
       setBusy("all", false);
     }
@@ -182,7 +233,10 @@ export const Materials = () => {
   if (!ownsBoothInThisWorld) {
     return (
       <PageContainer isLoading={isLoading}>
-        <ClaimBoothFirst pageTitle="Materials" unlocks="The material stations open once you have your own booth." />
+        <ClaimBoothFirst
+          pageTitle={WORLD_OBJECTS.materials}
+          unlocks="The material stations open once you have your own display."
+        />
       </PageContainer>
     );
   }
@@ -191,13 +245,8 @@ export const Materials = () => {
     <PageContainer isLoading={isLoading}>
       <div className="tc-workshop">
         <div className="tc-workshop__top">
-          <h2 className="tc-sign">Materials</h2>
-          <p className="tc-hint">
-            <span className="tc-hint__icon" aria-hidden="true">
-              ▶
-            </span>
-            Start a station, wait, then collect!
-          </p>
+          <h2 className="tc-sign">{WORLD_OBJECTS.materials}</h2>
+          <p className="tc-hint">Start a station, wait, then collect! +{MATERIAL_COLLECT_XP} XP each</p>
           <PlayerStats visitorInventory={visitorInventory} />
         </div>
 
@@ -236,6 +285,7 @@ export const Materials = () => {
 
       {materials.length > 0 && (
         <div className="tc-dock">
+          <ActionAlert message={actionError} onDismiss={() => setActionError("")} />
           <button
             type="button"
             className="tc-collect-all"
@@ -246,6 +296,15 @@ export const Materials = () => {
           </button>
           <MaterialsInventoryBar materials={materials} visitorInventory={visitorInventory} />
         </div>
+      )}
+
+      {levelUp && (
+        <LevelUpModal
+          level={levelUp.level}
+          bonusTokens={levelUp.levelUpTokens}
+          levelsGained={levelUp.levelsGained}
+          onClose={() => setLevelUp(null)}
+        />
       )}
     </PageContainer>
   );

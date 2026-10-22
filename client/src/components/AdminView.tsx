@@ -16,16 +16,16 @@ const ADMIN_ACTIONS: {
   [key in AdminActionType]: { title: string; message: string; confirmLabel: string };
 } = {
   "clear-booth": {
-    title: "Clear this booth",
+    title: "Clear this display",
     message:
-      "The owner will lose this booth and any decor placed in it. They keep their Toy Tokens, XP, level, and all decor they've bought.",
-    confirmLabel: "Clear booth",
+      "The owner will lose this display and any decor placed on it. They keep their Toy Tokens, XP, level, and all decor they've bought.",
+    confirmLabel: "Clear display",
   },
   "clear-inactive-booths": {
-    title: "Clear inactive booths",
+    title: "Clear inactive displays",
     message:
-      "Every booth whose owner hasn't visited it in 14+ days will be released. Owners keep their Toy Tokens, XP, level, and all decor they've bought.",
-    confirmLabel: "Clear inactive booths",
+      "Every display whose owner hasn't visited it in 14+ days will be released. Owners keep their Toy Tokens, XP, level, and all decor they've bought.",
+    confirmLabel: "Clear inactive displays",
   },
   "reset-leaderboard": {
     title: "Reset leaderboard",
@@ -36,7 +36,7 @@ const ADMIN_ACTIONS: {
   "reset-world": {
     title: "Reset world",
     message:
-      "Every booth in this world will be released. Players keep their Toy Tokens, XP, level, and all decor they've bought. This can't be undone.",
+      "Every display in this world will be released. Players keep their Toy Tokens, XP, level, and all decor they've bought. This can't be undone.",
     confirmLabel: "Reset world",
   },
 };
@@ -50,8 +50,8 @@ const describeResult = (
   const cleared = data.clearedSceneDropIds?.length || 0;
   const failed = data.failedSceneDropIds?.length || 0;
   return (
-    `${cleared === 1 ? "1 booth" : `${cleared} booths`} cleared.` +
-    (failed ? ` ${failed === 1 ? "1 booth" : `${failed} booths`} couldn't be cleared — try again.` : "")
+    `${cleared === 1 ? "1 display" : `${cleared} displays`} cleared.` +
+    (failed ? ` ${failed === 1 ? "1 display" : `${failed} displays`} couldn't be cleared — try again.` : "")
   );
 };
 
@@ -86,16 +86,16 @@ export const AdminView = () => {
       {boothsFullAlert && (
         <div className="card danger" role="status">
           <div className="card-details">
-            <h3 className="card-title h4">All booths are full</h3>
+            <h3 className="card-title h4">All displays are full</h3>
             <p className="p2">
               {boothsFullAlert.turnedAwayCount === 1
-                ? "1 player couldn't get a booth"
+                ? "1 player couldn't get a display"
                 : `${boothsFullAlert.turnedAwayCount} players couldn't get a booth`}
               , most recently on{" "}
               <time dateTime={new Date(boothsFullAlert.lastTriggeredAt).toISOString()}>
                 {new Date(boothsFullAlert.lastTriggeredAt).toLocaleString()}
               </time>
-              . Clearing inactive booths or adding booth scenes will make room.
+              . Clearing inactive displays or adding booth scenes will make room.
             </p>
           </div>
         </div>
@@ -108,7 +108,7 @@ export const AdminView = () => {
           disabled={isWorking}
           onClick={() => setPendingAction("clear-booth")}
         >
-          Clear this booth ({targetBooth.ownerDisplayName})
+          Clear this display ({targetBooth.ownerDisplayName})
         </button>
       )}
       <button
@@ -117,7 +117,7 @@ export const AdminView = () => {
         disabled={isWorking}
         onClick={() => setPendingAction("clear-inactive-booths")}
       >
-        Clear inactive booths (14+ days)
+        Clear inactive displays (14+ days)
       </button>
       <button
         type="button"

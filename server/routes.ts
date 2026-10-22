@@ -10,6 +10,7 @@ import {
   handleCraftToy,
   handleGetGameState,
   handleGetLeaderboard,
+  handlePlaceDecoration,
   handlePurchaseDecoration,
   handleResetLeaderboard,
   handleResetWorld,
@@ -55,6 +56,7 @@ router.post("/collect-toy", handleCollectToy);
 router.post("/sell-toy", handleSellToy);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);
+router.post("/place-decoration", handlePlaceDecoration);
 
 // Admin — every route here is gated by requireAdmin
 router.post("/admin/clear-booth", requireAdmin, handleClearBooth);

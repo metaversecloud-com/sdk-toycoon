@@ -10,6 +10,7 @@ import { InteractiveParams, SET_HAS_INTERACTIVE_PARAMS } from "./context/types";
 
 // utils
 import { setupBackendAPI } from "./utils/backendAPI";
+import { Decorations } from "./pages/Decorations";
 
 const App = () => {
   const navigate = useNavigate();
@@ -89,6 +90,7 @@ const App = () => {
       <Route path="/workshop" element={<Workshop />} />
       <Route path="/sell" element={<Sell />} />
       <Route path="*" element={<Error />} />
+      <Route path="/decorations" element={<Decorations />} />
     </Routes>
   );
 };

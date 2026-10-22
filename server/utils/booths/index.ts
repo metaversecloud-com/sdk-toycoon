@@ -4,3 +4,4 @@ export * from "./clearBoothsWhere.js";
 export * from "./getBoothData.js";
 export * from "./getBoothIndex.js";
 export * from "./getOwnedBoothSceneDropId.js";
+export * from "./resetBoothDecor.js"

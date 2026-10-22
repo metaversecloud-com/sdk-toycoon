@@ -41,16 +41,17 @@ export const clearBooth = async ({
 
       // Skip if the owner's record points at a different booth in this world — that data isn't ours to clear
       if (ownerData && (!recordedBoothId || recordedBoothId === sceneDropId)) {
-        const { [urlSlug]: _removedBooth, ...boothIds } = ownerData.boothIds || {};
-        const update: Partial<VisitorDataObjectType> = { boothIds };
+        // Dot-paths set to null so nested keys are actually removed (a plain object update may only merge)
+        const update: { [path: string]: unknown } = {};
 
-        // placedDecorations is { [slot]: { [urlSlug]: decorationName } } — remove this world from every slot
-        const update: { [path: string]: unknown } = { boothIds: boothIds };
+        if (recordedBoothId) update[`boothIds.${urlSlug}`] = null;
 
+        // placedDecorations is { [slot]: { [urlSlug]: decorationName } }, so un-place this world from every slot
         for (const [slot, placementsByWorld] of Object.entries(ownerData.placedDecorations || {})) {
           if (placementsByWorld?.[urlSlug] !== undefined) update[`placedDecorations.${slot}.${urlSlug}`] = null;
         }
-        await owner.updateDataObject(update, {});
+
+        if (Object.keys(update).length > 0) await owner.updateDataObject(update, {});
       }
     }
 

@@ -11,14 +11,15 @@ import { ClaimBoothResponseType } from "@shared/types/BoothTypes.js";
 import { MAX_CLAIM_ATTEMPTS } from "../constants.js";
 
 /**
- * Assigns the visitor an open booth in this world (one booth per visitor per world).
+ * Assigns the visitor an open booth in this world (one booth per visitor per world). Opened from an open booth's own
+ * asset, it claims that booth; from Start Here (or if that booth was just taken), any open one.
  * - Visitor already owns a booth here → returns it so the client can teleport them straight there
  * - No open booths → flags an alert for admins on the World data object
  */
 export const handleClaimBooth = async (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
-    const { profileId, urlSlug } = credentials;
+    const { profileId, sceneDropId: clickedSceneDropId, urlSlug } = credentials;
 
     const [{ visitor, visitorData, visitorInventory }, { booths, world, worldData }] = await Promise.all([
       initializeVisitorData(credentials),
@@ -35,7 +36,7 @@ export const handleClaimBooth = async (req: Request, res: Response) => {
     }
 
     if (Object.keys(booths).length === 0) {
-      return res.status(404).json({ success: false, message: "This world doesn't have any booths set up yet." });
+      return res.status(404).json({ success: false, message: "This world doesn't have any displays set up yet." });
     }
 
     // Random order so simultaneous claimers spread across booths instead of colliding on the same one
@@ -44,6 +45,9 @@ export const handleClaimBooth = async (req: Request, res: Response) => {
       const j = Math.floor(Math.random() * (i + 1));
       [openBoothIds[i], openBoothIds[j]] = [openBoothIds[j], openBoothIds[i]];
     }
+    // The booth the visitor is standing at goes first
+    const clickedIndex = openBoothIds.indexOf(clickedSceneDropId);
+    if (clickedIndex > 0) openBoothIds.unshift(...openBoothIds.splice(clickedIndex, 1));
 
     let claimedBoothSceneDropId: string | null = null;
     let lockedAttempts = 0;
@@ -86,7 +90,7 @@ export const handleClaimBooth = async (req: Request, res: Response) => {
     if (lockedAttempts > 0) {
       return res.status(409).json({
         success: false,
-        message: "Booths are being claimed right now. Please try again.",
+        message: "Displays are being claimed right now. Please try again.",
       });
     }
 

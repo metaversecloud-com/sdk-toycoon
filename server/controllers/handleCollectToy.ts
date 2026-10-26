@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { getCraftedToyItem, getToyRecipeById, ToyTypeId } from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
+  awardBonusXp,
   claimActionLock,
   errorHandler,
   getBoothIndex,
@@ -10,12 +11,12 @@ import {
   initializeVisitorData,
   modifyVisitorInventoryItem,
   requireBoothInWorld,
-  updateLeaderboardEntry,
 } from "@utils/index.js";
 
 /**
  * Step 2 of 2: collects a finished toy ({ recipeId }) once its craft timer is done (server-validated), puts it on the
- * player's shelf, and counts the craft. If granting the toy fails, the craft stays ready so nothing is lost.
+ * player's shelf, counts the craft, and earns the recipe's craftXp. If granting the toy fails, the craft stays ready so
+ * nothing is lost.
  */
 export const handleCollectToy = async (req: Request, res: Response) => {
   try {
@@ -25,12 +26,12 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     const recipe = getToyRecipeById(req.body?.recipeId as ToyTypeId);
     if (!recipe) throw "Valid recipeId is required";
 
-    const [{ ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths }] = await Promise.all([
+    const [{ ecosystemToys }, { visitor, visitorData }, { booths }] = await Promise.all([
       getInventoryItems(credentials),
       initializeVisitorData(credentials),
       getBoothIndex(credentials),
     ]);
-    await requireBoothInWorld(credentials, visitorData, "crafting toys", booths);
+    const booth = await requireBoothInWorld(credentials, visitorData, "crafting toys", booths);
 
     const toy = getCraftedToyItem(recipe, Object.values(ecosystemToys));
     if (!toy) throw `The ${recipe.displayName} toy item isn't set up in the ecosystem.`;
@@ -52,9 +53,21 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     });
     if (!claimed) return res.status(409).json({ success: false, message: "Already collecting — try again in a moment." });
 
-    let toyItem;
+    // The craft's XP (which also refreshes the leaderboard) is granted at the same time as the toy, so it doesn't add a
+    // round trip. awardBonusXp never throws.
+    let toyItem, xpResult;
     try {
-      toyItem = await modifyVisitorInventoryItem({ credentials, visitor, id: toy.id, quantity: 1 });
+      [toyItem, xpResult] = await Promise.all([
+        modifyVisitorInventoryItem({ credentials, visitor, id: toy.id, quantity: 1 }),
+        awardBonusXp({
+          amount: recipe.craftXp,
+          boothKeyAssetId: booth.keyAssetId,
+          credentials,
+          totalToysCrafted,
+          visitor,
+          visitorData,
+        }),
+      ]);
     } catch (grantError) {
       // Put the craft back to ready and undo the count, so the toy isn't lost
       await visitor
@@ -63,7 +76,7 @@ export const handleCollectToy = async (req: Request, res: Response) => {
       throw grantError;
     }
 
-    // Analytics and leaderboard are best-effort — the toy is already on the shelf
+    // Analytics are best-effort — the toy is already on the shelf
     const analytics = [{ analyticName: "toycoon_toy_crafted", profileId, urlSlug, uniqueKey: profileId }];
     if (recipe.id === "teddy_bear") {
       analytics.push({ analyticName: "toycoon_bear_crafted", profileId, urlSlug, uniqueKey: profileId });
@@ -71,12 +84,8 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     visitor
       .updateDataObject({}, { analytics })
       .catch((error: any) => errorHandler({ error, functionName: "handleCollectToy", message: "Error tracking analytics" }));
-    updateLeaderboardEntry({
-      credentials,
-      stats: { totalXp: visitorInventory.xp, level: visitorInventory.level, totalToysCrafted },
-    }).catch((error) => errorHandler({ error, functionName: "handleCollectToy", message: "Error updating leaderboard" }));
 
-    return res.json({ success: true, recipeId: recipe.id, toy: toyItem, totalToysCrafted });
+    return res.json({ success: true, recipeId: recipe.id, toy: toyItem, totalToysCrafted, xpResult });
   } catch (error) {
     return errorHandler({ error, functionName: "handleCollectToy", message: "Error collecting toy", req, res });
   }

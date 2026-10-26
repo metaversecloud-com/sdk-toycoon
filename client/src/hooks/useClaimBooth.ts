@@ -9,7 +9,9 @@ import { backendAPI, setErrorMessage, setGameState } from "@/utils";
 import { ClaimBoothResultType } from "@shared/types/BoothTypes";
 
 /**
- * Claims an open booth for the visitor (optionally teleporting them to it), then refreshes game state
+ * Claims an open booth for the visitor, then refreshes game state. Claiming from an open booth's own asset claims that
+ * booth (the server tries the clicked booth first). teleportAfterClaim sends the player to their new booth — unless it's
+ * the booth they're standing at (pass its sceneDropId as currentSceneDropId).
  */
 export const useClaimBooth = () => {
   const dispatch = useContext(GlobalDispatchContext);
@@ -17,7 +19,10 @@ export const useClaimBooth = () => {
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimResult, setClaimResult] = useState<ClaimBoothResultType | null>(null);
 
-  const claimBooth = async ({ teleportAfterClaim = false } = {}) => {
+  const claimBooth = async ({
+    currentSceneDropId,
+    teleportAfterClaim = false,
+  }: { currentSceneDropId?: string; teleportAfterClaim?: boolean } = {}) => {
     setIsClaiming(true);
     setErrorMessage(dispatch, "");
 
@@ -25,7 +30,8 @@ export const useClaimBooth = () => {
       const { data } = await backendAPI.post("/claim-booth");
       setClaimResult(data.result);
 
-      if (teleportAfterClaim && data.result !== "allBoothsTaken") await backendAPI.post("/teleport/my-booth");
+      const isElsewhere = data.ownedBoothSceneDropId !== currentSceneDropId;
+      if (teleportAfterClaim && data.result !== "allBoothsTaken" && isElsewhere) await backendAPI.post("/teleport/my-booth");
 
       const { data: gameState } = await backendAPI.get("/game-state");
       setGameState(dispatch, gameState);

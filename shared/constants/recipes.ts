@@ -14,6 +14,8 @@ export interface ToyRecipeType {
   // Fixed sell price (V1 has no order-matching). Ecosystem metadata rewardTokens / rewardXP override these per item.
   sellTokens: number;
   sellXp: number;
+  // XP for collecting a finished toy from the workbench: more than a material, less than selling it
+  craftXp: number;
   // Max finished toys of this type a player can hold unsold (a toy being crafted counts too)
   cap: number;
   // How long crafting takes. ~2/3 of the recipe's material bottleneck time (economy model: Rocking Horse 45s,
@@ -32,6 +34,7 @@ export const TOY_RECIPES: ToyRecipeType[] = [
     materials: { Wood: 3, Fabric: 1 },
     sellTokens: 3,
     sellXp: 10,
+    craftXp: 3,
     cap: 10,
     craftSeconds: 30,
   },
@@ -42,6 +45,7 @@ export const TOY_RECIPES: ToyRecipeType[] = [
     materials: { Stuffing: 2, Thread: 1, Fabric: 1 },
     sellTokens: 5,
     sellXp: 25,
+    craftXp: 8,
     cap: 8,
     craftSeconds: 60,
     craftedColor: "Brown",
@@ -53,11 +57,16 @@ export const TOY_RECIPES: ToyRecipeType[] = [
     materials: { Wood: 5, Wheels: 4, Gears: 2, Paint: 1 },
     sellTokens: 20,
     sellXp: 100,
+    craftXp: 30,
     cap: 5,
     craftSeconds: 180,
     craftedColor: "Black",
   },
 ];
+
+// XP for each material unit collected — the smallest reward in the loop (collect < craft < sell), so the XP bar moves
+// from the very first collect
+export const MATERIAL_COLLECT_XP = 1;
 
 // Toy Tokens granted once when a player reaches a level (economy model, Leveling tab)
 export const LEVEL_UP_TOKEN_REWARDS: { [level: number]: number } = {

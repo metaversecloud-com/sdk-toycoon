@@ -1,5 +1,6 @@
 export * from "./droppedAssets/index.js";
 export * from "./booths/index.js";
+export * from "./awardXp.js";
 export * from "./claimActionLock.js";
 export * from "./cleanReturnPayload.js";
 export * from "./errorHandler.js";

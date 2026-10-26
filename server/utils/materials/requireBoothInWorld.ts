@@ -4,7 +4,7 @@ import { getBoothIndex } from "../booths/getBoothIndex.js";
 import { getOwnedBoothSceneDropId } from "../booths/getOwnedBoothSceneDropId.js";
 import { standardizeError } from "../standardizeError.js";
 
-export const getClaimBoothFirstMessage = (action: string) => `Claim a booth at Start Here before ${action}.`;
+export const getClaimBoothFirstMessage = (action: string) => `Claim a display at the Start Here sign before ${action}.`;
 
 /**
  * Gameplay (materials, crafting, selling, …) is only for players who own a booth in this world. Throws a 403 otherwise,

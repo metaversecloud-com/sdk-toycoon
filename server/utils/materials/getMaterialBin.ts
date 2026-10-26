@@ -25,7 +25,7 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
     const material = ecosystemMaterials[materialId];
     if (!material) throw "Invalid material";
 
-    await requireBoothInWorld(credentials, visitorData, "collecting materials", booths);
+    const booth = await requireBoothInWorld(credentials, visitorData, "collecting materials", booths);
     if (visitorInventory.level < material.unlockLevel) throw "Material not unlocked yet.";
 
     const owned = visitorInventory.materials[materialId]?.quantity ?? 0;
@@ -35,7 +35,7 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
     const generationStartedAt = visitorData.materialGenerationStartedAt?.[material.name] ?? null;
     const { state } = getMaterialBinState(generationStartedAt, material.spawnIntervalSeconds);
 
-    return { cap, generationStartedAt, material, owned, state, visitor, visitorData };
+    return { booth, cap, generationStartedAt, material, owned, state, visitor, visitorData };
   } catch (error) {
     throw standardizeError(error);
   }

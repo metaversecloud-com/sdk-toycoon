@@ -14,7 +14,7 @@ export const TeleportButton = ({
 }: {
   children: ReactNode;
   className?: string;
-  destination: "my-booth" | "main-scene";
+  destination: "my-booth" | "main-scene" | "materials" | "assembly" | "cashier" | "shop";
 }) => {
   const dispatch = useContext(GlobalDispatchContext);
   const [isTeleporting, setIsTeleporting] = useState(false);

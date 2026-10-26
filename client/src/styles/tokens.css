@@ -50,6 +50,8 @@
   --tc-gold-text: #7a4f0c; /* readable gold-brown on cream */
   --tc-progress: #4a90d9;
   --tc-muted: #8a7a6a;
+  --tc-red: #a3271b; /* error text/border; passes AA on --tc-red-bg */
+  --tc-red-bg: #fdecea;
   --tc-shadow: 0 4px 10px rgba(59, 42, 26, 0.25);
   --tc-shadow-soft: 0 2px 4px rgba(59, 42, 26, 0.2);
 }

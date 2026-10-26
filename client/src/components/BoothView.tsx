@@ -12,33 +12,63 @@ import { useClaimBooth } from "@/hooks/useClaimBooth";
 // types
 import { TargetBoothType } from "@shared/types/BoothTypes";
 
+// utils
+import { WORLD_OBJECTS } from "@/utils";
+import { TOY_RECIPES } from "@shared/constants";
+
 /**
- * Read-only view of a booth, shown to every visitor who clicks a booth's key asset
+ * A booth (shown to players as their "display" at the craft fair), seen by every visitor who clicks its key asset.
+ * An open display can be claimed right here; once it's yours, it tells you where to go next.
  */
 export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
-  const { ownsBoothInThisWorld } = useContext(GlobalStateContext);
+  const { ownsBoothInThisWorld, visitorInventory } = useContext(GlobalStateContext);
   const { claimBooth, claimResult, isClaiming } = useClaimBooth();
-  const resultRef = useRef<HTMLParagraphElement>(null);
+  const resultRef = useRef<HTMLHeadingElement>(null);
+  const allTakenRef = useRef<HTMLParagraphElement>(null);
 
-  const { claimDate, isClaimed, isOwnedByVisitor, level, ownerDisplayName } = booth;
+  const { claimDate, isClaimed, isOwnedByVisitor, level, ownerDisplayName, sceneDropId } = booth;
+  const hasStarted = (visitorInventory?.xp ?? 0) > 0;
 
+  // The claim button disappears once used, so move focus to the result instead of stranding keyboard users
   useEffect(() => {
-    if (claimResult === "allBoothsTaken") resultRef.current?.focus();
+    if (claimResult === "allBoothsTaken") allTakenRef.current?.focus();
+    else if (claimResult) resultRef.current?.focus();
   }, [claimResult]);
 
-  const renderMyBoothAction = () => {
+  const renderNextStep = () => (
+    <div className="tc-panel" role="status">
+      <h3 ref={resultRef} tabIndex={-1} className="tc-panel__title">
+        {claimResult === "claimed" ? "🎉 This display is yours!" : "What's next?"}
+      </h3>
+      <p className="p2">
+        Head back to the workshop. Your first stop is the {WORLD_OBJECTS.materials}: collect Wood and Fabric, craft a{" "}
+        {TOY_RECIPES[0].displayName} at {WORLD_OBJECTS.assembly}, then sell it at the {WORLD_OBJECTS.cashier}.
+      </p>
+      <TeleportButton destination="materials" className="tc-cta">
+        Go to the {WORLD_OBJECTS.materials}
+      </TeleportButton>
+    </div>
+  );
+
+  const renderAction = () => {
     if (isOwnedByVisitor) return <AbandonBoothButton teleportToMainScene />;
-    if (ownsBoothInThisWorld) return <TeleportButton destination="my-booth">Go to my booth</TeleportButton>;
+    if (ownsBoothInThisWorld) return <TeleportButton destination="my-booth">Go to my display</TeleportButton>;
     if (claimResult === "allBoothsTaken") {
       return (
-        <p ref={resultRef} tabIndex={-1} className="p2" role="status">
-          All booths in this world are taken right now. We've let the world admin know.
+        <p ref={allTakenRef} tabIndex={-1} className="p2" role="status">
+          All displays in this world are taken right now. We've let the world admin know.
         </p>
       );
     }
+    // Claims this display; if someone else just took it, the player gets (and is sent to) another open one
     return (
-      <button type="button" className="btn" disabled={isClaiming} onClick={() => claimBooth({ teleportAfterClaim: true })}>
-        {isClaiming ? "Finding you a booth..." : "Teleport to an open booth"}
+      <button
+        type="button"
+        className={isClaimed ? "btn" : "tc-cta"}
+        disabled={isClaiming}
+        onClick={() => claimBooth({ teleportAfterClaim: true, currentSceneDropId: sceneDropId })}
+      >
+        {isClaiming ? "Claiming..." : isClaimed ? "Find me an open display" : "Claim this display"}
       </button>
     );
   };
@@ -49,7 +79,7 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
         <div className="card-details">
           {isClaimed ? (
             <>
-              <h3 className="card-title h3">{isOwnedByVisitor ? "Your booth" : `${ownerDisplayName}'s booth`}</h3>
+              <h3 className="card-title h3">{isOwnedByVisitor ? "Your display" : `${ownerDisplayName}'s display`}</h3>
               <dl className="grid grid-cols-2 gap-1 p2">
                 <dt>Owner</dt>
                 <dd>{ownerDisplayName}</dd>
@@ -67,19 +97,23 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
             </>
           ) : (
             <>
-              <h3 className="card-title h3">Open booth</h3>
+              <h3 className="card-title h3">Open display</h3>
               <p className="card-description p2">
-                Booth not claimed yet...{ownsBoothInThisWorld ? "" : " Teleport to an open one?"}
+                {ownsBoothInThisWorld
+                  ? "Nobody has claimed this display yet. You already have one in this world."
+                  : "Nobody has claimed this display yet. Claim it to show off the toys you make!"}
               </p>
             </>
           )}
         </div>
       </div>
 
+      {isOwnedByVisitor && (claimResult === "claimed" || !hasStarted) && renderNextStep()}
+
       <div className="grid gap-2">
-        {renderMyBoothAction()}
+        {renderAction()}
         <TeleportButton destination="main-scene" className="btn btn-outline">
-          Back to Main Scene
+          Back to the workshop
         </TeleportButton>
       </div>
     </div>

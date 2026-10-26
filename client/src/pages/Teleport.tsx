@@ -12,7 +12,7 @@ import { ErrorType } from "@/context/types";
 import { backendAPI, setErrorMessage, setGameState } from "@/utils";
 
 /**
- * Teleport hub: jump to your booth (claiming one first if needed) or back to the Main Scene
+ * Teleport hub: jump to your booth ("display" to players), claiming one first if needed, or back to the Main Scene
  */
 export const Teleport = () => {
   const dispatch = useContext(GlobalDispatchContext);
@@ -35,11 +35,11 @@ export const Teleport = () => {
   }, [hasInteractiveParams, dispatch]);
 
   return (
-    <PageContainer isLoading={isLoading} headerText="Find your booth">
+    <PageContainer isLoading={isLoading} headerText="Find your display">
       <div className="grid gap-4">
         <StartHere />
         <TeleportButton destination="main-scene" className="btn btn-outline">
-          Back to Main Scene
+          Back to the workshop
         </TeleportButton>
       </div>
     </PageContainer>

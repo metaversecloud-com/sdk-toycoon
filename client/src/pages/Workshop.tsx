@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 // components
-import { ClaimBoothFirst, PageContainer, PlayerStats, RecipeCard } from "@/components";
+import { ActionAlert, ClaimBoothFirst, LevelUpModal, PageContainer, PlayerStats, RecipeCard } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
@@ -12,7 +12,17 @@ import { ErrorType } from "@/context/types";
 import { useServerNow } from "@/hooks/useServerNow";
 
 // utils
-import { backendAPI, patchGame, setErrorMessage, setGameState } from "@/utils";
+import {
+  applyXpResult,
+  backendAPI,
+  getErrorText,
+  getMaterialIcons,
+  patchGame,
+  setErrorMessage,
+  setGameState,
+  WORLD_OBJECTS,
+  XpResultType,
+} from "@/utils";
 import {
   countOwnedToys,
   describeMissingMaterials,
@@ -26,22 +36,34 @@ import {
 } from "@shared/constants";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 import { VisitorInventoryItemType } from "@shared/types/VisitorData";
+import { getLevelFromXp } from "@shared/levels";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
 
 /**
- * The Workshop: craft toys from materials. One workbench per toy the player's level has unlocked (L1 Rocking Horse,
+ * Toy Assembly (the Workshop page): craft toys from materials. One workbench per toy the player's level has unlocked (L1 Rocking Horse,
  * L2 + Teddy Bear, L3 + Train), each crafting one at a time: Craft (materials used) → wait craftSeconds → Collect.
  * Countdowns mirror the server's timer; taps update the screen immediately and are corrected (or undone) by the server.
+ * Collecting a finished toy earns the recipe's craftXp. Toys are always called by their type ("Teddy Bear"), never the
+ * crafted item's color variant name ("Brown Teddy Bear").
  */
 export const Workshop = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { ecosystemToys, hasInteractiveParams, ownsBoothInThisWorld, serverTimeOffset, visitorData, visitorInventory } =
-    useContext(GlobalStateContext);
+  const {
+    ecosystemMaterials,
+    ecosystemToys,
+    hasInteractiveParams,
+    ownsBoothInThisWorld,
+    serverTimeOffset,
+    visitorData,
+    visitorInventory,
+  } = useContext(GlobalStateContext);
 
   const [isLoading, setIsLoading] = useState(true);
   const now = useServerNow();
   const [busyRecipes, setBusyRecipes] = useState<Set<ToyTypeId>>(new Set());
   const [statusMessage, setStatusMessage] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [levelUp, setLevelUp] = useState<XpResultType>(null);
 
   // Lets Topia bust the server's ecosystem inventory cache when new items are uploaded
   const [searchParams] = useSearchParams();
@@ -59,6 +81,7 @@ export const Workshop = () => {
 
   const level = visitorInventory?.level || 1;
   const materialCounts = getMaterialCountsByName(visitorInventory?.materials);
+  const materialIcons = getMaterialIcons(ecosystemMaterials);
   const toyItems = Object.values(ecosystemToys || {});
   const unlockedRecipes = TOY_RECIPES.filter(({ unlockLevel }) => unlockLevel <= level);
   const nextRecipe = TOY_RECIPES.find(({ unlockLevel }) => unlockLevel > level);
@@ -83,7 +106,7 @@ export const Workshop = () => {
     return updated;
   };
 
-  const handleCraft = async (recipe: ToyRecipeType, toyName: string) => {
+  const handleCraft = async (recipe: ToyRecipeType) => {
     if (busyRecipes.has(recipe.id)) return;
     const previousMaterials = Object.fromEntries(
       Object.keys(materialsAfterCraft(recipe)).map((itemId) => [itemId, visitorInventory!.materials[itemId]]),
@@ -93,14 +116,14 @@ export const Workshop = () => {
     patchGame(dispatch, { craftTimers: { [recipe.id]: Date.now() + (serverTimeOffset ?? 0) }, materials: materialsAfterCraft(recipe) });
     setBusy(recipe.id, true);
     setStatusMessage("");
-    setErrorMessage(dispatch, "");
+    setActionError("");
     try {
       const { data } = await backendAPI.post("/craft-toy", { recipeId: recipe.id });
       patchGame(dispatch, { craftTimers: { [recipe.id]: data.craftStartedAt }, materials: data.materials });
-      setStatusMessage(`Started making a ${toyName}.`);
+      setStatusMessage(`Started making a ${recipe.displayName}.`);
     } catch (error) {
       patchGame(dispatch, { craftTimers: { [recipe.id]: null }, materials: previousMaterials });
-      setErrorMessage(dispatch, error as ErrorType);
+      setActionError(getErrorText(error as ErrorType));
     } finally {
       setBusy(recipe.id, false);
     }
@@ -113,30 +136,35 @@ export const Workshop = () => {
       visitorInventory?.toys[toyItem.id] ??
       ({ ...toyItem, ecosystemItemId: toyItem.id, quantity: 0, availableQuantity: 0 } as VisitorInventoryItemType);
     const previousCrafted = visitorData?.totalToysCrafted || 0;
+    const previousXp = visitorInventory?.xp ?? 0;
 
     // Put it on the shelf right away; the server's reply has the confirmed totals
     patchGame(dispatch, {
       craftTimers: { [recipe.id]: null },
       toys: { [toyItem.id]: { ...previousToy, quantity: previousToy.quantity + 1 } },
       visitorData: { totalToysCrafted: previousCrafted + 1 },
+      inventory: { xp: previousXp + recipe.craftXp, level: getLevelFromXp(previousXp + recipe.craftXp) },
     });
     setBusy(recipe.id, true);
     setStatusMessage("");
-    setErrorMessage(dispatch, "");
+    setActionError("");
     try {
       const { data } = await backendAPI.post("/collect-toy", { recipeId: recipe.id });
       patchGame(dispatch, {
         toys: { [data.toy.ecosystemItemId ?? toyItem.id]: data.toy },
         visitorData: { totalToysCrafted: data.totalToysCrafted },
       });
-      setStatusMessage(`Your ${toyItem.displayName} is done!`);
+      applyXpResult(dispatch, data.xpResult);
+      if (data.xpResult?.levelsGained.length) setLevelUp(data.xpResult);
+      setStatusMessage(`Your ${recipe.displayName} is done! +${recipe.craftXp} XP`);
     } catch (error) {
       patchGame(dispatch, {
         craftTimers: { [recipe.id]: previousTimer },
         toys: { [toyItem.id]: previousToy },
         visitorData: { totalToysCrafted: previousCrafted },
+        inventory: { xp: previousXp, level: getLevelFromXp(previousXp) },
       });
-      setErrorMessage(dispatch, error as ErrorType);
+      setActionError(getErrorText(error as ErrorType));
     } finally {
       setBusy(recipe.id, false);
     }
@@ -145,7 +173,10 @@ export const Workshop = () => {
   if (!ownsBoothInThisWorld && !isLoading) {
     return (
       <PageContainer isLoading={isLoading}>
-        <ClaimBoothFirst pageTitle="Workshop" unlocks="The Workshop opens once you have your own booth." />
+        <ClaimBoothFirst
+          pageTitle={WORLD_OBJECTS.assembly}
+          unlocks={`${WORLD_OBJECTS.assembly} opens once you have your own display.`}
+        />
       </PageContainer>
     );
   }
@@ -154,13 +185,8 @@ export const Workshop = () => {
     <PageContainer isLoading={isLoading}>
       <div className="tc-workshop">
         <div className="tc-workshop__top">
-          <h2 className="tc-sign">Workshop</h2>
-          <p className="tc-hint">
-            <span className="tc-hint__icon" aria-hidden="true">
-              ▶
-            </span>
-            Turn your materials into toys!
-          </p>
+          <h2 className="tc-sign">{WORLD_OBJECTS.assembly}</h2>
+          <p className="tc-hint">Turn your materials into toys!</p>
           <PlayerStats visitorInventory={visitorInventory} />
         </div>
 
@@ -178,7 +204,7 @@ export const Workshop = () => {
 
             let blockedReason: string | null = null;
             if (!toyItem) blockedReason = `The ${recipe.displayName} isn't set up yet.`;
-            else if (ownedToyCount >= recipe.cap) blockedReason = "Your shelf is full — sell some at the Sell counter.";
+            else if (ownedToyCount >= recipe.cap) blockedReason = `Your shelf is full — sell some at the ${WORLD_OBJECTS.cashier}.`;
             else if (Object.keys(missing).length) blockedReason = `Need ${describeMissingMaterials(missing)}.`;
 
             return (
@@ -187,12 +213,13 @@ export const Workshop = () => {
                 recipe={recipe}
                 toyItem={toyItem}
                 materialCounts={materialCounts}
+                materialIcons={materialIcons}
                 ownedToyCount={ownedToyCount}
                 blockedReason={blockedReason}
                 craftState={state}
                 secondsRemaining={secondsRemaining}
                 isDisabled={busyRecipes.has(recipe.id)}
-                onCraft={() => handleCraft(recipe, toyItem?.displayName ?? recipe.displayName)}
+                onCraft={() => handleCraft(recipe)}
                 onCollect={() => toyItem && handleCollect(recipe, toyItem)}
               />
             );
@@ -210,6 +237,19 @@ export const Workshop = () => {
       <p className="sr-only" role="status">
         {statusMessage}
       </p>
+
+      <div className="tc-dock">
+        <ActionAlert message={actionError} onDismiss={() => setActionError("")} />
+      </div>
+
+      {levelUp && (
+        <LevelUpModal
+          level={levelUp.level}
+          bonusTokens={levelUp.levelUpTokens}
+          levelsGained={levelUp.levelsGained}
+          onClose={() => setLevelUp(null)}
+        />
+      )}
     </PageContainer>
   );
 };

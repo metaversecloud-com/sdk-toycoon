@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
-import { getMaterialCap } from "@shared/constants/index.js";
+import { getMaterialCap, MATERIAL_COLLECT_XP } from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
+  awardBonusXp,
   collectFromBin,
   errorHandler,
   getBoothIndex,
@@ -15,7 +16,7 @@ import { VisitorInventoryItemType } from "../types/index.js";
 /**
  * Collects one unit from every ready bin the visitor has unlocked and isn't capped on, in one request.
  * Same per-bin rules and protections as a single collect; bins that aren't ready, are full, or are mid-collect are
- * skipped rather than failing the whole request.
+ * skipped rather than failing the whole request. Earns the same XP per unit as collecting one at a time.
  */
 export const handleCollectAllMaterials = async (req: Request, res: Response) => {
   try {
@@ -26,7 +27,7 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
       initializeVisitorData(credentials),
       getBoothIndex(credentials),
     ]);
-    await requireBoothInWorld(credentials, visitorData, "collecting materials", booths);
+    const booth = await requireBoothInWorld(credentials, visitorData, "collecting materials", booths);
 
     const now = Date.now();
     const readyBins = Object.values(ecosystemMaterials).filter((material) => {
@@ -60,7 +61,16 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
 
     if (Object.keys(collected).length === 0) throw "Couldn't collect anything — try again in a moment.";
 
-    return res.json({ success: true, collected });
+    // One XP grant for the whole batch
+    const xpResult = await awardBonusXp({
+      amount: MATERIAL_COLLECT_XP * Object.keys(collected).length,
+      boothKeyAssetId: booth.keyAssetId,
+      credentials,
+      visitor,
+      visitorData,
+    });
+
+    return res.json({ success: true, collected, xpResult });
   } catch (error) {
     return errorHandler({
       error,

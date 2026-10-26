@@ -11,7 +11,7 @@ export const handleClearBooth = async (req: Request, res: Response) => {
 
     const { booths, world } = await getBoothIndex(credentials);
     const booth = sceneDropId ? booths[sceneDropId] : undefined;
-    if (!booth) return res.status(404).json({ success: false, message: "Booth not found in this world." });
+    if (!booth) return res.status(404).json({ success: false, message: "Display not found in this world." });
 
     const { boothAsset, boothData } = await getBoothData(credentials, booth.keyAssetId, sceneDropId);
     if (!boothData.ownerId) return res.json({ success: true, clearedSceneDropIds: [], failedSceneDropIds: [] });

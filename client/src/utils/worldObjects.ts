@@ -9,7 +9,7 @@ export const WORLD_OBJECTS = {
   materials: "Materials Box",
   assembly: "Toy Assembly",
   cashier: "Cashier",
-  shop: "Decor Shop",
+  shop: "Decorations",
 };
 
 /**

@@ -56,7 +56,7 @@ export const handlePlaceDecoration = async (req: Request, res: Response) => {
     if (current === item.name) throw `${item.displayName} is already on the ${spotLabel} spot.`;
 
     const owned = (visitorInventory.decorations[itemId] ?? visitorInventory.toys[itemId])?.quantity ?? 0;
-    if (owned < 1) throw `Buy a ${item.displayName} at the Decor Shop first.`;
+    if (owned < 1) throw `Buy a ${item.displayName} at Decorations first.`;
     if (owned - countPlacements(visitorData.placedDecorations, item.name, { spot, urlSlug }) < 1) {
       throw `All your ${item.displayName}s are already on display. Buy another one to put it here too.`;
     }

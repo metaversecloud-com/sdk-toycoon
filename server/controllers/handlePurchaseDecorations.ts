@@ -12,7 +12,7 @@ import {
 import { CURRENCY_ITEM_NAME } from "../constants.js";
 
 /**
- * Buys one decoration ({ decorationId }) at the Decor Shop for its cost in Toy Tokens: rugs, awnings, lights, and every
+ * Buys one decoration ({ decorationId }) at the Decorations shop for its cost in Toy Tokens: rugs, awnings, lights, and every
  * toy (Rocking Horse, both Teddy Bears, both Trains). Players can own several copies, e.g. to show two White Teddy
  * Bears. Bought toys are ordinary toys: they can also be sold at the Cashier.
  */
@@ -28,7 +28,7 @@ export const handlePurchaseDecoration = async (req: Request, res: Response) => {
       initializeVisitorData(credentials),
     ]);
     const item = ecosystemDecorations[decorationId] ?? ecosystemToys[decorationId];
-    if (!item || !getDecorSlotType(item)) throw "That isn't sold at the Decor Shop.";
+    if (!item || !getDecorSlotType(item)) throw "That isn't sold at Decorations.";
 
     const price = getDecorPrice(item);
     if (visitorInventory.level < item.unlockLevel) throw `${item.displayName} unlocks at level ${item.unlockLevel}.`;

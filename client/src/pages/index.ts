@@ -4,4 +4,4 @@ export * from "./Materials";
 export * from "./Sell";
 export * from "./Teleport";
 export * from "./Workshop";
-export * from "./Shop";
+export * from "./Decorations";

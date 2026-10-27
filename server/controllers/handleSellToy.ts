@@ -42,7 +42,7 @@ export const handleSellToy = async (req: Request, res: Response) => {
     const owned = Math.max(0, (visitorInventory.toys[toy.id]?.quantity ?? 0) - onDisplay);
     if (owned < 1) {
       throw onDisplay
-        ? `Your ${recipe.displayName}s are on your display. Take one down at the Decor Shop to sell it.`
+        ? `Your ${recipe.displayName}s are on your display. Take one down there to sell it.`
         : `You don't have a ${recipe.displayName} to sell.`;
     }
 

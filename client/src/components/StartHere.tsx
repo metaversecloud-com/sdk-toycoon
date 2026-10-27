@@ -62,7 +62,7 @@ export const StartHere = () => {
       station: "shop",
       art: "🛍️",
       title: "Go shopping",
-      text: `Spend Toy Tokens at the ${WORLD_OBJECTS.shop} on rugs, lights, and toys for your display.`,
+      text: `Buy rugs, lights, and toys at ${WORLD_OBJECTS.shop}, then set them out on your display.`,
     },
   ];
   const hasStarted = (visitorInventory?.xp ?? 0) > 0;
@@ -153,7 +153,7 @@ export const StartHere = () => {
                 {/* Stations open once you have a display, so new players see the steps and the claim button */}
                 {ownsBoothInThisWorld && (
                   <TeleportButton destination={station} className="tc-step__go">
-                    Go to {station === "assembly" ? "" : "the "}
+                    Go to {station === "assembly" || station === "shop" ? "" : "the "}
                     {WORLD_OBJECTS[station]}
                   </TeleportButton>
                 )}

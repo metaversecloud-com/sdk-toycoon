@@ -28,7 +28,7 @@ export const STATIONS = {
   materials: { uniqueName: "toycoon_materials", path: "/materials", title: "Materials Box" },
   assembly: { uniqueName: "toycoon_assembly", path: "/workshop", title: "Toy Assembly" },
   cashier: { uniqueName: "toycoon_cashier", path: "/sell", title: "Cashier" },
-  shop: { uniqueName: "toycoon_shop", path: "/shop", title: "Decor Shop" },
+  shop: { uniqueName: "toycoon_shop", path: "/decorations", title: "Decorations" },
 } as const;
 
 export type StationType = keyof typeof STATIONS;

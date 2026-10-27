@@ -39,6 +39,20 @@ export const SIGN_UNIQUE_NAME = "toycoon_sign";
 export const UNCLAIMED_SIGN_TEXT = "Claim Me!";
 export const getClaimedSignText = (displayName: string) => `${displayName || "My"}'s Display`;
 
+// The level a decoration unlocks at when its metadata doesn't set unlockLevel, by the start of its name (Lina's items
+// are named like "Rug Pink"). From Angel's decorations work; confirm against Lina's real item names.
+const DECOR_UNLOCK_LEVELS: { namePrefix: string; unlockLevel: number }[] = [
+  { namePrefix: "Teddy Bear", unlockLevel: 2 },
+  { namePrefix: "Rug", unlockLevel: 2 },
+  { namePrefix: "Train", unlockLevel: 3 },
+  { namePrefix: "Awning", unlockLevel: 3 },
+  { namePrefix: "Lights", unlockLevel: 3 },
+];
+
+export const getDecorUnlockLevel = (itemName: string) =>
+  DECOR_UNLOCK_LEVELS.find(({ namePrefix }) => itemName.toLowerCase().startsWith(namePrefix.toLowerCase()))
+    ?.unlockLevel ?? 1;
+
 // Price for a decoration whose ecosystem item has no cost set yet.
 // TODO: replace with Lina's prices (each item's metadata.cost)
 export const DEFAULT_DECOR_COST = 10;

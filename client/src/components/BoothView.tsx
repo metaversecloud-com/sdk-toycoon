@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef } from "react";
 
 // components
-import { AbandonBoothButton, TeleportButton } from "@/components";
+import { AbandonBoothButton, DisplayDecor, TeleportButton } from "@/components";
 
 // context
 import { GlobalStateContext } from "@/context/GlobalContext";
@@ -18,7 +18,8 @@ import { TOY_RECIPES } from "@shared/constants";
 
 /**
  * A booth (shown to players as their "display" at the craft fair), seen by every visitor who clicks its key asset.
- * An open display can be claimed right here; once it's yours, it tells you where to go next.
+ * An open display can be claimed right here; once it's yours, it tells you where to go next and lets you choose what's
+ * on each of its decor spots.
  */
 export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
   const { ownsBoothInThisWorld, visitorInventory } = useContext(GlobalStateContext);
@@ -109,6 +110,8 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
       </div>
 
       {isOwnedByVisitor && (claimResult === "claimed" || !hasStarted) && renderNextStep()}
+
+      {isOwnedByVisitor && <DisplayDecor />}
 
       <div className="grid gap-2">
         {renderAction()}

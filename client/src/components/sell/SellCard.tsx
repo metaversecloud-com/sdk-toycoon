@@ -1,3 +1,4 @@
+//client/src/components/sell/SellCard.tsx
 import { useEffect, useId, useState } from "react";
 
 // types
@@ -55,7 +56,7 @@ export const SellCard = ({
   const reason = !toyItem
     ? `The ${recipe.displayName} isn't set up yet.`
     : ownedCount < 1 && onDisplayCount > 0
-      ? `Your ${recipe.displayName}s are on your display. Take one down at the ${WORLD_OBJECTS.shop} to sell it.`
+      ? `Your ${recipe.displayName}s are on your display. Take one down there to sell it.`
       : ownedCount < 1
         ? `Craft a ${recipe.displayName} at ${WORLD_OBJECTS.assembly} first.`
         : null;

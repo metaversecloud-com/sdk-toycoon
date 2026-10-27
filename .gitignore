@@ -27,3 +27,7 @@ build-ssr
 
 # custom
 server/dist
+
+# tofu (tofu/ is applied remotely by Terrakube; only source + lock are tracked)
+.terraform/
+.terraform.nosync/

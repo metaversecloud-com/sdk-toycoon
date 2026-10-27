@@ -1054,7 +1054,7 @@ button.tc-bubble:focus-visible,
 
 .tc-spot {
   display: grid;
-  grid-template-columns: 40px 56px minmax(0, 1fr);
+  grid-template-columns: 40px 52px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
@@ -1094,13 +1094,13 @@ button.tc-bubble:focus-visible,
 .tc-spot__select {
   width: 100%;
   height: 36px;
-  padding: 0 6px;
+  padding: 0 2px;
   border-radius: 8px;
   border: 2px solid var(--tc-cream-edge);
   background: #fff;
   color: var(--tc-ink);
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 

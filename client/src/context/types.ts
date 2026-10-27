@@ -1,6 +1,7 @@
 import { VisitorDataObjectType, VisitorInventoryItemType, VisitorInventoryType } from "@shared/types/VisitorData";
 import { BoothsFullAlertType, TargetBoothType } from "@shared/types/BoothTypes";
 import { InventoryItemType } from "@shared/types/InventoryItems";
+import { PlacedDecorationsType } from "@shared/constants";
 
 export const SET_HAS_INTERACTIVE_PARAMS = "SET_HAS_INTERACTIVE_PARAMS";
 export const SET_GAME_STATE = "SET_GAME_STATE";
@@ -17,6 +18,8 @@ export type GamePatchType = {
   craftTimers?: { [recipeId: string]: number | null };
   materials?: { [itemId: string]: VisitorInventoryItemType };
   toys?: { [itemId: string]: VisitorInventoryItemType };
+  decorations?: { [itemId: string]: VisitorInventoryItemType };
+  placedDecorations?: PlacedDecorationsType; // replaces the whole record (it's small)
   visitorData?: Partial<Pick<VisitorDataObjectType, "totalCoinsEarned" | "totalToysCrafted" | "totalToysSold">>;
   inventory?: Partial<Pick<VisitorInventoryType, "coins" | "xp" | "level">>;
 };
@@ -43,6 +46,7 @@ export interface InitialState {
   visitorInventory?: VisitorInventoryType;
   ecosystemMaterials?: { [itemId: string]: InventoryItemType };
   ecosystemToys?: { [itemId: string]: InventoryItemType };
+  ecosystemDecorations?: { [itemId: string]: InventoryItemType };
   ownsBoothInThisWorld?: boolean;
   ownedBoothSceneDropId?: string | null;
   targetBooth?: TargetBoothType | null;

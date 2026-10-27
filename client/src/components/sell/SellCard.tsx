@@ -24,6 +24,7 @@ const plural = (count: number, name: string) => `${count} ${name}${count === 1 ?
 export const SellCard = ({
   isBusy,
   isDisabled,
+  onDisplayCount = 0,
   onSell,
   ownedCount,
   recipe,
@@ -32,7 +33,8 @@ export const SellCard = ({
   isBusy: boolean;
   isDisabled: boolean;
   onSell: (quantity: number) => void;
-  ownedCount: number;
+  onDisplayCount?: number; // copies on the player's display, which can't be sold
+  ownedCount: number; // copies that can be sold
   recipe: ToyRecipeType;
   toyItem?: InventoryItemType;
 }) => {
@@ -52,9 +54,11 @@ export const SellCard = ({
   const canSell = !!toyItem && ownedCount > 0;
   const reason = !toyItem
     ? `The ${recipe.displayName} isn't set up yet.`
-    : ownedCount < 1
-      ? `Craft a ${recipe.displayName} at ${WORLD_OBJECTS.assembly} first.`
-      : null;
+    : ownedCount < 1 && onDisplayCount > 0
+      ? `Your ${recipe.displayName}s are on your display. Take one down at the ${WORLD_OBJECTS.shop} to sell it.`
+      : ownedCount < 1
+        ? `Craft a ${recipe.displayName} at ${WORLD_OBJECTS.assembly} first.`
+        : null;
 
   const setClamped = (value: number) => setQuantity(Math.min(Math.max(Math.round(value) || 1, 1), ownedCount));
 

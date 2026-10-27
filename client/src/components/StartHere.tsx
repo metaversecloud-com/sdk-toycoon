@@ -58,7 +58,12 @@ export const StartHere = () => {
       title: "Sell toys",
       text: `Sell your toys at the ${WORLD_OBJECTS.cashier} for Toy Tokens. Every step earns XP!`,
     },
-    { station: "shop", art: "🛍️", title: "Go shopping", text: "Spend Toy Tokens on decorations for your display." },
+    {
+      station: "shop",
+      art: "🛍️",
+      title: "Go shopping",
+      text: `Spend Toy Tokens at the ${WORLD_OBJECTS.shop} on rugs, lights, and toys for your display.`,
+    },
   ];
   const hasStarted = (visitorInventory?.xp ?? 0) > 0;
 

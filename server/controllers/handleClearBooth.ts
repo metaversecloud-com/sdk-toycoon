@@ -1,5 +1,12 @@
 import { Request, Response } from "express";
-import { clearBooth, errorHandler, getBoothData, getBoothIndex, getCredentials } from "@utils/index.js";
+import {
+  clearBooth,
+  errorHandler,
+  getBoothData,
+  getBoothIndex,
+  getCredentials,
+  getEmptySpotImageUrl,
+} from "@utils/index.js";
 
 /**
  * Admin: releases a single booth (defaults to the booth whose drawer the admin has open)
@@ -16,7 +23,13 @@ export const handleClearBooth = async (req: Request, res: Response) => {
     const { boothAsset, boothData } = await getBoothData(credentials, booth.keyAssetId, sceneDropId);
     if (!boothData.ownerId) return res.json({ success: true, clearedSceneDropIds: [], failedSceneDropIds: [] });
 
-    await clearBooth({ boothAsset, boothData, credentials, world });
+    await clearBooth({
+      boothAsset,
+      boothData,
+      credentials,
+      emptySpotImageUrl: getEmptySpotImageUrl(req.hostname),
+      world,
+    });
 
     // A booth just opened up, so the "all booths taken" alert no longer applies
     await world.updateDataObject({ boothsFullAlert: null });

@@ -16,3 +16,4 @@ export * from "./sell/index.js";
 export * from "./StartHere.js";
 export * from "./TeleportButton.js";
 export * from "./workshop/index.js";
+export * from "./shop/index.js";

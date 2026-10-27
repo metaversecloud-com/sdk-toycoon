@@ -1,0 +1,108 @@
+// Booth decor (Phase 3): which items can go on which spot in a booth scene, and how placements are counted.
+// Every booth scene has one web-image asset per spot, with the spot's unique name. Placing a decoration swaps that
+// asset's picture; one item per spot.
+
+export type DecorSlotType = "rug" | "awning" | "lights" | "toy";
+
+// Spot unique name → what can go there. Rug, awning, and lights each have one spot; toys can go on any of the three.
+export const DECOR_SPOTS: { [spot: string]: DecorSlotType } = {
+  toycoon_awning: "awning",
+  toycoon_lights: "lights",
+  toycoon_rug: "rug",
+  toycoon_slot1: "toy",
+  toycoon_slot2: "toy",
+  toycoon_slot3: "toy",
+};
+
+// Toys on the toy spots are sized to fit inside this box (world pixels, keeping their proportions), and an empty toy
+// spot shows the app's transparent picture of the same size. Amanda picked 80px in a real booth (2026-10-25).
+export const TOY_SPOT_SIZE = 80;
+
+export const DECOR_SPOT_LABELS: { [spot: string]: string } = {
+  toycoon_awning: "Awning",
+  toycoon_lights: "Lights",
+  toycoon_rug: "Rug",
+  toycoon_slot1: "Toy 1",
+  toycoon_slot2: "Toy 2",
+  toycoon_slot3: "Toy 3",
+};
+
+export const DECOR_SLOT_TYPE_LABELS: { [slotType in DecorSlotType]: string } = {
+  awning: "Awnings",
+  lights: "Lights",
+  rug: "Rugs",
+  toy: "Toys",
+};
+
+// The sign at the top of every booth: "Claim Me!" while open, "<name>'s Display" once claimed
+export const SIGN_UNIQUE_NAME = "toycoon_sign";
+export const UNCLAIMED_SIGN_TEXT = "Claim Me!";
+export const getClaimedSignText = (displayName: string) => `${displayName || "My"}'s Display`;
+
+// Price for a decoration whose ecosystem item has no cost set yet.
+// TODO: replace with Lina's prices (each item's metadata.cost)
+export const DEFAULT_DECOR_COST = 10;
+
+type DecorItemType = { type?: string; slot?: string; name: string; cost?: number; layerUrl?: string; icon?: string };
+
+const SLOT_TYPES: DecorSlotType[] = ["rug", "awning", "lights", "toy"];
+
+/**
+ * Which spots an item can go on. Toys go on the toy spots. Decorations use their metadata.slot if set ("rug",
+ * "awning", "lights", or a spot's unique name), otherwise their name ("Blue Rug" → rug, "Fairy Lights" → lights).
+ * null = not a booth decoration.
+ */
+export const getDecorSlotType = (item: DecorItemType): DecorSlotType | null => {
+  if (item.type === "toy") return "toy";
+  if (item.type !== "decoration") return null;
+
+  const slot = (item.slot || "").trim().toLowerCase();
+  if (DECOR_SPOTS[slot]) return DECOR_SPOTS[slot];
+  const fromSlot = SLOT_TYPES.find((slotType) => slot === slotType || slot === slotType.replace(/s$/, ""));
+  if (fromSlot) return fromSlot;
+
+  const name = item.name.toLowerCase();
+  if (name.includes("rug")) return "rug";
+  if (name.includes("awning")) return "awning";
+  if (name.includes("light")) return "lights";
+  return null;
+};
+
+export const getSpotsForSlotType = (slotType: DecorSlotType) =>
+  Object.keys(DECOR_SPOTS).filter((spot) => DECOR_SPOTS[spot] === slotType);
+
+export const getDecorPrice = (item: DecorItemType) => item.cost || DEFAULT_DECOR_COST;
+
+// The picture shown on a spot: the item's layerUrl, or its inventory image until a layerUrl is set
+export const getDecorImageUrl = (item: DecorItemType) => item.layerUrl || item.icon || "";
+
+// { [spot]: { [urlSlug]: item name } }, as stored on the visitor's data object. null = removed.
+export type PlacedDecorationsType = { [spot: string]: { [urlSlug: string]: string | null } };
+
+/**
+ * How many of an item (by name) are placed, across every spot in every world. Pass except to leave one placement out
+ * (the spot being changed). A player can place as many copies as they own.
+ */
+export const countPlacements = (
+  placedDecorations: PlacedDecorationsType | undefined,
+  itemName: string,
+  except?: { spot: string; urlSlug: string },
+) => {
+  let count = 0;
+  for (const [spot, byWorld] of Object.entries(placedDecorations || {})) {
+    for (const [urlSlug, placedName] of Object.entries(byWorld || {})) {
+      if (placedName !== itemName) continue;
+      if (except && except.spot === spot && except.urlSlug === urlSlug) continue;
+      count++;
+    }
+  }
+  return count;
+};
+
+// This world's placements: { [spot]: item name }
+export const getPlacementsInWorld = (placedDecorations: PlacedDecorationsType | undefined, urlSlug: string) =>
+  Object.fromEntries(
+    Object.keys(DECOR_SPOTS)
+      .map((spot) => [spot, placedDecorations?.[spot]?.[urlSlug] ?? null] as const)
+      .filter(([, name]) => !!name),
+  ) as { [spot: string]: string };

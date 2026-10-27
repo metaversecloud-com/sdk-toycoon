@@ -23,6 +23,7 @@ const globalReducer = (state: InitialState, action: ActionType) => {
         visitorInventory: payload.visitorInventory,
         ecosystemMaterials: payload.ecosystemMaterials,
         ecosystemToys: payload.ecosystemToys,
+        ecosystemDecorations: payload.ecosystemDecorations,
         ownsBoothInThisWorld: payload.ownsBoothInThisWorld,
         ownedBoothSceneDropId: payload.ownedBoothSceneDropId,
         targetBooth: payload.targetBooth,
@@ -42,12 +43,14 @@ const globalReducer = (state: InitialState, action: ActionType) => {
           ...patch.visitorData,
           materialGenerationStartedAt: { ...state.visitorData.materialGenerationStartedAt, ...patch.materialTimers },
           toyCraftStartedAt: { ...state.visitorData.toyCraftStartedAt, ...patch.craftTimers },
+          placedDecorations: patch.placedDecorations ?? state.visitorData.placedDecorations,
         },
         visitorInventory: {
           ...state.visitorInventory,
           ...patch.inventory,
           materials: { ...state.visitorInventory.materials, ...patch.materials },
           toys: { ...state.visitorInventory.toys, ...patch.toys },
+          decorations: { ...state.visitorInventory.decorations, ...patch.decorations },
         },
       };
     }

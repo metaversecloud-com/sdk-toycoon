@@ -64,8 +64,10 @@ export type VisitorDataObjectType = {
     [action: string]: number;
   };
   placedDecorations: {
-    [slot: string]: {
-      [urlSlug: string]: string; // decoration name currently shown on that slot's anchor in that world, e.g. "Blue Rug"
+    [spot: string]: {
+      // Item name shown on that spot (a booth asset's unique name, e.g. "toycoon_rug") in that world, e.g. "Blue Rug".
+      // null = removed. See shared/constants/decor.ts.
+      [urlSlug: string]: string | null;
     };
   };
   boothIds: {

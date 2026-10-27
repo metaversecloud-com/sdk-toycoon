@@ -22,16 +22,24 @@ export const MAX_CLAIM_ATTEMPTS = 5;
 export const MAIN_SCENE_UNIQUE_NAME = "toycoon_start";
 
 // The Main Scene's gameplay stations, one per step on the Start Here sign (POST /teleport/<station>). Each teleport lands
-// next to the station's asset and opens its page in the drawer; path null = no page to open yet (the shop is Phase 3).
+// next to the station's asset and opens its page in the drawer (path null = just teleport).
 // TODO: confirm with Lina that each station asset has this unique name in every world
 export const STATIONS = {
   materials: { uniqueName: "toycoon_materials", path: "/materials", title: "Materials Box" },
   assembly: { uniqueName: "toycoon_assembly", path: "/workshop", title: "Toy Assembly" },
   cashier: { uniqueName: "toycoon_cashier", path: "/sell", title: "Cashier" },
-  shop: { uniqueName: "toycoon_shop", path: null, title: "Shop" },
+  shop: { uniqueName: "toycoon_shop", path: "/shop", title: "Decor Shop" },
 } as const;
 
 export type StationType = keyof typeof STATIONS;
+
+// The app's own transparent picture for an empty decor spot (client/public/spots), used when a spot's picture link
+// can't be read. Served from the app's address, e.g. https://<app host>/spots/empty-80.png
+export const EMPTY_SPOT_IMAGE_PATH = "/spots/empty-80.png";
+
+// Topia only accepts public https picture links, so when the app runs on localhost it points at the deployed dev
+// site's copy instead (override with EMPTY_SPOT_IMAGE_URL)
+export const DEPLOYED_APP_URL = "https://toycoon0-dev-topia.topia-rtsdk.com";
 
 // Visitors land this many px below the target asset so they don't spawn on top of it
 // TODO: tune once real booth/Main Scene layouts exist

@@ -10,7 +10,9 @@ import {
   handleCraftToy,
   handleGetGameState,
   handleGetLeaderboard,
+  handlePlaceDecoration,
   handlePurchaseDecoration,
+  handleRemoveDecoration,
   handleResetLeaderboard,
   handleResetWorld,
   handleSellToy,
@@ -48,6 +50,8 @@ router.get("/leaderboard", handleGetLeaderboard);
 router.post("/claim-booth", handleClaimBooth);
 router.post("/abandon-booth", handleAbandonBooth);
 router.post("/purchase-decoration", handlePurchaseDecoration);
+router.post("/place-decoration", handlePlaceDecoration);
+router.post("/remove-decoration", handleRemoveDecoration);
 router.post("/start-material", handleStartMaterial);
 router.post("/collect-material", handleCollectMaterial);
 router.post("/collect-all-materials", handleCollectAllMaterials);

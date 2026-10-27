@@ -10,7 +10,14 @@ import { ErrorType } from "@/context/types";
 
 // utils
 import { backendAPI, getErrorText, patchGame, setErrorMessage, setGameState, WORLD_OBJECTS } from "@/utils";
-import { countOwnedToys, getCraftedToyItem, TOY_RECIPES, ToyRecipeType, ToyTypeId } from "@shared/constants";
+import {
+  countOwnedToys,
+  countPlacements,
+  getCraftedToyItem,
+  TOY_RECIPES,
+  ToyRecipeType,
+  ToyTypeId,
+} from "@shared/constants";
 
 /**
  * The Cashier (Sell page): sell crafted toys for a fixed price in Toy Tokens + XP. Crossing an XP threshold levels the player
@@ -104,12 +111,15 @@ export const Sell = () => {
         <ul className="tc-recipes" aria-label="Toys you can sell">
           {unlockedRecipes.map((recipe) => {
             const toyItem = getCraftedToyItem(recipe, toyItems);
+            const onDisplay = toyItem ? countPlacements(visitorData?.placedDecorations, toyItem.name) : 0;
             return (
               <SellCard
                 key={recipe.id}
                 recipe={recipe}
                 toyItem={toyItem}
-                ownedCount={countOwnedToys(recipe, visitorInventory?.toys)}
+                // Toys on the player's display stay there, so only the rest can be sold
+                ownedCount={Math.max(0, countOwnedToys(recipe, visitorInventory?.toys) - onDisplay)}
+                onDisplayCount={onDisplay}
                 isBusy={sellingRecipeId === recipe.id}
                 isDisabled={sellingRecipeId !== null}
                 onSell={(quantity) => handleSell(recipe, quantity)}

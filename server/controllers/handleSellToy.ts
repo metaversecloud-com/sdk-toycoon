@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getCraftedToyItem, getToyRecipeById, ToyTypeId } from "@shared/constants/index.js";
+import { countPlacements, getCraftedToyItem, getToyRecipeById, ToyTypeId } from "@shared/constants/index.js";
 import {
   awardXp,
   AwardXpResultType,
@@ -37,8 +37,14 @@ export const handleSellToy = async (req: Request, res: Response) => {
 
     const toy = getCraftedToyItem(recipe, Object.values(ecosystemToys));
     if (!toy) throw `The ${recipe.displayName} toy item isn't set up in the ecosystem.`;
-    const owned = visitorInventory.toys[toy.id]?.quantity ?? 0;
-    if (owned < 1) throw `You don't have a ${recipe.displayName} to sell.`;
+    // Toys on the player's display (in any world) stay there; only the rest can be sold
+    const onDisplay = countPlacements(visitorData.placedDecorations, toy.name);
+    const owned = Math.max(0, (visitorInventory.toys[toy.id]?.quantity ?? 0) - onDisplay);
+    if (owned < 1) {
+      throw onDisplay
+        ? `Your ${recipe.displayName}s are on your display. Take one down at the Decor Shop to sell it.`
+        : `You don't have a ${recipe.displayName} to sell.`;
+    }
 
     const quantity = req.body?.quantity === undefined ? 1 : Number(req.body.quantity);
     if (!Number.isInteger(quantity) || quantity < 1) throw "Quantity must be a whole number of at least 1.";

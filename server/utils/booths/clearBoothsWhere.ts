@@ -12,11 +12,13 @@ import { getBoothData } from "./getBoothData.js";
 export const clearBoothsWhere = async ({
   booths,
   credentials,
+  emptySpotImageUrl,
   shouldClear,
   world,
 }: {
   booths: BoothIndexType;
   credentials: Credentials;
+  emptySpotImageUrl?: string;
   shouldClear: (boothData: BoothDataObjectType) => boolean;
   world: any;
 }): Promise<{ clearedSceneDropIds: string[]; failedSceneDropIds: string[] }> => {
@@ -30,10 +32,14 @@ export const clearBoothsWhere = async ({
       await Promise.all(
         batch.map(async (sceneDropId) => {
           try {
-            const { boothAsset, boothData } = await getBoothData(credentials, booths[sceneDropId].keyAssetId, sceneDropId);
+            const { boothAsset, boothData } = await getBoothData(
+              credentials,
+              booths[sceneDropId].keyAssetId,
+              sceneDropId,
+            );
             if (!boothData.ownerId || !shouldClear(boothData)) return;
 
-            await clearBooth({ boothAsset, boothData, credentials, world });
+            await clearBooth({ boothAsset, boothData, credentials, emptySpotImageUrl, world });
             clearedSceneDropIds.push(sceneDropId);
           } catch (error) {
             console.error(`Failed to clear booth ${sceneDropId}`, error);

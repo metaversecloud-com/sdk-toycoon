@@ -58,7 +58,12 @@ export const StartHere = () => {
       title: "Sell toys",
       text: `Sell your toys at the ${WORLD_OBJECTS.cashier} for Toy Tokens. Every step earns XP!`,
     },
-    { station: "shop", art: "🛍️", title: "Go shopping", text: "Spend Toy Tokens on decorations for your display." },
+    {
+      station: "shop",
+      art: "🛍️",
+      title: "Go shopping",
+      text: `Buy rugs, lights, and toys at ${WORLD_OBJECTS.shop}, then set them out on your display.`,
+    },
   ];
   const hasStarted = (visitorInventory?.xp ?? 0) > 0;
 
@@ -148,7 +153,7 @@ export const StartHere = () => {
                 {/* Stations open once you have a display, so new players see the steps and the claim button */}
                 {ownsBoothInThisWorld && (
                   <TeleportButton destination={station} className="tc-step__go">
-                    Go to {station === "assembly" ? "" : "the "}
+                    Go to {station === "assembly" || station === "shop" ? "" : "the "}
                     {WORLD_OBJECTS[station]}
                   </TeleportButton>
                 )}

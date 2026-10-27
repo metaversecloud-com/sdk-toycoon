@@ -50,6 +50,7 @@ export interface GameStateResponseType {
   visitorInventory: VisitorInventoryType;
   ecosystemMaterials: { [itemId: string]: InventoryItemType }; // every collectable material, for the Materials page
   ecosystemToys: { [itemId: string]: InventoryItemType }; // every craftable toy item (incl. color variants), for the Workshop
+  ecosystemDecorations: { [itemId: string]: InventoryItemType }; // rugs, awnings, lights — for the Decorations shop
   ownsBoothInThisWorld: boolean;
   ownedBoothSceneDropId: string | null;
   targetBooth: TargetBoothType | null; // null when the clicked asset isn't part of a booth scene (e.g. Main Scene)
@@ -57,7 +58,6 @@ export interface GameStateResponseType {
   isAdmin: boolean;
   boothsFullAlert: BoothsFullAlertType | null; // only populated for admins
   serverTime: number; // server's Date.now() when this was built, so the client can correct for clock differences
-  ecosystemDecorations?: { [itemId: string]: InventoryItemType }
 }
 
 export type ClaimBoothResultType = "claimed" | "alreadyOwned" | "allBoothsTaken";

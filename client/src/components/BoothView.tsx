@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef } from "react";
 
 // components
-import { AbandonBoothButton, TeleportButton } from "@/components";
+import { AbandonBoothButton, DisplayDecor, TeleportButton } from "@/components";
 
 // context
 import { GlobalStateContext } from "@/context/GlobalContext";
@@ -18,7 +18,8 @@ import { TOY_RECIPES } from "@shared/constants";
 
 /**
  * A booth (shown to players as their "display" at the craft fair), seen by every visitor who clicks its key asset.
- * An open display can be claimed right here; once it's yours, it tells you where to go next.
+ * An open display can be claimed right here; once it's yours, it tells you where to go next and lets you choose what's
+ * on each of its decor spots.
  */
 export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
   const { ownsBoothInThisWorld, visitorInventory } = useContext(GlobalStateContext);
@@ -73,48 +74,33 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
     );
   };
 
+  const title = !isClaimed ? "Open Display" : isOwnedByVisitor ? "Your Display" : `${ownerDisplayName}'s Display`;
+  const claimedOn = claimDate ? new Date(claimDate).toLocaleDateString() : null;
+
   return (
-    <div className="grid gap-4">
-      <div className="card">
-        <div className="card-details">
-          {isClaimed ? (
-            <>
-              <h3 className="card-title h3">{isOwnedByVisitor ? "Your display" : `${ownerDisplayName}'s display`}</h3>
-              <dl className="grid grid-cols-2 gap-1 p2">
-                <dt>Owner</dt>
-                <dd>{ownerDisplayName}</dd>
-                <dt>Level</dt>
-                <dd>{level}</dd>
-                {claimDate && (
-                  <>
-                    <dt>Claimed</dt>
-                    <dd>
-                      <time dateTime={claimDate}>{new Date(claimDate).toLocaleDateString()}</time>
-                    </dd>
-                  </>
-                )}
-              </dl>
-            </>
-          ) : (
-            <>
-              <h3 className="card-title h3">Open display</h3>
-              <p className="card-description p2">
-                {ownsBoothInThisWorld
-                  ? "Nobody has claimed this display yet. You already have one in this world."
-                  : "Nobody has claimed this display yet. Claim it to show off the toys you make!"}
-              </p>
-            </>
-          )}
-        </div>
+    <div className="tc-workshop">
+      <div className="tc-workshop__top">
+        <h2 className="tc-sign">{title}</h2>
+        <p className="tc-hint">
+          {isClaimed
+            ? `Level ${level}${claimedOn ? ` · Claimed ${claimedOn}` : ""}`
+            : ownsBoothInThisWorld
+              ? "You already have a display in this world."
+              : "Claim it to show off the toys you make!"}
+        </p>
       </div>
 
-      {isOwnedByVisitor && (claimResult === "claimed" || !hasStarted) && renderNextStep()}
+      <div className="tc-welcome">
+        {isOwnedByVisitor && (claimResult === "claimed" || !hasStarted) && renderNextStep()}
 
-      <div className="grid gap-2">
-        {renderAction()}
-        <TeleportButton destination="main-scene" className="btn btn-outline">
-          Back to the workshop
-        </TeleportButton>
+        {isOwnedByVisitor && <DisplayDecor />}
+
+        <div className="tc-panel tc-booth-actions">
+          {renderAction()}
+          <TeleportButton destination="main-scene" className="btn btn-outline">
+            Back to the workshop
+          </TeleportButton>
+        </div>
       </div>
     </div>
   );

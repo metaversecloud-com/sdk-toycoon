@@ -8,7 +8,10 @@ import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalConte
 import { ErrorType } from "@/context/types";
 
 // utils
-import { backendAPI, setErrorMessage, setGameState } from "@/utils";
+import { backendAPI, patchGame, setErrorMessage, setGameState } from "@/utils";
+
+// What the "Give me Toy Tokens" test tool grants per press
+const TEST_TOKEN_GRANT = 5000;
 
 type AdminActionType = "clear-booth" | "clear-inactive-booths" | "reset-world" | "reset-leaderboard";
 
@@ -62,6 +65,24 @@ export const AdminView = () => {
   const [pendingAction, setPendingAction] = useState<AdminActionType | null>(null);
   const [isWorking, setIsWorking] = useState(false);
   const [resultMessage, setResultMessage] = useState("");
+
+  // Test tool: Toy Tokens for the admin themself, e.g. to try out the Decorations shop. No confirmation: it only adds.
+  const grantTokens = async () => {
+    setIsWorking(true);
+    setResultMessage("");
+    setErrorMessage(dispatch, "");
+    try {
+      const { data } = await backendAPI.post("/admin/grant-tokens", { amount: TEST_TOKEN_GRANT });
+      patchGame(dispatch, { inventory: { coins: data.coins } });
+      setResultMessage(
+        `Added ${data.amount.toLocaleString()} Toy Tokens. You now have ${data.coins.toLocaleString()}.`,
+      );
+    } catch (error) {
+      setErrorMessage(dispatch, error as ErrorType);
+    } finally {
+      setIsWorking(false);
+    }
+  };
 
   const runAction = async (action: AdminActionType) => {
     setIsWorking(true);
@@ -127,8 +148,18 @@ export const AdminView = () => {
       >
         Reset leaderboard
       </button>
-      <button type="button" className="btn btn-danger" disabled={isWorking} onClick={() => setPendingAction("reset-world")}>
+      <button
+        type="button"
+        className="btn btn-danger"
+        disabled={isWorking}
+        onClick={() => setPendingAction("reset-world")}
+      >
         Reset world
+      </button>
+
+      <h3 className="h4">Test tools</h3>
+      <button type="button" className="btn btn-outline" disabled={isWorking} onClick={grantTokens}>
+        Give me {TEST_TOKEN_GRANT.toLocaleString()} Toy Tokens
       </button>
 
       <p className="p2" role="status">

@@ -34,7 +34,7 @@ export const Home = () => {
   }, [hasInteractiveParams]);
 
   return (
-    <PageContainer isLoading={isLoading} headerText={targetBooth ? "Toycoon" : undefined}>
+    <PageContainer isLoading={isLoading}>
       {targetBooth ? (
         <div className="grid gap-6">
           <BoothView booth={targetBooth} />

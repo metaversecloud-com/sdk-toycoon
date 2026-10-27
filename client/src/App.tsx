@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { Route, Routes, useNavigate, useSearchParams } from "react-router-dom";
 
 // pages
-import { Error, Home, Materials, Sell, Teleport, Workshop } from "./pages";
+import { Decorations, Error, Home, Materials, Sell, Teleport, Workshop } from "./pages";
 
 // context
 import { GlobalDispatchContext } from "./context/GlobalContext";
@@ -10,7 +10,6 @@ import { InteractiveParams, SET_HAS_INTERACTIVE_PARAMS } from "./context/types";
 
 // utils
 import { setupBackendAPI } from "./utils/backendAPI";
-import { Decorations } from "./pages/Decorations";
 
 const App = () => {
   const navigate = useNavigate();
@@ -89,8 +88,8 @@ const App = () => {
       <Route path="/materials" element={<Materials />} />
       <Route path="/workshop" element={<Workshop />} />
       <Route path="/sell" element={<Sell />} />
-      <Route path="*" element={<Error />} />
       <Route path="/decorations" element={<Decorations />} />
+      <Route path="*" element={<Error />} />
     </Routes>
   );
 };

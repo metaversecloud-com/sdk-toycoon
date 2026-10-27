@@ -2,11 +2,16 @@ import { Request, Response } from "express";
 import {
   claimBooth,
   errorHandler,
+  getBoothSpots,
+  getEmptySpotImageUrl,
   getBoothIndex,
   getCredentials,
   getOwnedBoothSceneDropId,
   initializeVisitorData,
+  resetBoothSpots,
+  setBoothSign,
 } from "@utils/index.js";
+import { getClaimedSignText, SIGN_UNIQUE_NAME } from "@shared/constants/index.js";
 import { ClaimBoothResponseType } from "@shared/types/BoothTypes.js";
 import { MAX_CLAIM_ATTEMPTS } from "../constants.js";
 
@@ -78,9 +83,22 @@ export const handleClaimBooth = async (req: Request, res: Response) => {
     }
 
     if (claimedBoothSceneDropId) {
+      const boothSceneDropId = claimedBoothSceneDropId;
       await Promise.all([
-        world.updateDataObject({ [`booths.${claimedBoothSceneDropId}.ownerId`]: profileId }),
-        visitor.updateDataObject({ boothIds: { ...visitorData.boothIds, [urlSlug]: claimedBoothSceneDropId } }, {}),
+        world.updateDataObject({ [`booths.${boothSceneDropId}.ownerId`]: profileId }),
+        visitor.updateDataObject({ boothIds: { ...visitorData.boothIds, [urlSlug]: boothSceneDropId } }, {}),
+        // The booth's sign changes from "Claim Me!" to "<name>'s Display", and every decor spot starts out empty
+        // (transparent). Best-effort: the claim already succeeded.
+        getBoothSpots(credentials, boothSceneDropId)
+          .then((spots) =>
+            Promise.all([
+              setBoothSign({ sign: spots[SIGN_UNIQUE_NAME], text: getClaimedSignText(credentials.displayName) }),
+              resetBoothSpots({ emptySpotImageUrl: getEmptySpotImageUrl(req.hostname), spots }),
+            ]),
+          )
+          .catch((error: any) =>
+            errorHandler({ error, functionName: "handleClaimBooth", message: "Error updating the booth's sign" }),
+          ),
       ]);
 
       const response: ClaimBoothResponseType = { result: "claimed", ownedBoothSceneDropId: claimedBoothSceneDropId };

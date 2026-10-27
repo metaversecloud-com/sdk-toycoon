@@ -5,7 +5,6 @@ import {
   getBoothData,
   getBoothIndex,
   getCredentials,
-  getEmptySpotImageUrl,
 } from "@utils/index.js";
 
 /**
@@ -23,13 +22,7 @@ export const handleClearBooth = async (req: Request, res: Response) => {
     const { boothAsset, boothData } = await getBoothData(credentials, booth.keyAssetId, sceneDropId);
     if (!boothData.ownerId) return res.json({ success: true, clearedSceneDropIds: [], failedSceneDropIds: [] });
 
-    await clearBooth({
-      boothAsset,
-      boothData,
-      credentials,
-      emptySpotImageUrl: getEmptySpotImageUrl(req.hostname),
-      world,
-    });
+    await clearBooth({ boothAsset, boothData, credentials, world });
 
     // A booth just opened up, so the "all booths taken" alert no longer applies
     await world.updateDataObject({ boothsFullAlert: null });

@@ -1,5 +1,5 @@
 import { DroppedAssetInterface } from "@rtsdk/topia";
-import { DECOR_SPOTS, SIGN_UNIQUE_NAME, TOY_SPOT_SIZE } from "@shared/constants/index.js";
+import { DECOR_SPOTS, getEmptySpotImage, SIGN_UNIQUE_NAME, TOY_SPOT_SIZE } from "@shared/constants/index.js";
 import { Credentials } from "../../types/index.js";
 import { errorHandler } from "../errorHandler.js";
 import { getImageSize } from "../getImageSize.js";
@@ -98,34 +98,30 @@ export const getFitScale = async (imageUrl: string, box: { width: number; height
 };
 
 /**
- * Empties a spot: the app's transparent picture at normal size. Every spot starts out and ends up this way, so there's
- * no per-booth "original picture" to keep track of. Without a usable link (Topia needs one), only the size is reset.
+ * Empties a spot: Lina's empty picture for that kind of spot (awning-empty.png, toy-empty.png, …). Rug, awning, and
+ * lights empties show at their own size; the toy empty is fitted to the toy box like a toy, so an empty toy spot takes
+ * the same space as a toy on it.
  */
-export const resetSpot = async (asset: DroppedAssetInterface, emptySpotImageUrl?: string) => {
+export const resetSpot = async (asset: DroppedAssetInterface, spot: string) => {
+  const emptyImage = getEmptySpotImage(spot);
+  const box = getSpotBox(spot);
+  const scale = box ? await getFitScale(emptyImage, box) : 1;
   const layers = getSpotLayers(asset);
-  const needsPicture = isImageUrl(emptySpotImageUrl) && (layers.bottom !== emptySpotImageUrl || !!layers.top);
-  if (!isImageUrl(emptySpotImageUrl)) console.warn(`[decor] No empty picture to put on ${asset.uniqueName}`);
   await Promise.all([
-    needsPicture ? asset.updateWebImageLayers(emptySpotImageUrl!, "") : undefined,
+    layers.bottom === emptyImage && !layers.top ? undefined : asset.updateWebImageLayers(emptyImage, ""),
     // Topia doesn't always report a spot's current size, so set it unless it's known to match
-    asset.assetScale === 1 ? undefined : asset.updateScale(1),
+    asset.assetScale === scale ? undefined : asset.updateScale(scale),
   ]);
 };
 
 /**
- * Empties every decor spot in a booth (clearing or abandoning it). One spot failing doesn't stop the others.
+ * Empties every decor spot in a booth (claiming, clearing, or abandoning it). One spot failing doesn't stop the others.
  */
-export const resetBoothSpots = async ({
-  emptySpotImageUrl,
-  spots,
-}: {
-  emptySpotImageUrl?: string;
-  spots: BoothSpotsType;
-}) => {
+export const resetBoothSpots = async ({ spots }: { spots: BoothSpotsType }) => {
   await Promise.all(
     Object.keys(DECOR_SPOTS).map(async (spot) => {
       if (!spots[spot]) return;
-      await resetSpot(spots[spot], emptySpotImageUrl).catch((error: any) =>
+      await resetSpot(spots[spot], spot).catch((error: any) =>
         errorHandler({ error, functionName: "resetBoothSpots", message: `Error resetting ${spot}` }),
       );
     }),

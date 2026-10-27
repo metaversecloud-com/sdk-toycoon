@@ -13,7 +13,7 @@ import { getBoothSpots, resetBoothSpots, setBoothSign } from "./boothSpots.js";
  * - Owner record: drops this world's boothIds entry and un-places this world's decor (every
  *   placedDecorations[slot][urlSlug]), which returns those items to the owner's available count in every world.
  *   Inventory (owned decor, Toy Tokens, XP) and counters/badges are never modified — decor is owned globally and permanently.
- * - Booth scene: every decor spot goes back to the transparent empty picture and the sign to "Claim Me!" (best-effort).
+ * - Booth scene: every decor spot goes back to its empty picture and the sign to "Claim Me!" (best-effort).
  * - Booth: owner metadata reset. claimCount is intentionally preserved; it versions the claim lock, and resetting it
  *   would make a future claim reuse a lock id that's still held from an earlier claim.
  *
@@ -23,13 +23,11 @@ export const clearBooth = async ({
   boothAsset,
   boothData,
   credentials,
-  emptySpotImageUrl,
   world,
 }: {
   boothAsset: DroppedAssetInterface;
   boothData: BoothDataObjectType;
   credentials: Credentials;
-  emptySpotImageUrl?: string; // the app's transparent spot picture: what every decor spot shows when empty
   world: any;
 }): Promise<{ previousOwnerId: string | null }> => {
   try {
@@ -65,7 +63,7 @@ export const clearBooth = async ({
     await getBoothSpots(credentials, sceneDropId)
       .then((spots) =>
         Promise.all([
-          resetBoothSpots({ emptySpotImageUrl, spots }),
+          resetBoothSpots({ spots }),
           setBoothSign({ sign: spots[SIGN_UNIQUE_NAME], text: UNCLAIMED_SIGN_TEXT }),
         ]),
       )

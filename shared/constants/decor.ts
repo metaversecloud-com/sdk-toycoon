@@ -87,8 +87,28 @@ export const getSpotsForSlotType = (slotType: DecorSlotType) =>
 
 export const getDecorPrice = (item: DecorItemType) => item.cost || DEFAULT_DECOR_COST;
 
-// The picture shown on a spot: the item's layerUrl, or its inventory image until a layerUrl is set
-export const getDecorImageUrl = (item: DecorItemType) => item.layerUrl || item.icon || "";
+// Lina's booth pictures for rugs, awnings, and lights (made to fit the booth): booth-<kind>-<color>.png, e.g.
+// booth-rug-pink.png. The colors she uploaded, by kind (2026-10-26).
+export const DECOR_IMAGE_BASE_URL = "https://sdk-toycoon.s3.us-east-1.amazonaws.com";
+export const DECOR_IMAGE_COLORS: { [slotType in DecorSlotType]?: string[] } = {
+  awning: ["blue", "green", "pink"],
+  lights: ["white", "multicolor"],
+  rug: ["blue", "green", "pink"],
+};
+
+/**
+ * The picture shown on a spot: the item's layerUrl if set; otherwise, for rugs, awnings, and lights, Lina's booth
+ * picture in the color named in the item ("Rug Pink" / "Pink Rug" → booth-rug-pink.png, "Multi-Color Lights" →
+ * booth-lights-multicolor.png); otherwise (toys, unknown colors) the item's inventory image.
+ */
+export const getDecorImageUrl = (item: DecorItemType) => {
+  if (item.layerUrl) return item.layerUrl;
+  const slotType = getDecorSlotType(item);
+  const name = item.name.toLowerCase().replace(/[^a-z]/g, "");
+  const color = slotType ? DECOR_IMAGE_COLORS[slotType]?.find((candidate) => name.includes(candidate)) : undefined;
+  if (slotType && color) return `${DECOR_IMAGE_BASE_URL}/booth-${slotType}-${color}.png`;
+  return item.icon || "";
+};
 
 // { [spot]: { [urlSlug]: item name } }, as stored on the visitor's data object. null = removed.
 export type PlacedDecorationsType = { [spot: string]: { [urlSlug: string]: string | null } };

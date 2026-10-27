@@ -1033,6 +1033,12 @@ button.tc-bubble:focus-visible,
   text-align: center;
 }
 
+/* Claim / go-to / abandon and "Back to the workshop" at the bottom of a display */
+.tc-booth-actions {
+  justify-items: stretch;
+  gap: 8px;
+}
+
 .tc-shop__sign {
   margin: 0;
   padding: 6px 12px;

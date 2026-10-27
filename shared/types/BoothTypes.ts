@@ -15,9 +15,6 @@ export interface BoothDataObjectType {
   badges: string[];
   lastInteractionTimestamp: number; // ms; drives the 14-day inactivity check
   claimCount: number; // increments on every claim; versions the claim lock so a stale read can't double-claim
-  // Each decor spot's empty picture and size, recorded the first time the app touches this booth (before anything is
-  // placed), so removing a decoration or clearing the booth can put them back. scale is the asset's own assetScale.
-  spotDefaults?: { [spot: string]: { bottom: string; top: string; scale?: number } };
 }
 
 // Lightweight index of every booth scene in a world, cached on the World data object

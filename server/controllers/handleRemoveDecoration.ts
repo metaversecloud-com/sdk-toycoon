@@ -4,19 +4,17 @@ import {
   claimActionLock,
   errorHandler,
   getEmptySpotImageUrl,
-  getBoothData,
   getBoothIndex,
   getBoothSpots,
   getCredentials,
   initializeVisitorData,
   requireBoothInWorld,
-  getSpotEmptyState,
   resetSpot,
 } from "@utils/index.js";
 
 /**
- * Takes the decoration off a spot of the player's display ({ spot }): the spot goes back to its empty picture and
- * original size, and the item goes back to the player's available items.
+ * Takes the decoration off a spot of the player's display ({ spot }): the spot goes back to the transparent empty
+ * picture at normal size, and the item goes back to the player's available items.
  */
 export const handleRemoveDecoration = async (req: Request, res: Response) => {
   try {
@@ -34,10 +32,7 @@ export const handleRemoveDecoration = async (req: Request, res: Response) => {
     const current = visitorData.placedDecorations?.[spot]?.[urlSlug] ?? null;
     if (!current) throw `Nothing is on the ${DECOR_SPOT_LABELS[spot]} spot.`;
 
-    const [spots, { boothData }] = await Promise.all([
-      getBoothSpots(credentials, booth.sceneDropId),
-      getBoothData(credentials, booth.keyAssetId, booth.sceneDropId),
-    ]);
+    const spots = await getBoothSpots(credentials, booth.sceneDropId);
 
     const placementPath = `placedDecorations.${spot}.${urlSlug}`;
     const claimed = await claimActionLock({
@@ -50,13 +45,11 @@ export const handleRemoveDecoration = async (req: Request, res: Response) => {
     if (!claimed)
       return res.status(409).json({ success: false, message: "Already decorating — try again in a moment." });
 
-    // Without a saved empty picture, the app's transparent spot picture goes on instead. Without the spot itself, the
-    // record is still cleared so the item is usable again.
-    const emptySpotImageUrl = getEmptySpotImageUrl(req.hostname);
-    const defaults = getSpotEmptyState(spot, boothData.spotDefaults, emptySpotImageUrl) ?? { bottom: "", top: "" };
+    // The spot goes back to the transparent empty picture at normal size. Without the spot itself, the record is still
+    // cleared so the item is usable again.
     if (spots[spot]) {
       try {
-        await resetSpot(spots[spot], defaults, emptySpotImageUrl);
+        await resetSpot(spots[spot], getEmptySpotImageUrl(req.hostname));
       } catch (swapError) {
         await visitor
           .updateDataObject({ [placementPath]: current }, {})

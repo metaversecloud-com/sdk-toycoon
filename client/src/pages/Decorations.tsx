@@ -6,7 +6,13 @@ import { ActionAlert, ClaimBoothFirst, PageContainer, PlayerStats, ShopItemCard 
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
 import { ErrorType } from "@/context/types";
 import { backendAPI, getErrorText, setErrorMessage, setGameState, WORLD_OBJECTS } from "@/utils";
-import { DECOR_SLOT_TYPE_LABELS, DecorSlotType, getDecorPrice, getDecorSlotType } from "@shared/constants";
+import {
+  DECOR_SLOT_TYPE_LABELS,
+  DecorSlotType,
+  getDecorPrice,
+  getDecorSlotType,
+  getOwnedDecorCount,
+} from "@shared/constants";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 
 // The order the shop's sections appear in
@@ -15,12 +21,19 @@ const SLOT_TYPE_ORDER: DecorSlotType[] = ["toy", "rug", "awning", "lights"];
 /**
  * Decoration shop: buy toys, rugs, awnings, and lights with Toy Tokens, in one section per kind with small cards two
  * per row. Each purchase adds one copy; players set them out on their display from the display itself
- * (BoothView → DisplayDecor), one item per spot.
+ * (BoothView → DisplayDecor), one item per spot. Toys bought here are display pieces, separate from the toys players
+ * craft and sell.
  */
 export const Decorations = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { ecosystemDecorations, ecosystemToys, hasInteractiveParams, ownsBoothInThisWorld, visitorInventory } =
-    useContext(GlobalStateContext);
+  const {
+    ecosystemDecorations,
+    ecosystemToys,
+    hasInteractiveParams,
+    ownsBoothInThisWorld,
+    visitorData,
+    visitorInventory,
+  } = useContext(GlobalStateContext);
 
   const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -106,9 +119,7 @@ export const Decorations = () => {
                         key={item.id}
                         item={item}
                         price={price}
-                        owned={
-                          (visitorInventory?.decorations[item.id] ?? visitorInventory?.toys[item.id])?.quantity ?? 0
-                        }
+                        owned={getOwnedDecorCount(item, visitorInventory, visitorData)}
                         blockedReason={blockedReason}
                         isBusy={busyId === item.id}
                         isDisabled={busyId !== null}

@@ -10,6 +10,7 @@ import {
   handleCraftToy,
   handleGetGameState,
   handleGetLeaderboard,
+  handleGrantTokens,
   handlePlaceDecoration,
   handlePurchaseDecoration,
   handleRemoveDecoration,
@@ -67,5 +68,6 @@ router.post("/admin/clear-booth", requireAdmin, handleClearBooth);
 router.post("/admin/clear-inactive-booths", requireAdmin, handleClearInactiveBooths);
 router.post("/admin/reset-world", requireAdmin, handleResetWorld);
 router.post("/admin/reset-leaderboard", requireAdmin, handleResetLeaderboard);
+router.post("/admin/grant-tokens", requireAdmin, handleGrantTokens);
 
 export default router;

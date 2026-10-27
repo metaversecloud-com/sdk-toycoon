@@ -5,6 +5,7 @@ import {
   DECOR_SPOTS,
   getDecorImageUrl,
   getDecorSlotType,
+  getOwnedDecorCount,
 } from "@shared/constants/index.js";
 import {
   claimActionLock,
@@ -21,8 +22,9 @@ import {
 
 /**
  * Puts a decoration ({ itemId, spot }) on a spot of the player's display in this world, replacing whatever was there
- * (which goes back to the player's available items). Rugs, awnings, and lights each have their own spot; toys (crafted
- * or bought) can go on any of the three toy spots. A player can place as many copies of an item as they own.
+ * (which goes back to the player's available items). Rugs, awnings, and lights each have their own spot; toys bought
+ * at the Decorations shop can go on any of the three toy spots (crafted toys are for selling, not decorating).
+ * A player can place as many copies of an item as they own.
  * The spot's picture is swapped to the item's booth picture (Lina's S3 image, its layerUrl, or its inventory image) —
  * toys fitted to an 80px box, the rest at their own size.
  */
@@ -51,7 +53,8 @@ export const handlePlaceDecoration = async (req: Request, res: Response) => {
     const current = visitorData.placedDecorations?.[spot]?.[urlSlug] ?? null;
     if (current === item.name) throw `${item.displayName} is already on the ${spotLabel} spot.`;
 
-    const owned = (visitorInventory.decorations[itemId] ?? visitorInventory.toys[itemId])?.quantity ?? 0;
+    // Toys come from the Decorations shop (decorToys), never the crafted toys that are for selling
+    const owned = getOwnedDecorCount(item, visitorInventory, visitorData);
     if (owned < 1) throw `Buy a ${item.displayName} at Decorations first.`;
     if (owned - countPlacements(visitorData.placedDecorations, item.name, { spot, urlSlug }) < 1) {
       throw `All your ${item.displayName}s are already on display. Buy another one to put it here too.`;

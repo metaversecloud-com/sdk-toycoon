@@ -70,6 +70,11 @@ export type VisitorDataObjectType = {
       [urlSlug: string]: string | null;
     };
   };
+  // Toys bought at the Decorations shop, by ecosystem item id → copies owned. Display pieces only: kept here, never in
+  // the Topia inventory, so they can't be sold at the Cashier (crafted toys live in the inventory and are what's sold).
+  decorToys: {
+    [itemId: string]: number;
+  };
   boothIds: {
     [urlSlug: string]: string; // sceneDropId of this visitor's booth in that world (one booth per world)
   };

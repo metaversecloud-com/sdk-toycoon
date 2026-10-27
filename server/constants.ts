@@ -71,5 +71,6 @@ export const DEFAULT_VISITOR_DATA: VisitorDataObjectType = {
   toyCraftStartedAt: {},
   lockVersions: {},
   placedDecorations: {},
+  decorToys: {},
   boothIds: {},
 };

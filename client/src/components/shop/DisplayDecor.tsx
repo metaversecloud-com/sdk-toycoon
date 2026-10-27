@@ -17,6 +17,7 @@ import {
   DecorSlotType,
   getClaimedSignText,
   getDecorSlotType,
+  getOwnedDecorCount,
   PlacedDecorationsType,
 } from "@shared/constants";
 import { InventoryItemType } from "@shared/types/InventoryItems";
@@ -46,8 +47,8 @@ export const DisplayDecor = () => {
     .filter((entry): entry is { item: InventoryItemType; slotType: DecorSlotType } => !!entry.slotType);
   const itemsByName = Object.fromEntries(catalog.map(({ item }) => [item.name, item]));
 
-  const ownedCount = (item: InventoryItemType) =>
-    (visitorInventory?.decorations[item.id] ?? visitorInventory?.toys[item.id])?.quantity ?? 0;
+  // Toys here are the ones bought at Decorations, never crafted ones (those are for selling)
+  const ownedCount = (item: InventoryItemType) => getOwnedDecorCount(item, visitorInventory, visitorData);
 
   // What can go on a spot right now: the right kind of item, with a copy not already set out somewhere else
   const optionsForSpot = (spot: string) =>

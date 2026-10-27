@@ -110,6 +110,20 @@ export const getDecorImageUrl = (item: DecorItemType) => {
   return item.icon || "";
 };
 
+/**
+ * How many copies of a decoration the player owns for decorating. Toys bought at the Decorations shop are tracked on
+ * the player's data object (decorToys), separately from crafted toys, which are for selling. Rugs, awnings, and lights
+ * are ordinary inventory items.
+ */
+export const getOwnedDecorCount = (
+  item: { id: string; type?: string },
+  visitorInventory?: { decorations: { [itemId: string]: { quantity: number } } },
+  visitorData?: { decorToys?: { [itemId: string]: number } },
+) =>
+  item.type === "toy"
+    ? (visitorData?.decorToys?.[item.id] ?? 0)
+    : (visitorInventory?.decorations[item.id]?.quantity ?? 0);
+
 // { [spot]: { [urlSlug]: item name } }, as stored on the visitor's data object. null = removed.
 export type PlacedDecorationsType = { [spot: string]: { [urlSlug: string]: string | null } };
 

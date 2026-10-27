@@ -8,6 +8,7 @@ export * from "./handleClearInactiveBooths.js";
 export * from "./handleCollectAllMaterials.js";
 export * from "./handleGetGameState.js";
 export * from "./handleGetLeaderboard.js";
+export * from "./handleGrantTokens.js";
 export * from "./handlePlaceDecoration.js";
 export * from "./handlePurchaseDecorations.js";
 export * from "./handleRemoveDecoration.js";

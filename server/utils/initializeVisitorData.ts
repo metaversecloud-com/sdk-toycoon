@@ -6,8 +6,8 @@ import { standardizeError } from "./standardizeError.js";
 
 /**
  * The visitor's data object (with defaults, as in getVisitor) + their inventory (Toy Tokens, XP, level, materials, toys, decorations).
- * Decorations and toys get availableQuantity = owned − placed on a display in ANY world: items are bought once into
- * the global inventory and can be placed in any world while any are available (placed toys can't be sold).
+ * Decorations get availableQuantity = owned − placed on a display in ANY world: decor is bought once into the global
+ * inventory and can be placed in any world while any are available. (Decor toys aren't inventory items; see decorToys.)
  */
 export const initializeVisitorData = async (
   credentials: Credentials,
@@ -21,7 +21,7 @@ export const initializeVisitorData = async (
       getVisitorInventory({ credentials, forceRefreshInventory, visitor }),
     ]);
 
-    for (const item of [...Object.values(visitorInventory.decorations), ...Object.values(visitorInventory.toys)]) {
+    for (const item of Object.values(visitorInventory.decorations)) {
       item.availableQuantity = Math.max(0, (item.quantity || 0) - countPlacements(visitorData.placedDecorations, item.name));
     }
 

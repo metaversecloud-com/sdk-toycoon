@@ -2,27 +2,25 @@
 import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { ActionAlert, ClaimBoothFirst, PageContainer, PlayerStats } from "@/components";
+import { ActionAlert, ClaimBoothFirst, PageContainer, PlayerStats, ShopItemCard } from "@/components";
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
 import { ErrorType } from "@/context/types";
 import { backendAPI, getErrorText, setErrorMessage, setGameState, WORLD_OBJECTS } from "@/utils";
-import { countPlacements, getDecorPrice, getDecorSlotType } from "@shared/constants";
+import { DECOR_SLOT_TYPE_LABELS, DecorSlotType, getDecorPrice, getDecorSlotType } from "@shared/constants";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 
+// The order the shop's sections appear in
+const SLOT_TYPE_ORDER: DecorSlotType[] = ["toy", "rug", "awning", "lights"];
+
 /**
- * Decoration shop: buy rugs, awnings, lights, and toys with Toy Tokens. Each purchase adds one copy; players set them
- * out on their display from the display itself (BoothView → DisplayDecor), one item per spot.
+ * Decoration shop: buy toys, rugs, awnings, and lights with Toy Tokens, in one section per kind with small cards two
+ * per row. Each purchase adds one copy; players set them out on their display from the display itself
+ * (BoothView → DisplayDecor), one item per spot.
  */
 export const Decorations = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const {
-    ecosystemDecorations,
-    ecosystemToys,
-    hasInteractiveParams,
-    ownsBoothInThisWorld,
-    visitorData,
-    visitorInventory,
-  } = useContext(GlobalStateContext);
+  const { ecosystemDecorations, ecosystemToys, hasInteractiveParams, ownsBoothInThisWorld, visitorInventory } =
+    useContext(GlobalStateContext);
 
   const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -63,11 +61,10 @@ export const Decorations = () => {
 
   const level = visitorInventory?.level || 1;
   const tokens = visitorInventory?.coins || 0;
-  // Everything that can go on a display: toys first, then rugs, awnings, and lights
-  const items: InventoryItemType[] = [
-    ...Object.values(ecosystemToys || {}),
-    ...Object.values(ecosystemDecorations || {}),
-  ].filter((item) => !!getDecorSlotType(item));
+  // Everything that can go on a display, with the kind of spot it goes on
+  const catalog = [...Object.values(ecosystemToys || {}), ...Object.values(ecosystemDecorations || {})]
+    .map((item) => ({ item, slotType: getDecorSlotType(item) }))
+    .filter((entry): entry is { item: InventoryItemType; slotType: DecorSlotType } => !!entry.slotType);
 
   if (!ownsBoothInThisWorld && !isLoading) {
     return (
@@ -86,52 +83,50 @@ export const Decorations = () => {
           <PlayerStats visitorInventory={visitorInventory} />
         </div>
 
-        <ul className="tc-recipes" aria-label="Decorations">
-          {items.map((item) => {
-            const price = getDecorPrice(item);
-            const owned = (visitorInventory?.decorations[item.id] ?? visitorInventory?.toys[item.id])?.quantity ?? 0;
-            const onDisplay = countPlacements(visitorData?.placedDecorations, item.name);
-            const isLocked = level < item.unlockLevel;
-            const canAfford = tokens >= price;
-            const isBusy = busyId === item.id;
-
-            let reason: string | null = null;
-            if (isLocked) reason = `Reach level ${item.unlockLevel} to unlock.`;
-            else if (!canAfford) reason = `Need ${price - tokens} more Toy Tokens.`;
-
+        <div className="tc-shop">
+          {SLOT_TYPE_ORDER.map((slotType) => {
+            const items = catalog.filter((entry) => entry.slotType === slotType).map(({ item }) => item);
+            if (!items.length) return null;
             return (
-              <li key={item.id} className="tc-recipe">
-                <div className="tc-recipe__header">
-                  <span className="tc-recipe__art" aria-hidden="true">
-                    {item.icon ? <img src={item.icon} alt="" /> : "🎀"}
-                  </span>
-                  <div>
-                    <h3 className="tc-recipe__title">{item.displayName}</h3>
-                    <p className="tc-recipe__meta">
-                      {price} Toy Tokens · You own {owned}
-                      {onDisplay > 0 && ` (${onDisplay} on display)`}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="tc-cta"
-                  disabled={busyId !== null || !!reason}
-                  onClick={() =>
-                    runAction(
-                      item.id,
-                      () => backendAPI.post("/purchase-decoration", { decorationId: item.id }),
-                      `Bought ${item.displayName}. Set it out from your display.`,
-                    )
-                  }
-                >
-                  {isBusy ? "Buying..." : `Buy · ${price} Toy Tokens`}
-                </button>
-                {reason && <p className="tc-recipe__blocked">{reason}</p>}
-              </li>
+              <section key={slotType} aria-labelledby={`tc-shop-${slotType}`}>
+                <h3 id={`tc-shop-${slotType}`} className="tc-section-title">
+                  {DECOR_SLOT_TYPE_LABELS[slotType]}
+                </h3>
+                <ul className="tc-shop-items">
+                  {items.map((item) => {
+                    const price = getDecorPrice(item);
+                    const blockedReason =
+                      level < item.unlockLevel
+                        ? `Level ${item.unlockLevel}`
+                        : tokens < price
+                          ? `You need ${price - tokens} more Toy Tokens`
+                          : null;
+                    return (
+                      <ShopItemCard
+                        key={item.id}
+                        item={item}
+                        price={price}
+                        owned={
+                          (visitorInventory?.decorations[item.id] ?? visitorInventory?.toys[item.id])?.quantity ?? 0
+                        }
+                        blockedReason={blockedReason}
+                        isBusy={busyId === item.id}
+                        isDisabled={busyId !== null}
+                        onBuy={() =>
+                          runAction(
+                            item.id,
+                            () => backendAPI.post("/purchase-decoration", { decorationId: item.id }),
+                            `Bought ${item.displayName}. Set it out from your display.`,
+                          )
+                        }
+                      />
+                    );
+                  })}
+                </ul>
+              </section>
             );
           })}
-        </ul>
+        </div>
       </div>
 
       <p className="sr-only" role="status">

@@ -33,14 +33,6 @@ export const STATIONS = {
 
 export type StationType = keyof typeof STATIONS;
 
-// The app's own transparent picture for an empty decor spot (client/public/spots), used when a spot's picture link
-// can't be read. Served from the app's address, e.g. https://<app host>/spots/empty-80.png
-export const EMPTY_SPOT_IMAGE_PATH = "/spots/empty-80.png";
-
-// Topia only accepts public https picture links, so when the app runs on localhost it points at the deployed dev
-// site's copy instead (override with EMPTY_SPOT_IMAGE_URL)
-export const DEPLOYED_APP_URL = "https://toycoon0-dev-topia.topia-rtsdk.com";
-
 // Visitors land this many px below the target asset so they don't spawn on top of it
 // TODO: tune once real booth/Main Scene layouts exist
 export const TELEPORT_Y_OFFSET = 140;

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { clearBoothsWhere, errorHandler, getBoothIndex, getCredentials, getEmptySpotImageUrl } from "@utils/index.js";
+import { clearBoothsWhere, errorHandler, getBoothIndex, getCredentials } from "@utils/index.js";
 import { INACTIVE_BOOTH_THRESHOLD_MS } from "../constants.js";
 
 /**
@@ -15,7 +15,6 @@ export const handleClearInactiveBooths = async (req: Request, res: Response) => 
     const { clearedSceneDropIds, failedSceneDropIds } = await clearBoothsWhere({
       booths,
       credentials,
-      emptySpotImageUrl: getEmptySpotImageUrl(req.hostname),
       shouldClear: ({ lastInteractionTimestamp }) => (lastInteractionTimestamp || 0) < cutoff,
       world,
     });

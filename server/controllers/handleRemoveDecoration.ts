@@ -3,7 +3,6 @@ import { DECOR_SPOT_LABELS, DECOR_SPOTS } from "@shared/constants/index.js";
 import {
   claimActionLock,
   errorHandler,
-  getEmptySpotImageUrl,
   getBoothIndex,
   getBoothSpots,
   getCredentials,
@@ -13,8 +12,8 @@ import {
 } from "@utils/index.js";
 
 /**
- * Takes the decoration off a spot of the player's display ({ spot }): the spot goes back to the transparent empty
- * picture at normal size, and the item goes back to the player's available items.
+ * Takes the decoration off a spot of the player's display ({ spot }): the spot goes back to its empty picture (Lina's
+ * awning-/lights-/rug-/toy-empty.png), and the item goes back to the player's available items.
  */
 export const handleRemoveDecoration = async (req: Request, res: Response) => {
   try {
@@ -45,11 +44,11 @@ export const handleRemoveDecoration = async (req: Request, res: Response) => {
     if (!claimed)
       return res.status(409).json({ success: false, message: "Already decorating — try again in a moment." });
 
-    // The spot goes back to the transparent empty picture at normal size. Without the spot itself, the record is still
-    // cleared so the item is usable again.
+    // The spot goes back to its empty picture. Without the spot itself, the record is still cleared so the item is
+    // usable again.
     if (spots[spot]) {
       try {
-        await resetSpot(spots[spot], getEmptySpotImageUrl(req.hostname));
+        await resetSpot(spots[spot], spot);
       } catch (swapError) {
         await visitor
           .updateDataObject({ [placementPath]: current }, {})

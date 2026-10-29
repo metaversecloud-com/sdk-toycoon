@@ -5,7 +5,6 @@ import {
   getBoothData,
   getBoothIndex,
   getCredentials,
-  getEmptySpotImageUrl,
   getOwnedBoothSceneDropId,
   getVisitor,
 } from "@utils/index.js";
@@ -37,13 +36,7 @@ export const handleAbandonBooth = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "You don't have a display in this world." });
     }
 
-    await clearBooth({
-      boothAsset,
-      boothData,
-      credentials,
-      emptySpotImageUrl: getEmptySpotImageUrl(req.hostname),
-      world,
-    });
+    await clearBooth({ boothAsset, boothData, credentials, world });
 
     // A booth just opened up, so the "all booths taken" alert no longer applies
     world

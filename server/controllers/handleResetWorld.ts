@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { clearBoothsWhere, errorHandler, getBoothIndex, getCredentials, getEmptySpotImageUrl } from "@utils/index.js";
+import { clearBoothsWhere, errorHandler, getBoothIndex, getCredentials } from "@utils/index.js";
 
 /**
  * Admin: releases every booth in the world and clears world-level alerts.
@@ -16,7 +16,6 @@ export const handleResetWorld = async (req: Request, res: Response) => {
     const { clearedSceneDropIds, failedSceneDropIds } = await clearBoothsWhere({
       booths,
       credentials,
-      emptySpotImageUrl: getEmptySpotImageUrl(req.hostname),
       shouldClear: () => true,
       world,
     });

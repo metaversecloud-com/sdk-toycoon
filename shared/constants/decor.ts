@@ -96,6 +96,16 @@ export const DECOR_IMAGE_COLORS: { [slotType in DecorSlotType]?: string[] } = {
   rug: ["blue", "green", "pink"],
 };
 
+// What each kind of spot shows with nothing on it (Lina's pictures, same sizes as the decorations that go there)
+export const DECOR_EMPTY_IMAGES: { [slotType in DecorSlotType]: string } = {
+  awning: `${DECOR_IMAGE_BASE_URL}/awning-empty.png`,
+  lights: `${DECOR_IMAGE_BASE_URL}/lights-empty.png`,
+  rug: `${DECOR_IMAGE_BASE_URL}/rug-empty.png`,
+  toy: `${DECOR_IMAGE_BASE_URL}/toy-empty.png`,
+};
+
+export const getEmptySpotImage = (spot: string) => DECOR_EMPTY_IMAGES[DECOR_SPOTS[spot]];
+
 /**
  * The picture shown on a spot: the item's layerUrl if set; otherwise, for rugs, awnings, and lights, Lina's booth
  * picture in the color named in the item ("Rug Pink" / "Pink Rug" → booth-rug-pink.png, "Multi-Color Lights" →
@@ -120,9 +130,7 @@ export const getOwnedDecorCount = (
   visitorInventory?: { decorations: { [itemId: string]: { quantity: number } } },
   visitorData?: { decorToys?: { [itemId: string]: number } },
 ) =>
-  item.type === "toy"
-    ? (visitorData?.decorToys?.[item.id] ?? 0)
-    : (visitorInventory?.decorations[item.id]?.quantity ?? 0);
+  item.type === "toy" ? visitorData?.decorToys?.[item.id] ?? 0 : visitorInventory?.decorations[item.id]?.quantity ?? 0;
 
 // { [spot]: { [urlSlug]: item name } }, as stored on the visitor's data object. null = removed.
 export type PlacedDecorationsType = { [spot: string]: { [urlSlug: string]: string | null } };

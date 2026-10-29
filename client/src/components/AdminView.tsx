@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 
 // components
-import { ConfirmationModal } from "@/components";
+import { ConfirmationModal, SHOW_LEADERBOARD } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
@@ -140,14 +140,16 @@ export const AdminView = () => {
       >
         Clear inactive displays (14+ days)
       </button>
-      <button
-        type="button"
-        className="btn btn-danger-outline"
-        disabled={isWorking}
-        onClick={() => setPendingAction("reset-leaderboard")}
-      >
-        Reset leaderboard
-      </button>
+      {SHOW_LEADERBOARD && (
+        <button
+          type="button"
+          className="btn btn-danger-outline"
+          disabled={isWorking}
+          onClick={() => setPendingAction("reset-leaderboard")}
+        >
+          Reset leaderboard
+        </button>
+      )}
       <button
         type="button"
         className="btn btn-danger"

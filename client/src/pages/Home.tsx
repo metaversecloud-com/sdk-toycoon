@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 // components
-import { BoothView, Leaderboard, PageContainer, StartHere } from "@/components";
+import { BoothView, Leaderboard, PageContainer, SHOW_LEADERBOARD, StartHere } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
@@ -38,7 +38,7 @@ export const Home = () => {
       {targetBooth ? (
         <div className="grid gap-6">
           <BoothView booth={targetBooth} />
-          <Leaderboard />
+          {SHOW_LEADERBOARD && <Leaderboard />}
         </div>
       ) : (
         <StartHere />

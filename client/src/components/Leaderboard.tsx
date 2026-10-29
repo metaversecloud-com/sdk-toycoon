@@ -13,6 +13,9 @@ import { backendAPI, setErrorMessage } from "@/utils";
 // types
 import { LeaderboardResponseType } from "@shared/types/LeaderboardTypes";
 
+// Leaderboard is hidden from players and admins for now; the server still tracks entries, so flip this to bring it back
+export const SHOW_LEADERBOARD = false;
+
 /**
  * This world's top players. Only fetched the first time the accordion is opened so it doesn't slow down every drawer load.
  */

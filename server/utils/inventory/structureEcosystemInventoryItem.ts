@@ -1,6 +1,7 @@
 import { InventoryItemInterface } from "@rtsdk/topia";
 import { getDecorUnlockLevel, getMaterialSpawnSeconds, getMaterialUnlockLevel } from "@shared/constants/index.js";
 import { InventoryItemType, MetadataType } from "../../types/index.js";
+import { getMaterialCollectXp } from "@shared/constants/economy.js";
 
 // Ecosystem metadata may arrive as strings, so coerce numeric fields defensively
 const num = (value: unknown, fallback = 0) => {
@@ -65,7 +66,7 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
     // Economy
     cost: num(cost),
     reward: num(rewardTokens ?? reward), // Lina's metadata uses rewardTokens / rewardXP
-    xpReward: num(rewardXP ?? xpReward),
+    xpReward: num(rewardXP ?? xpReward, isMaterial ? getMaterialCollectXp(materialName) : 0),
     // Materials and shop items fall back to the brief's unlock levels / generation times when metadata doesn't set them
     unlockLevel: num(
       unlockLevel,

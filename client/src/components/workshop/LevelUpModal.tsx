@@ -1,6 +1,6 @@
 import { KeyboardEvent, useEffect, useId, useRef } from "react";
 
-import { MATERIAL_UNLOCK_LEVELS, TOY_RECIPES } from "@shared/constants";
+import { MATERIALS, TOY_RECIPES } from "@shared/constants";
 
 /**
  * Celebrates a level-up after a sale: the new level, the bonus Toy Tokens, and what it unlocked.
@@ -23,8 +23,8 @@ export const LevelUpModal = ({
   const unlockedToys = TOY_RECIPES.filter(({ unlockLevel }) => levelsGained.includes(unlockLevel)).map(
     ({ displayName }) => displayName,
   );
-  const unlockedMaterials = Object.entries(MATERIAL_UNLOCK_LEVELS)
-    .filter(([, unlockLevel]) => levelsGained.includes(unlockLevel))
+  const unlockedMaterials = Object.entries(MATERIALS)
+    .filter(([, { unlockLevel }]) => levelsGained.includes(unlockLevel))
     .map(([name]) => name);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 

@@ -29,7 +29,3 @@ export const getMaterialCap = (name: string) => getMaterialConfig(name).cap;
 export const getMaterialUnlockLevel = (name: string) => getMaterialConfig(name).unlockLevel;
 export const getMaterialSpawnSeconds = (name: string) => getMaterialConfig(name).spawnSeconds;
 export const getMaterialCollectXp = (name: string) => getMaterialConfig(name).collectXp;
-
-export const MATERIAL_UNLOCK_LEVELS: { [materialName: string]: number } = Object.fromEntries(
-  Object.entries(MATERIALS).map(([name, config]) => [name, config.unlockLevel]),
-);

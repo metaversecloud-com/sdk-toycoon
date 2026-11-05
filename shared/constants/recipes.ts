@@ -66,7 +66,9 @@ export const TOY_RECIPES: ToyRecipeType[] = [
 
 // XP for each material unit collected — the smallest reward in the loop (collect < craft < sell), so the XP bar moves
 // from the very first collect
-export const MATERIAL_COLLECT_XP = 1;
+export const material = {
+  xpReward: 1
+};
 
 // Toy Tokens granted once when a player reaches a level (economy model, Leveling tab)
 export const LEVEL_UP_TOKEN_REWARDS: { [level: number]: number } = {

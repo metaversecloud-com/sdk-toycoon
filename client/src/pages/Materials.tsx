@@ -30,7 +30,7 @@ import {
   WORLD_OBJECTS,
   XpResultType,
 } from "@/utils";
-import { getMaterialCap, MATERIAL_COLLECT_XP } from "@shared/constants";
+import { getMaterialCap, material.xpReward } from "@shared/constants";
 import { getLevelFromXp } from "@shared/levels";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 import { VisitorInventoryItemType } from "@shared/types/VisitorData";
@@ -42,7 +42,7 @@ import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
  * Start → wait spawnIntervalSeconds → Collect (one unit). Countdowns here only mirror the server's timer for display;
  * the server decides when a station is ready. Each material is capped (Wood 20, Fabric 10, …).
  * Taps update the screen immediately (optimistic) and are corrected by the server's reply — or undone if it refuses,
- * with the reason shown right above the dock. Each unit collected earns MATERIAL_COLLECT_XP.
+ * with the reason shown right above the dock. Each unit collected earns material.xpReward.
  */
 export const Materials = () => {
   const dispatch = useContext(GlobalDispatchContext);
@@ -164,7 +164,7 @@ export const Materials = () => {
     patchGame(dispatch, {
       materialTimers: { [name]: null },
       materials: { [id]: withQuantity(previousItem, previousItem.quantity + 1) },
-      ...xpPatch(previousXp + MATERIAL_COLLECT_XP),
+      ...xpPatch(previousXp + material.xpReward),
     });
     setStatusMessage("");
     setActionError("");
@@ -172,7 +172,7 @@ export const Materials = () => {
       const { data } = await backendAPI.post("/collect-material", { materialId: id });
       patchGame(dispatch, { materials: { [id]: data.item } });
       applyCollectXp(data.xpResult);
-      setStatusMessage(`Collected 1 ${displayName}. +${MATERIAL_COLLECT_XP} XP`);
+      setStatusMessage(`Collected 1 ${displayName}. +${material.xpReward} XP`);
       finishCollect(true);
     } catch (error) {
       patchGame(dispatch, {
@@ -200,7 +200,7 @@ export const Materials = () => {
     patchGame(dispatch, {
       materialTimers: Object.fromEntries(ready.map(({ name }) => [name, null])),
       materials: Object.fromEntries(previous.map(({ material, item }) => [material.id, withQuantity(item, item.quantity + 1)])),
-      ...xpPatch(previousXp + MATERIAL_COLLECT_XP * ready.length),
+      ...xpPatch(previousXp + material.xpReward * ready.length),
     });
     setBusy("all", true);
     setStatusMessage("");
@@ -217,7 +217,7 @@ export const Materials = () => {
       if (data.xpResult) applyCollectXp(data.xpResult);
       else patchGame(dispatch, xpPatch(previousXp));
       const names = Object.values(collected).map(({ displayName, name }) => displayName || name);
-      setStatusMessage(`Collected ${names.join(", ")}. +${MATERIAL_COLLECT_XP * names.length} XP`);
+      setStatusMessage(`Collected ${names.join(", ")}. +${material.xpReward * names.length} XP`);
     } catch (error) {
       patchGame(dispatch, {
         materialTimers: Object.fromEntries(previous.map(({ material, timer }) => [material.name, timer])),
@@ -246,7 +246,7 @@ export const Materials = () => {
       <div className="tc-workshop">
         <div className="tc-workshop__top">
           <h2 className="tc-sign">{WORLD_OBJECTS.materials}</h2>
-          <p className="tc-hint">Start a station, wait, then collect! +{MATERIAL_COLLECT_XP} XP each</p>
+          <p className="tc-hint">Start a station, wait, then collect! +{material.xpReward} XP each</p>
           <PlayerStats visitorInventory={visitorInventory} />
         </div>
 

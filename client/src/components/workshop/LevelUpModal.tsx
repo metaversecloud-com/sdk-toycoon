@@ -1,6 +1,7 @@
-import { KeyboardEvent, useEffect, useId, useRef } from "react";
+import { KeyboardEvent, useContext, useEffect, useId, useRef } from "react";
 
-import { MATERIAL_UNLOCK_LEVELS, TOY_RECIPES } from "@shared/constants";
+import { GlobalStateContext } from "@/context/GlobalContext";
+import { TOY_RECIPES } from "@shared/constants";
 
 /**
  * Celebrates a level-up after a sale: the new level, the bonus Toy Tokens, and what it unlocked.
@@ -18,14 +19,16 @@ export const LevelUpModal = ({
   onClose: () => void;
 }) => {
   const titleId = useId();
+  const { ecosystemMaterials } = useContext(GlobalStateContext);
 
   // What the levels just gained unlocked
   const unlockedToys = TOY_RECIPES.filter(({ unlockLevel }) => levelsGained.includes(unlockLevel)).map(
     ({ displayName }) => displayName,
   );
-  const unlockedMaterials = Object.entries(MATERIAL_UNLOCK_LEVELS)
-    .filter(([, unlockLevel]) => levelsGained.includes(unlockLevel))
-    .map(([name]) => name);
+  // Read from the ecosystem items so metadata overrides (unlockLevel) are respected
+  const unlockedMaterials = Object.values(ecosystemMaterials || {})
+    .filter((material) => levelsGained.includes(material.unlockLevel))
+    .map((material) => material.displayName);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {

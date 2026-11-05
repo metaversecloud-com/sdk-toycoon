@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { MATERIAL_COLLECT_XP } from "@shared/constants/index.js";
 import { awardBonusXp, collectFromBin, errorHandler, getCredentials, getMaterialBin } from "@utils/index.js";
 
 /**
@@ -20,7 +19,7 @@ export const handleCollectMaterial = async (req: Request, res: Response) => {
     // The XP is granted at the same time as the material (not after), so the collect costs one less round trip
     const result = await collectFromBin({
       alongsideGrant: () =>
-        awardBonusXp({ amount: MATERIAL_COLLECT_XP, boothKeyAssetId: booth.keyAssetId, credentials, visitor, visitorData }),
+        awardBonusXp({ amount: material.xpReward, boothKeyAssetId: booth.keyAssetId, credentials, visitor, visitorData }),
       credentials,
       generationStartedAt: generationStartedAt!,
       material,

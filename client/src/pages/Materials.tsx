@@ -30,7 +30,7 @@ import {
   WORLD_OBJECTS,
   XpResultType,
 } from "@/utils";
-import { getMaterialCap, material.xpReward } from "@shared/constants";
+import { getMaterialCap } from "@shared/constants";
 import { getLevelFromXp } from "@shared/levels";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 import { VisitorInventoryItemType } from "@shared/types/VisitorData";
@@ -42,7 +42,7 @@ import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
  * Start → wait spawnIntervalSeconds → Collect (one unit). Countdowns here only mirror the server's timer for display;
  * the server decides when a station is ready. Each material is capped (Wood 20, Fabric 10, …).
  * Taps update the screen immediately (optimistic) and are corrected by the server's reply — or undone if it refuses,
- * with the reason shown right above the dock. Each unit collected earns material.xpReward.
+ * with the reason shown right above the dock. Each unit collected earns that material's xpReward.
  */
 export const Materials = () => {
   const dispatch = useContext(GlobalDispatchContext);
@@ -196,11 +196,13 @@ export const Materials = () => {
       timer: visitorData?.materialGenerationStartedAt?.[material.name] ?? null,
       item: ownedItem(material),
     }));
+    // Each material pays its own XP
+    const readyXp = ready.reduce((total, material) => total + material.xpReward, 0);
 
     patchGame(dispatch, {
       materialTimers: Object.fromEntries(ready.map(({ name }) => [name, null])),
       materials: Object.fromEntries(previous.map(({ material, item }) => [material.id, withQuantity(item, item.quantity + 1)])),
-      ...xpPatch(previousXp + material.xpReward * ready.length),
+      ...xpPatch(previousXp + readyXp),
     });
     setBusy("all", true);
     setStatusMessage("");
@@ -217,7 +219,12 @@ export const Materials = () => {
       if (data.xpResult) applyCollectXp(data.xpResult);
       else patchGame(dispatch, xpPatch(previousXp));
       const names = Object.values(collected).map(({ displayName, name }) => displayName || name);
-      setStatusMessage(`Collected ${names.join(", ")}. +${material.xpReward * names.length} XP`);
+      // Only what the server actually collected earns XP
+      const collectedXp = Object.keys(collected).reduce(
+        (total, id) => total + (ecosystemMaterials?.[id]?.xpReward ?? 0),
+        0,
+      );
+      setStatusMessage(`Collected ${names.join(", ")}. +${collectedXp} XP`);
     } catch (error) {
       patchGame(dispatch, {
         materialTimers: Object.fromEntries(previous.map(({ material, timer }) => [material.name, timer])),
@@ -246,7 +253,7 @@ export const Materials = () => {
       <div className="tc-workshop">
         <div className="tc-workshop__top">
           <h2 className="tc-sign">{WORLD_OBJECTS.materials}</h2>
-          <p className="tc-hint">Start a station, wait, then collect! +{material.xpReward} XP each</p>
+          <p className="tc-hint">Start a station, wait, then collect! Every unit earns XP.</p>
           <PlayerStats visitorInventory={visitorInventory} />
         </div>
 

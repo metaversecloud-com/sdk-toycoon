@@ -64,9 +64,16 @@ export type VisitorDataObjectType = {
     [action: string]: number;
   };
   placedDecorations: {
-    [slot: string]: {
-      [urlSlug: string]: string; // decoration name currently shown on that slot's anchor in that world, e.g. "Blue Rug"
+    [spot: string]: {
+      // Item name shown on that spot (a booth asset's unique name, e.g. "toycoon_rug") in that world, e.g. "Blue Rug".
+      // null = removed. See shared/constants/decor.ts.
+      [urlSlug: string]: string | null;
     };
+  };
+  // Toys bought at the Decorations shop, by ecosystem item id → copies owned. Display pieces only: kept here, never in
+  // the Topia inventory, so they can't be sold at the Cashier (crafted toys live in the inventory and are what's sold).
+  decorToys: {
+    [itemId: string]: number;
   };
   boothIds: {
     [urlSlug: string]: string; // sceneDropId of this visitor's booth in that world (one booth per world)

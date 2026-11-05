@@ -1,75 +1,129 @@
-// server/controllers/handlePlaceDecoration.ts
 import { Request, Response } from "express";
-import { countPlaced, getDecorSlot } from "@shared/constants/index.js";
 import {
+  countPlacements,
+  DECOR_SPOT_LABELS,
+  DECOR_SPOTS,
+  getDecorImageUrl,
+  getDecorSlotType,
+  getOwnedDecorCount,
+} from "@shared/constants/index.js";
+import {
+  claimActionLock,
   errorHandler,
   getBoothIndex,
+  getBoothSpots,
   getCredentials,
   getInventoryItems,
-  getOwnedBoothSceneDropId,
   initializeVisitorData,
-  World,
+  getFitScale,
+  getSpotBox,
+  requireBoothInWorld,
 } from "@utils/index.js";
 
 /**
- * Shows an owned decoration in the visitor's booth by swapping the image on that slot's anchor asset.
- * Idempotent, so no lock is needed: a double-click writes the same value twice.
+ * Puts a decoration ({ itemId, spot }) on a spot of the player's display in this world, replacing whatever was there
+ * (which goes back to the player's available items). Rugs, awnings, and lights each have their own spot; toys bought
+ * at the Decorations shop can go on any of the three toy spots (crafted toys are for selling, not decorating).
+ * A player can place as many copies of an item as they own.
+ * The spot's picture is swapped to the item's booth picture (Lina's S3 image, its layerUrl, or its inventory image) —
+ * toys fitted to an 80px box, the rest at their own size.
  */
 export const handlePlaceDecoration = async (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
     const { profileId, urlSlug } = credentials;
-    const { decorationId } = req.body;
-    if (!decorationId) throw "Valid decorationId is required";
+    const { itemId, spot } = req.body || {};
 
-    const [{ ecosystemDecorations }, { visitor, visitorData, visitorInventory }, { booths }] = await Promise.all([
-      getInventoryItems(credentials),
-      initializeVisitorData(credentials),
-      getBoothIndex(credentials),
-    ]);
+    const spotType = DECOR_SPOTS[spot];
+    if (!spotType) throw "Choose a spot on your display.";
 
-    const decoration = ecosystemDecorations[decorationId];
-    if (!decoration) throw "Invalid decoration";
+    const [{ ecosystemDecorations, ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths }] =
+      await Promise.all([
+        getInventoryItems(credentials),
+        initializeVisitorData(credentials),
+        getBoothIndex(credentials),
+      ]);
+    const booth = await requireBoothInWorld(credentials, visitorData, "decorating", booths);
 
-    const slot = getDecorSlot(decoration.name);
-    if (!slot) throw `${decoration.displayName} isn't set up for placement yet.`;
-    if (visitorInventory.level < slot.unlockLevel) throw "You haven't unlocked this decoration yet.";
+    const item = ecosystemDecorations[itemId] ?? ecosystemToys[itemId];
+    if (!item) throw "Invalid decoration";
+    const spotLabel = DECOR_SPOT_LABELS[spot];
+    if (getDecorSlotType(item) !== spotType) throw `${item.displayName} can't go on the ${spotLabel} spot.`;
 
-    const boothSceneDropId = getOwnedBoothSceneDropId({ booths, profileId, urlSlug, visitorData });
-    if (!boothSceneDropId) throw "Claim a booth in this world first.";
+    const current = visitorData.placedDecorations?.[spot]?.[urlSlug] ?? null;
+    if (current === item.name) throw `${item.displayName} is already on the ${spotLabel} spot.`;
 
-    const previous = visitorData.placedDecorations?.[slot.id]?.[urlSlug] ?? null;
-    if (previous === decoration.name) throw "That decoration is already in your booth.";
-
-    const owned = visitorInventory.decorations[decorationId]?.quantity ?? 0;
-    if (owned - countPlaced(visitorData.placedDecorations, decoration.name) < 1) {
-      throw "You don't have a copy available for this world. Buy it first.";
+    // Toys come from the Decorations shop (decorToys), never the crafted toys that are for selling
+    const owned = getOwnedDecorCount(item, visitorInventory, visitorData);
+    if (owned < 1) throw `Buy a ${item.displayName} at Decorations first.`;
+    if (owned - countPlacements(visitorData.placedDecorations, item.name, { spot, urlSlug }) < 1) {
+      throw `All your ${item.displayName}s are already on display. Buy another one to put it here too.`;
     }
 
-    const imageUrl = decoration.layerUrl || decoration.icon;
-    if (!imageUrl) throw `${decoration.displayName} has no image configured.`;
+    const imageUrl = getDecorImageUrl(item);
+    if (!imageUrl) throw `${item.displayName} doesn't have a picture yet.`;
 
-    const world = World.create(urlSlug, { credentials });
-    const anchors = await world.fetchDroppedAssetsBySceneDropId({
-      sceneDropId: boothSceneDropId,
-      uniqueName: slot.anchorUniqueName,
+    const spots = await getBoothSpots(credentials, booth.sceneDropId);
+    const spotAsset = spots[spot];
+    if (!spotAsset) throw `Your display doesn't have a ${spotLabel} spot set up yet.`;
+
+    // Topia shows a new picture at its own pixel size: toys are fitted to the toy spots' box, the rest (Lina's booth
+    // pictures) show as they are
+    const box = getSpotBox(spot);
+    const scale = box ? await getFitScale(imageUrl, box) : 1;
+
+    // One decor change at a time, so a double-tap can't place one copy on two spots
+    const placementPath = `placedDecorations.${spot}.${urlSlug}`;
+    const claimed = await claimActionLock({
+      action: "decor",
+      alsoWrite: { [placementPath]: item.name },
+      profileId,
+      visitor,
+      visitorData,
     });
-    const anchor = anchors?.[0];
-    if (!anchor) throw "Couldn't find that spot in your booth. Ask an admin to reset your booth.";
+    if (!claimed)
+      return res.status(409).json({ success: false, message: "Already decorating — try again in a moment." });
 
-    // Record first (this is what frees the previous variant), then swap the image; undo the record if the swap fails
-    const placedPath = `placedDecorations.${slot.id}.${urlSlug}`;
-    await visitor.updateDataObject({ [placedPath]: decoration.name }, {});
     try {
-      await anchor.updateWebImageLayers("", imageUrl);
+      await spotAsset.updateWebImageLayers(imageUrl, "");
     } catch (swapError) {
-      await visitor.updateDataObject({ [placedPath]: previous }, {}).catch((error: any) =>
-        errorHandler({ error, functionName: "handlePlaceDecoration", message: "Error undoing placement" }),
-      );
+      // The picture didn't change, so the placement didn't happen
+      await visitor
+        .updateDataObject({ [placementPath]: current }, {})
+        .catch((error: any) =>
+          errorHandler({ error, functionName: "handlePlaceDecoration", message: "Error undoing placement record" }),
+        );
       throw swapError;
     }
 
-    return res.json({ success: true, slot: slot.id, placedDecoration: decoration.name });
+    // Best-effort: the decoration is placed either way, just not resized if this fails. Always sent: Topia doesn't
+    // report a spot's current size, so there's no telling whether it already matches.
+    await spotAsset
+      .updateScale(scale)
+      .catch((error: any) =>
+        errorHandler({ error, functionName: "handlePlaceDecoration", message: `Error resizing ${spot}` }),
+      );
+    console.log(
+      `[decor] Placed ${item.name} on ${spot}: asset ${spotAsset.id} at (${spotAsset.position?.x}, ${spotAsset.position?.y}), ` +
+        `picture ${imageUrl}, scale ${scale}`,
+    );
+
+    visitor
+      .updateDataObject(
+        {},
+        {
+          analytics: [{ analyticName: "toycoon_decor_placed", profileId, urlSlug, uniqueKey: `${profileId}_${spot}` }],
+        },
+      )
+      .catch((error: any) =>
+        errorHandler({ error, functionName: "handlePlaceDecoration", message: "Error tracking analytics" }),
+      );
+
+    const placedDecorations = {
+      ...visitorData.placedDecorations,
+      [spot]: { ...visitorData.placedDecorations?.[spot], [urlSlug]: item.name },
+    };
+    return res.json({ success: true, spot, itemName: item.name, replaced: current, placedDecorations });
   } catch (error) {
     return errorHandler({
       error,

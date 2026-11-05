@@ -10,8 +10,10 @@ import {
   handleCraftToy,
   handleGetGameState,
   handleGetLeaderboard,
+  handleGrantTokens,
   handlePlaceDecoration,
   handlePurchaseDecoration,
+  handleRemoveDecoration,
   handleResetLeaderboard,
   handleResetWorld,
   handleSellToy,
@@ -49,6 +51,8 @@ router.get("/leaderboard", handleGetLeaderboard);
 router.post("/claim-booth", handleClaimBooth);
 router.post("/abandon-booth", handleAbandonBooth);
 router.post("/purchase-decoration", handlePurchaseDecoration);
+router.post("/place-decoration", handlePlaceDecoration);
+router.post("/remove-decoration", handleRemoveDecoration);
 router.post("/start-material", handleStartMaterial);
 router.post("/collect-material", handleCollectMaterial);
 router.post("/collect-all-materials", handleCollectAllMaterials);
@@ -57,7 +61,6 @@ router.post("/collect-toy", handleCollectToy);
 router.post("/sell-toy", handleSellToy);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);
-router.post("/place-decoration", handlePlaceDecoration);
 router.post("/teleport/:station(materials|assembly|cashier|shop)", handleTeleportToStation);
 
 // Admin — every route here is gated by requireAdmin
@@ -65,5 +68,6 @@ router.post("/admin/clear-booth", requireAdmin, handleClearBooth);
 router.post("/admin/clear-inactive-booths", requireAdmin, handleClearInactiveBooths);
 router.post("/admin/reset-world", requireAdmin, handleResetWorld);
 router.post("/admin/reset-leaderboard", requireAdmin, handleResetLeaderboard);
+router.post("/admin/grant-tokens", requireAdmin, handleGrantTokens);
 
 export default router;

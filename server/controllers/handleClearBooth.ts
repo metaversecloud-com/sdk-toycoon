@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
-import { clearBooth, errorHandler, getBoothData, getBoothIndex, getCredentials } from "@utils/index.js";
+import {
+  clearBooth,
+  errorHandler,
+  getBoothData,
+  getBoothIndex,
+  getCredentials,
+} from "@utils/index.js";
 
 /**
  * Admin: releases a single booth (defaults to the booth whose drawer the admin has open)

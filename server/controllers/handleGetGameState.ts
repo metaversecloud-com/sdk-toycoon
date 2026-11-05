@@ -75,6 +75,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       visitorInventory,
       ecosystemMaterials,
       ecosystemToys,
+      ecosystemDecorations,
       ownsBoothInThisWorld: !!ownedBoothSceneDropId,
       ownedBoothSceneDropId,
       targetBooth,

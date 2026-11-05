@@ -30,7 +30,11 @@ export const clearBoothsWhere = async ({
       await Promise.all(
         batch.map(async (sceneDropId) => {
           try {
-            const { boothAsset, boothData } = await getBoothData(credentials, booths[sceneDropId].keyAssetId, sceneDropId);
+            const { boothAsset, boothData } = await getBoothData(
+              credentials,
+              booths[sceneDropId].keyAssetId,
+              sceneDropId,
+            );
             if (!boothData.ownerId || !shouldClear(boothData)) return;
 
             await clearBooth({ boothAsset, boothData, credentials, world });

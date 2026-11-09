@@ -11,6 +11,7 @@ import {
   initializeVisitorData,
   modifyVisitorInventoryItem,
   requireBoothInWorld,
+  saveBadgeProgress,
 } from "@utils/index.js";
 import { CURRENCY_ITEM_NAME } from "../constants.js";
 
@@ -90,6 +91,7 @@ export const handleSellToy = async (req: Request, res: Response) => {
     await visitor
       .updateDataObject({ totalCoinsEarned, totalToysSold }, { analytics })
       .catch((error: any) => errorHandler({ error, functionName: "handleSellToy", message: "Error saving lifetime earnings" }));
+    saveBadgeProgress({ credentials, level, update: {}, visitor, visitorData: { ...visitorData, totalCoinsEarned, totalToysSold } });
 
     return res.json({
       success: true,

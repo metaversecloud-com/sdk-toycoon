@@ -59,6 +59,7 @@ export interface GameStateResponseType {
   ecosystemMaterials: { [itemId: string]: InventoryItemType }; // every collectable material, for the Materials page
   ecosystemToys: { [itemId: string]: InventoryItemType }; // every craftable toy item (incl. color variants), for the Workshop
   ecosystemDecorations: { [itemId: string]: InventoryItemType }; // rugs, awnings, lights — for the Decorations shop
+  ecosystemBadges: { [itemId: string]: InventoryItemType }; // every BADGE item, for the trophy's Badges tab
   ownsBoothInThisWorld: boolean;
   ownedBoothSceneDropId: string | null;
   targetBooth: TargetBoothType | null; // null when the clicked asset isn't part of a booth scene (e.g. Main Scene)

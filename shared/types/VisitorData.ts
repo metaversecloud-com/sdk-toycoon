@@ -54,7 +54,15 @@ export type VisitorDataObjectType = {
   totalCoinsEarned: number; // lifetime Toy Tokens earned; only ever increments. Also the "has started playing" sentinel
   totalToysCrafted: number; // all toy types; shown on the leaderboard
   totalToysSold: number; // only ever increments
-  badges: string[];
+  badges: string[]; // ids of the badges granted (see shared/constants/badges.ts); the inventory items are what's shown
+  // Badge progress (see shared/constants/badges.ts). Maps rather than lists where two tabs might write at once, so a
+  // dot-path write of the same key is harmless.
+  materialsCollected: number;
+  toysCraftedByType: { [recipeId: string]: number };
+  recentCraftTimes: number[]; // server ms timestamps of the last few toys collected
+  daysPlayed: { [day: string]: boolean }; // "YYYY-MM-DD" (UTC) → true
+  shopsVisited: { [ownerProfileId: string]: boolean }; // other players' displays opened, up to MAX_SHOPS_VISITED_TRACKED
+  decorPlacedEver: { [itemId: string]: boolean };
   materialGenerationStartedAt: {
     [materialName: string]: number | null; // server ms timestamp the bin was started; null/missing = idle (see getMaterialBinState)
   };

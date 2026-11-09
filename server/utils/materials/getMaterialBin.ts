@@ -35,7 +35,7 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
     const generationStartedAt = visitorData.materialGenerationStartedAt?.[material.name] ?? null;
     const { state } = getMaterialBinState(generationStartedAt, material.spawnIntervalSeconds);
 
-    return { booth, cap, generationStartedAt, material, owned, state, visitor, visitorData };
+    return { booth, cap, generationStartedAt, material, owned, state, visitor, visitorData, visitorInventory };
   } catch (error) {
     throw standardizeError(error);
   }

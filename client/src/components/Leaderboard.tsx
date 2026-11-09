@@ -13,8 +13,56 @@ import { backendAPI, setErrorMessage } from "@/utils";
 // types
 import { LeaderboardResponseType } from "@shared/types/LeaderboardTypes";
 
-// Leaderboard is hidden from players and admins for now; the server still tracks entries, so flip this to bring it back
+// The booth page and admin view leave the leaderboard out for now (the trophy shows it); flip this to bring them back
 export const SHOW_LEADERBOARD = false;
+
+/**
+ * This world's top players (rank, level, XP, toys crafted), with the viewer's own rank if they're further down.
+ * A stacked list rather than a table, so it fits the narrow drawer: each player's stats sit under their name.
+ */
+export const LeaderboardTable = ({ data }: { data: LeaderboardResponseType }) => {
+  if (data.leaderboard.length === 0) return <p className="p2">No players on the leaderboard yet.</p>;
+
+  const { leaderboard, myEntry } = data;
+  const isMeInTop = leaderboard.some(({ profileId }) => profileId === myEntry?.profileId);
+
+  return (
+    <div className="grid gap-2">
+      <ol className="tc-leaderboard" aria-label={`Top ${leaderboard.length} players in this world`}>
+        {leaderboard.map((entry) => {
+          const isMe = entry.profileId === myEntry?.profileId;
+          return (
+            <li
+              key={entry.profileId}
+              className={`tc-leaderboard__row${isMe ? " tc-leaderboard__row--me" : ""}`}
+              aria-current={isMe ? "true" : undefined}
+            >
+              <span className="tc-leaderboard__rank">
+                <span className="sr-only">Rank </span>
+                {entry.rank}
+              </span>
+              <span className="tc-leaderboard__player">
+                <span className="tc-leaderboard__name">
+                  {entry.displayName}
+                  {isMe && " (you)"}
+                </span>
+                <span className="tc-leaderboard__stats">
+                  Level {entry.level} · {entry.totalXp.toLocaleString()} XP · {entry.totalToysCrafted.toLocaleString()}{" "}
+                  {entry.totalToysCrafted === 1 ? "toy" : "toys"} crafted
+                </span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      {myEntry && !isMeInTop && (
+        <p className="p2">
+          You're #{myEntry.rank} with {myEntry.totalXp.toLocaleString()} XP.
+        </p>
+      )}
+    </div>
+  );
+};
 
 /**
  * This world's top players. Only fetched the first time the accordion is opened so it doesn't slow down every drawer load.
@@ -37,48 +85,14 @@ export const Leaderboard = () => {
   };
 
   const renderContent = () => {
-    if (isLoading) return <p className="p2" role="status">Loading leaderboard...</p>;
+    if (isLoading)
+      return (
+        <p className="p2" role="status">
+          Loading leaderboard...
+        </p>
+      );
     if (!data) return null;
-    if (data.leaderboard.length === 0) return <p className="p2">No players on the leaderboard yet.</p>;
-
-    const { leaderboard, myEntry } = data;
-    const isMeInTop = leaderboard.some(({ profileId }) => profileId === myEntry?.profileId);
-
-    return (
-      <div className="grid gap-2">
-        <table className="table">
-          <caption className="sr-only">Top {leaderboard.length} players in this world</caption>
-          <thead>
-            <tr>
-              <th scope="col" className="h5">Rank</th>
-              <th scope="col" className="h5">Player</th>
-              <th scope="col" className="h5">Level</th>
-              <th scope="col" className="h5">Total XP</th>
-              <th scope="col" className="h5">Toys crafted</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leaderboard.map((entry) => {
-              const isMe = entry.profileId === myEntry?.profileId;
-              return (
-                <tr key={entry.profileId} aria-current={isMe ? "true" : undefined}>
-                  <td className="p2">{entry.rank}</td>
-                  <td className="p2">{isMe ? <strong>{entry.displayName} (you)</strong> : entry.displayName}</td>
-                  <td className="p2">{entry.level}</td>
-                  <td className="p2">{entry.totalXp.toLocaleString()}</td>
-                  <td className="p2">{entry.totalToysCrafted.toLocaleString()}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {myEntry && !isMeInTop && (
-          <p className="p2">
-            You're #{myEntry.rank} with {myEntry.totalXp.toLocaleString()} XP.
-          </p>
-        )}
-      </div>
-    );
+    return <LeaderboardTable data={data} />;
   };
 
   return (

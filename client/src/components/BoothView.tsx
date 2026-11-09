@@ -76,9 +76,9 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
 
   // The owner's lifetime stats, leaving out any that couldn't be read
   const ownerStatRows = [
-    { icon: "🧸", label: "Toys created", value: ownerStats?.totalToysCrafted },
-    { icon: "🏷️", label: "Toys sold", value: ownerStats?.totalToysSold },
-    { icon: "⭐", label: "Experience Points", value: ownerStats?.totalXp },
+    { label: "Toys created", value: ownerStats?.totalToysCrafted },
+    { label: "Toys sold", value: ownerStats?.totalToysSold },
+    { label: "Experience Points", value: ownerStats?.totalXp },
   ].filter(({ value }) => value != null);
 
   const title = !isClaimed ? "Open Display" : isOwnedByVisitor ? "Your Display" : `${ownerDisplayName}'s Display`;
@@ -104,12 +104,9 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
 
         {ownerStatRows.length > 0 && (
           <ul className="tc-panel tc-booth-stats">
-            {ownerStatRows.map(({ icon, label, value }) => (
+            {ownerStatRows.map(({ label, value }) => (
               <li key={label} className="tc-booth-stats__item">
-                <span className="tc-booth-stats__value">
-                  <span aria-hidden="true">{icon} </span>
-                  {value?.toLocaleString()}
-                </span>
+                <span className="tc-booth-stats__value">{value?.toLocaleString()}</span>
                 {label}
               </li>
             ))}

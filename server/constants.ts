@@ -22,13 +22,14 @@ export const MAX_CLAIM_ATTEMPTS = 5;
 export const MAIN_SCENE_UNIQUE_NAME = "toycoon_start";
 
 // The Main Scene's gameplay stations, one per step on the Start Here sign (POST /teleport/<station>). Each teleport lands
-// next to the station's asset and opens its page in the drawer (path null = just teleport).
-// TODO: confirm with Lina that each station asset has this unique name in every world
+// next to the station's asset and opens its page in the drawer (path null = just teleport). A station may go by more
+// than one unique name (the first one found is used): the Decorations shop was first named toycoon_shop.
+// TODO: confirm with Lina that each station asset has one of these unique names in every world
 export const STATIONS = {
-  materials: { uniqueName: "toycoon_materials", path: "/materials", title: "Materials Box" },
-  assembly: { uniqueName: "toycoon_assembly", path: "/workshop", title: "Toy Assembly" },
-  cashier: { uniqueName: "toycoon_cashier", path: "/sell", title: "Cashier" },
-  shop: { uniqueName: "toycoon_shop", path: "/decorations", title: "Decorations" },
+  materials: { uniqueNames: ["toycoon_materials"], path: "/materials", title: "Materials Box" },
+  assembly: { uniqueNames: ["toycoon_assembly"], path: "/workshop", title: "Toy Assembly" },
+  cashier: { uniqueNames: ["toycoon_cashier"], path: "/sell", title: "Cashier" },
+  shop: { uniqueNames: ["toycoon_decorations", "toycoon_shop"], path: "/decorations", title: "Decorations" },
 } as const;
 
 export type StationType = keyof typeof STATIONS;

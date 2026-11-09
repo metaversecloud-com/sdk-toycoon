@@ -1333,8 +1333,9 @@ button.tc-bubble:focus-visible,
   opacity: 0.4;
 }
 
+/* One equal column per stat, however wide the drawer is (a grid of fixed-width columns left empty ones on wide screens) */
 .tc-booth-stats {
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  display: flex;
   margin: 0;
   list-style: none;
   font-size: 0.85rem;
@@ -1343,7 +1344,14 @@ button.tc-bubble:focus-visible,
 
 .tc-booth-stats__item {
   display: grid;
+  flex: 1 1 0;
+  align-content: start;
   gap: 2px;
+  min-width: 0;
+}
+
+.tc-booth-stats__item + .tc-booth-stats__item {
+  border-left: 1px solid var(--tc-cream-edge);
 }
 
 .tc-booth-stats__value {

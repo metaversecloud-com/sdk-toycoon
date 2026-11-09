@@ -30,7 +30,7 @@ import {
   WORLD_OBJECTS,
   XpResultType,
 } from "@/utils";
-import { getMaterialCap } from "@shared/constants";
+import { getMaterialCap, getTimerSeconds } from "@shared/constants";
 import { getLevelFromXp } from "@shared/levels";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 import { VisitorInventoryItemType } from "@shared/types/VisitorData";
@@ -51,6 +51,7 @@ export const Materials = () => {
     hasInteractiveParams,
     ownsBoothInThisWorld,
     serverTimeOffset,
+    timerSpeed,
     visitorData,
     visitorInventory,
   } = useContext(GlobalStateContext);
@@ -90,7 +91,12 @@ export const Materials = () => {
   const nextUnlockLevel = lockedMaterials.length ? Math.min(...lockedMaterials.map(({ unlockLevel }) => unlockLevel)) : null;
   const nextUnlockCount = lockedMaterials.filter(({ unlockLevel }) => unlockLevel === nextUnlockLevel).length;
 
-  const stations = materials.map((material) => {
+  const stations = materials.map((baseMaterial) => {
+    // Station times follow this world's timer speed (set by an admin)
+    const material = {
+      ...baseMaterial,
+      spawnIntervalSeconds: getTimerSeconds(baseMaterial.spawnIntervalSeconds, timerSpeed),
+    };
     const owned = visitorInventory?.materials[material.id]?.quantity ?? 0;
     const isLocked = level < material.unlockLevel;
     const isFull = owned >= getMaterialCap(material.name);

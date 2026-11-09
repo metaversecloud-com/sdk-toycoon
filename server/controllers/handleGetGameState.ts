@@ -14,7 +14,7 @@ import {
   trackAnalytics,
 } from "@utils/index.js";
 import { DroppedAssetInterface } from "@rtsdk/topia";
-import { MAX_SHOPS_VISITED_TRACKED } from "@shared/constants/index.js";
+import { DEFAULT_TIMER_SPEED, MAX_SHOPS_VISITED_TRACKED } from "@shared/constants/index.js";
 import { GameStateResponseType, TargetBoothType } from "@shared/types/BoothTypes.js";
 
 /**
@@ -115,6 +115,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       availableBoothCount: Object.values(booths).filter(({ ownerId }) => !ownerId).length,
       isAdmin,
       boothsFullAlert: isAdmin ? worldData?.boothsFullAlert || null : null,
+      timerSpeed: worldData?.timerSpeed || DEFAULT_TIMER_SPEED,
       serverTime: Date.now(),
     };
 

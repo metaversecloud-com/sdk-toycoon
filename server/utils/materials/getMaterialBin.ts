@@ -1,4 +1,4 @@
-import { getMaterialCap } from "@shared/constants/index.js";
+import { getMaterialCap, getTimerSeconds } from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import { Credentials } from "../../types/index.js";
 import { initializeVisitorData } from "../initializeVisitorData.js";
@@ -17,7 +17,7 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
     if (!materialId) throw "Valid materialId is required";
 
     // Independent Topia calls run in parallel so a Start/Collect tap waits on one round-trip, not three
-    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths }] = await Promise.all([
+    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths, worldData }] = await Promise.all([
       getInventoryItems(credentials),
       initializeVisitorData(credentials),
       getBoothIndex(credentials),
@@ -33,7 +33,10 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
     if (owned >= cap) throw `Your ${material.displayName} is full (${owned}/${cap}). Use some before collecting more.`;
 
     const generationStartedAt = visitorData.materialGenerationStartedAt?.[material.name] ?? null;
-    const { state } = getMaterialBinState(generationStartedAt, material.spawnIntervalSeconds);
+    const { state } = getMaterialBinState(
+      generationStartedAt,
+      getTimerSeconds(material.spawnIntervalSeconds, worldData?.timerSpeed),
+    );
 
     return { booth, cap, generationStartedAt, material, owned, state, visitor, visitorData, visitorInventory };
   } catch (error) {

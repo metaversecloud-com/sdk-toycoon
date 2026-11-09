@@ -33,6 +33,7 @@ import {
   TOY_RECIPES,
   ToyRecipeType,
   ToyTypeId,
+  getTimerSeconds,
 } from "@shared/constants";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 import { VisitorInventoryItemType } from "@shared/types/VisitorData";
@@ -54,6 +55,7 @@ export const Workshop = () => {
     hasInteractiveParams,
     ownsBoothInThisWorld,
     serverTimeOffset,
+    timerSpeed,
     visitorData,
     visitorInventory,
   } = useContext(GlobalStateContext);
@@ -83,7 +85,11 @@ export const Workshop = () => {
   const materialCounts = getMaterialCountsByName(visitorInventory?.materials);
   const materialIcons = getMaterialIcons(ecosystemMaterials);
   const toyItems = Object.values(ecosystemToys || {});
-  const unlockedRecipes = TOY_RECIPES.filter(({ unlockLevel }) => unlockLevel <= level);
+  // Craft times follow this world's timer speed (set by an admin)
+  const unlockedRecipes = TOY_RECIPES.filter(({ unlockLevel }) => unlockLevel <= level).map((recipe) => ({
+    ...recipe,
+    craftSeconds: getTimerSeconds(recipe.craftSeconds, timerSpeed),
+  }));
   const nextRecipe = TOY_RECIPES.find(({ unlockLevel }) => unlockLevel > level);
 
   const setBusy = (recipeId: ToyTypeId, isBusy: boolean) =>

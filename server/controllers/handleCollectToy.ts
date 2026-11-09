@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
-import { getCraftedToyItem, getToyRecipeById, RECENT_CRAFT_TIMES_KEPT, ToyTypeId } from "@shared/constants/index.js";
+import {
+  getCraftedToyItem,
+  getTimerSeconds,
+  getToyRecipeById,
+  RECENT_CRAFT_TIMES_KEPT,
+  ToyTypeId,
+} from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
   awardBonusXp,
@@ -27,7 +33,7 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     const recipe = getToyRecipeById(req.body?.recipeId as ToyTypeId);
     if (!recipe) throw "Valid recipeId is required";
 
-    const [{ ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths }] = await Promise.all([
+    const [{ ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths, worldData }] = await Promise.all([
       getInventoryItems(credentials),
       initializeVisitorData(credentials),
       getBoothIndex(credentials),
@@ -38,7 +44,7 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     if (!toy) throw `The ${recipe.displayName} toy item isn't set up in the ecosystem.`;
 
     const craftStartedAt = visitorData.toyCraftStartedAt?.[recipe.id] ?? null;
-    const { state } = getMaterialBinState(craftStartedAt, recipe.craftSeconds);
+    const { state } = getMaterialBinState(craftStartedAt, getTimerSeconds(recipe.craftSeconds, worldData?.timerSpeed));
     if (state === "idle") throw `You aren't crafting a ${recipe.displayName}.`;
     if (state === "generating") throw `Your ${recipe.displayName} isn't finished yet.`;
 

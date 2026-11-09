@@ -1,3 +1,4 @@
+import { TimerSpeedType } from "@shared/constants";
 import { VisitorDataObjectType, VisitorInventoryItemType, VisitorInventoryType } from "@shared/types/VisitorData";
 import { BoothsFullAlertType, TargetBoothType } from "@shared/types/BoothTypes";
 import { InventoryItemType } from "@shared/types/InventoryItems";
@@ -48,6 +49,7 @@ export interface InitialState {
   ecosystemToys?: { [itemId: string]: InventoryItemType };
   ecosystemDecorations?: { [itemId: string]: InventoryItemType };
   ecosystemBadges?: { [itemId: string]: InventoryItemType };
+  timerSpeed?: TimerSpeedType;
   ownsBoothInThisWorld?: boolean;
   ownedBoothSceneDropId?: string | null;
   targetBooth?: TargetBoothType | null;

@@ -23,11 +23,12 @@ import { TOY_RECIPES } from "@shared/constants";
  */
 export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
   const { ownsBoothInThisWorld, visitorInventory } = useContext(GlobalStateContext);
+  const badges = Object.values(visitorInventory?.badges || {});
   const { claimBooth, claimResult, isClaiming } = useClaimBooth();
   const resultRef = useRef<HTMLHeadingElement>(null);
   const allTakenRef = useRef<HTMLParagraphElement>(null);
 
-  const { claimDate, isClaimed, isOwnedByVisitor, level, ownerDisplayName, sceneDropId } = booth;
+  const { claimDate, isClaimed, isOwnedByVisitor, level, ownerDisplayName, ownerStats, sceneDropId } = booth;
   const hasStarted = (visitorInventory?.xp ?? 0) > 0;
 
   // The claim button disappears once used, so move focus to the result instead of stranding keyboard users
@@ -74,6 +75,13 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
     );
   };
 
+  // The owner's lifetime stats, leaving out any that couldn't be read
+  const ownerStatRows = [
+    { icon: "🧸", label: "Toys created", value: ownerStats?.totalToysCrafted },
+    { icon: "🏷️", label: "Toys sold", value: ownerStats?.totalToysSold },
+    { icon: "⭐", label: "Experience Points", value: ownerStats?.totalXp },
+  ].filter(({ value }) => value != null);
+
   const title = !isClaimed ? "Open Display" : isOwnedByVisitor ? "Your Display" : `${ownerDisplayName}'s Display`;
   const claimedOn = claimDate ? new Date(claimDate).toLocaleDateString() : null;
 
@@ -94,6 +102,40 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
         {isOwnedByVisitor && (claimResult === "claimed" || !hasStarted) && renderNextStep()}
 
         {isOwnedByVisitor && <DisplayDecor />}
+
+        {isOwnedByVisitor && (
+          <section className="tc-display-decor" aria-labelledby="tc-badges-title">
+            <h3 id="tc-badges-title" className="tc-panel__title">
+              Your badges
+            </h3>
+            {badges.length > 0 ? (
+              <ul className="tc-badges">
+                {badges.map(({ ecosystemItemId, displayName, icon }) => (
+                  <li key={ecosystemItemId} className="tc-badges__item">
+                    {icon && <img src={icon} alt="" />}
+                    {displayName}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="tc-badges__empty">No badges yet.</p>
+            )}
+          </section>
+        )}
+
+        {ownerStatRows.length > 0 && (
+          <ul className="tc-panel tc-booth-stats">
+            {ownerStatRows.map(({ icon, label, value }) => (
+              <li key={label} className="tc-booth-stats__item">
+                <span className="tc-booth-stats__value">
+                  <span aria-hidden="true">{icon} </span>
+                  {value?.toLocaleString()}
+                </span>
+                {label}
+              </li>
+            ))}
+          </ul>
+        )}
 
         <div className="tc-panel tc-booth-actions">
           {renderAction()}

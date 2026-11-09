@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getMaterialCap, MATERIAL_COLLECT_XP } from "@shared/constants/index.js";
+import { getMaterialCap } from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
   awardBonusXp,
@@ -62,13 +62,11 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
     if (Object.keys(collected).length === 0) throw "Couldn't collect anything — try again in a moment.";
 
     // One XP grant for the whole batch
-    const xpResult = await awardBonusXp({
-      amount: MATERIAL_COLLECT_XP * Object.keys(collected).length,
-      boothKeyAssetId: booth.keyAssetId,
-      credentials,
-      visitor,
-      visitorData,
-    });
+    const xpEarned = readyBins.reduce((total, { id, xpReward }) => total + (collected[id] ? xpReward : 0), 0);
+    const xpResult =
+      xpEarned > 0
+        ? await awardBonusXp({ amount: xpEarned, boothKeyAssetId: booth.keyAssetId, credentials, visitor, visitorData })
+        : null;
 
     return res.json({ success: true, collected, xpResult });
   } catch (error) {

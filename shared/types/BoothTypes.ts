@@ -36,6 +36,13 @@ export interface WorldDataObjectType {
   boothsFullAlert?: BoothsFullAlertType | null;
 }
 
+// An owner's lifetime stats; a stat is null if it couldn't be read
+export interface BoothOwnerStatsType {
+  totalToysCrafted: number | null;
+  totalToysSold: number | null;
+  totalXp: number | null;
+}
+
 export interface TargetBoothType {
   sceneDropId: string;
   isClaimed: boolean;
@@ -43,6 +50,7 @@ export interface TargetBoothType {
   ownerDisplayName: string | null;
   level: number;
   claimDate: string | null;
+  ownerStats: BoothOwnerStatsType | null; // only sent for someone else's claimed booth
 }
 
 export interface GameStateResponseType {

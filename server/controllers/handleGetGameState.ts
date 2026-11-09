@@ -4,6 +4,7 @@ import {
   errorHandler,
   getBoothData,
   getBoothIndex,
+  getBoothOwnerStats,
   getCredentials,
   getInventoryItems,
   getOwnedBoothSceneDropId,
@@ -48,6 +49,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
         ownerDisplayName: boothData.ownerDisplayName,
         level: boothData.level,
         claimDate: boothData.claimDate,
+        ownerStats: boothData.ownerId && !isOwnedByVisitor ? await getBoothOwnerStats(credentials, boothData.ownerId) : null,
       };
 
       if (isOwnedByVisitor) ownedBoothAsset = boothAsset;

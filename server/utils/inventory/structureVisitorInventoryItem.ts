@@ -37,7 +37,7 @@ export const structureVisitorInventoryItem = async (
   return {
     id,
     ecosystemItemId,
-    type: ecosystemItem?.type, // "material" | "toy" | "decoration"
+    type: item?.type === "BADGE" ? "badge" : ecosystemItem?.type, // badges are a Topia item type, the rest come from metadata
     status,
     description: ecosystemItem?.description || itemDescription || description,
     icon: ecosystemItem?.icon || itemImageUrl || image_url || image_path,

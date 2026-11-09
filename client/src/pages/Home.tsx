@@ -24,7 +24,7 @@ export const Home = () => {
   useEffect(() => {
     if (hasInteractiveParams) {
       backendAPI
-        .get("/game-state", { params: { forceRefreshInventory } })
+        .get("/game-state", { params: { forceRefreshInventory, page: "home" } })
         .then((response) => {
           setGameState(dispatch, response.data);
         })

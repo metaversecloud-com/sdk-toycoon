@@ -72,7 +72,7 @@ export const Workshop = () => {
   useEffect(() => {
     if (hasInteractiveParams) {
       backendAPI
-        .get("/game-state", { params: { forceRefreshInventory } })
+        .get("/game-state", { params: { forceRefreshInventory, page: "workshop" } })
         .then((response) => setGameState(dispatch, response.data))
         .catch((error) => setErrorMessage(dispatch, error as ErrorType))
         .finally(() => setIsLoading(false));

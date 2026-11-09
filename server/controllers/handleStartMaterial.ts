@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { errorHandler, getCredentials, getMaterialBin } from "@utils/index.js";
+import { errorHandler, getCredentials, getMaterialBin, trackAnalytics } from "@utils/index.js";
 
 /**
  * Step 1 of 2: starts an idle material bin. The server records when it started; after the material's
@@ -16,6 +16,8 @@ export const handleStartMaterial = async (req: Request, res: Response) => {
     const generationStartedAt = Date.now();
     // Dot-path so other materials' bins are untouched
     await visitor.updateDataObject({ [`materialGenerationStartedAt.${material.name}`]: generationStartedAt }, {});
+
+    trackAnalytics({ credentials, events: [{ name: "materialStarts" }], visitor });
 
     return res.json({ success: true, materialName: material.name, generationStartedAt });
   } catch (error) {

@@ -91,7 +91,10 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     }
 
     // Analytics are best-effort — the toy is already on the shelf
-    const analytics = [{ analyticName: "toycoon_toy_crafted", profileId, urlSlug, uniqueKey: profileId }];
+    const analytics = [
+      { analyticName: "toycoon_toy_crafted", profileId, urlSlug, uniqueKey: profileId },
+      { analyticName: `toysCrafted-${recipe.id}`, profileId, urlSlug, uniqueKey: profileId },
+    ];
     if (recipe.id === "teddy_bear") {
       analytics.push({ analyticName: "toycoon_bear_crafted", profileId, urlSlug, uniqueKey: profileId });
     }

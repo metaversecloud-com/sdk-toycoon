@@ -19,6 +19,7 @@ import {
   initializeVisitorData,
   modifyVisitorInventoryItem,
   requireBoothInWorld,
+  trackAnalytics,
 } from "@utils/index.js";
 import { VisitorInventoryItemType } from "../types/index.js";
 
@@ -100,6 +101,8 @@ export const handleCraftToy = async (req: Request, res: Response) => {
         .catch((error: any) => errorHandler({ error, functionName: "handleCraftToy", message: "Error clearing craft timer" }));
       throw craftError;
     }
+
+    trackAnalytics({ credentials, events: [{ name: `craftStarts-${recipe.id}` }], visitor });
 
     return res.json({
       success: true,

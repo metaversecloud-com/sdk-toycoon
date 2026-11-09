@@ -43,14 +43,17 @@ export const Decorations = () => {
   const [searchParams] = useSearchParams();
   const forceRefreshInventory = searchParams.get("forceRefreshInventory") === "true";
 
-  const refresh = async () => {
-    const { data } = await backendAPI.get("/game-state", { params: { forceRefreshInventory } });
+  // isOpening: the page's first load, counted as an app open; refreshes after a purchase aren't
+  const refresh = async (isOpening = false) => {
+    const { data } = await backendAPI.get("/game-state", {
+      params: { forceRefreshInventory, page: isOpening ? "decorations" : undefined },
+    });
     setGameState(dispatch, data);
   };
 
   useEffect(() => {
     if (hasInteractiveParams) {
-      refresh()
+      refresh(true)
         .catch((error) => setErrorMessage(dispatch, error as ErrorType))
         .finally(() => setIsLoading(false));
     }

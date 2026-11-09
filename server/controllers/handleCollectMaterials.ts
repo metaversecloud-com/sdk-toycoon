@@ -6,6 +6,7 @@ import {
   getCredentials,
   getMaterialBin,
   saveBadgeProgress,
+  trackAnalytics,
 } from "@utils/index.js";
 
 /**
@@ -40,6 +41,7 @@ export const handleCollectMaterial = async (req: Request, res: Response) => {
       return res.status(409).json({ success: false, message: "Already collecting — try again in a moment." });
     }
 
+    trackAnalytics({ credentials, events: [{ name: "materialCollects", incrementBy: 1 }], visitor });
     // Counts toward Stocked Up / Supply Run (after the reply, so the collect doesn't wait on it)
     saveBadgeProgress({
       credentials,

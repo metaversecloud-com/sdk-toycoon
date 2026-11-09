@@ -53,7 +53,7 @@ export const Trophy = () => {
     if (hasInteractiveParams) {
       Promise.all([
         backendAPI
-          .get("/game-state", { params: { forceRefreshInventory } })
+          .get("/game-state", { params: { forceRefreshInventory, page: "trophy" } })
           .then((response) => setGameState(dispatch, response.data)),
         fetchLeaderboard(),
       ])
@@ -73,6 +73,13 @@ export const Trophy = () => {
     }
   };
 
+  // Switching tabs is counted for analytics (the first Leaderboard view is counted with the page open). Best-effort.
+  const selectTab = (id: TabId) => {
+    if (id === activeTab) return;
+    setActiveTab(id);
+    backendAPI.post("/track-event", { event: `trophyTabViews-${id}` }).catch(() => undefined);
+  };
+
   // Arrow keys (and Home/End) move between tabs, as in the WAI-ARIA tabs pattern
   const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     const index = TABS.findIndex(({ id }) => id === activeTab);
@@ -85,7 +92,7 @@ export const Trophy = () => {
     if (nextIndex === undefined) return;
     event.preventDefault();
     const nextId = TABS[nextIndex].id;
-    setActiveTab(nextId);
+    selectTab(nextId);
     tabRefs.current[nextId]?.focus();
   };
 
@@ -134,7 +141,7 @@ export const Trophy = () => {
                 aria-selected={activeTab === id}
                 aria-controls={`tc-tabpanel-${id}`}
                 tabIndex={activeTab === id ? 0 : -1}
-                onClick={() => setActiveTab(id)}
+                onClick={() => selectTab(id)}
                 onKeyDown={handleTabKeyDown}
               >
                 {label}

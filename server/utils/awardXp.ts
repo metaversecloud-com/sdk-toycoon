@@ -8,6 +8,7 @@ import { modifyVisitorInventoryItem } from "./inventory/modifyVisitorInventoryIt
 import { updateLeaderboardEntry } from "./leaderboard/updateLeaderboardEntry.js";
 import { standardizeError } from "./standardizeError.js";
 import { DroppedAsset } from "./topiaInit.js";
+import { trackAnalytics } from "./trackAnalytics.js";
 
 export type AwardXpResultType = {
   xp: number; // new XP total
@@ -66,6 +67,7 @@ export const awardXp = async ({
     }
 
     if (levelsGained.length) {
+      trackAnalytics({ credentials, events: levelsGained.map((newLevel) => ({ name: `levelUps-${newLevel}` })), visitor });
       if (saveLevelUpStats) {
         await visitor
           .updateDataObject(

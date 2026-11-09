@@ -67,12 +67,11 @@ export const awardEarnedBadges = async ({
     await visitor.updateDataObject(
       { badges: [...alreadyGranted, ...granted] },
       {
-        analytics: granted.map((id) => ({
-          analyticName: "toycoon_badge_unlocked",
-          profileId,
-          urlSlug,
-          uniqueKey: `${profileId}_${id}`,
-        })),
+        analytics: granted.flatMap((id) => [
+          { analyticName: "toycoon_badge_unlocked", profileId, urlSlug, uniqueKey: `${profileId}_${id}` },
+          { analyticName: "badgeEarns", profileId, urlSlug, uniqueKey: profileId },
+          { analyticName: `badgeEarns-${id}`, profileId, urlSlug, uniqueKey: profileId },
+        ]),
       },
     );
     return granted;

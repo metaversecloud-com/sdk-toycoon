@@ -18,3 +18,5 @@ export * from "./standardizeError.js";
 export * from "./teleportVisitorToAsset.js";
 export * from "./topiaInit.js";
 export * from "./getImageSize.js";
+export * from "./getOpenAnalytics.js";
+export * from "./trackAnalytics.js";

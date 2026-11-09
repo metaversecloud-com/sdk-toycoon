@@ -5,11 +5,13 @@ import {
   getBoothData,
   getBoothIndex,
   getBoothOwnerStats,
+  getOpenAnalytics,
   getCredentials,
   getInventoryItems,
   getOwnedBoothSceneDropId,
   initializeVisitorData,
   saveBadgeProgress,
+  trackAnalytics,
 } from "@utils/index.js";
 import { DroppedAssetInterface } from "@rtsdk/topia";
 import { MAX_SHOPS_VISITED_TRACKED } from "@shared/constants/index.js";
@@ -87,6 +89,16 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       badgeUpdate[`shopsVisited.${visitedOwnerId}`] = true;
     }
     saveBadgeProgress({ credentials, level: visitorInventory.level, update: badgeUpdate, visitor, visitorData });
+    trackAnalytics({
+      credentials,
+      events: getOpenAnalytics({
+        daysPlayed: visitorData.daysPlayed,
+        page: typeof req.query.page === "string" ? req.query.page : undefined,
+        targetBooth,
+        today,
+      }),
+      visitor,
+    });
 
     const isAdmin = !!visitor.isAdmin;
 

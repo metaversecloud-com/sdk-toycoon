@@ -19,6 +19,7 @@ import {
   getSpotBox,
   requireBoothInWorld,
   saveBadgeProgress,
+  trackAnalytics,
 } from "@utils/index.js";
 
 /**
@@ -127,6 +128,7 @@ export const handlePlaceDecoration = async (req: Request, res: Response) => {
       ...visitorData.placedDecorations,
       [spot]: { ...visitorData.placedDecorations?.[spot], [urlSlug]: item.name },
     };
+    trackAnalytics({ credentials, events: [{ name: `decorPlacements-${spotType}` }], visitor });
     saveBadgeProgress({
       credentials,
       level: visitorInventory.level,

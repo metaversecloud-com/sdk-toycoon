@@ -61,20 +61,12 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
 
     if (Object.keys(collected).length === 0) throw "Couldn't collect anything — try again in a moment.";
 
-    // Each collected material pays its own XP, so add them up (skipped bins contribute nothing)
-    const collectedXp = Object.keys(collected).reduce(
-      (total, materialId) => total + (ecosystemMaterials[materialId]?.xpReward ?? 0),
-      0,
-    );
-
     // One XP grant for the whole batch
-    const xpResult = await awardBonusXp({
-      amount: collectedXp,
-      boothKeyAssetId: booth.keyAssetId,
-      credentials,
-      visitor,
-      visitorData,
-    });
+    const xpEarned = readyBins.reduce((total, { id, xpReward }) => total + (collected[id] ? xpReward : 0), 0);
+    const xpResult =
+      xpEarned > 0
+        ? await awardBonusXp({ amount: xpEarned, boothKeyAssetId: booth.keyAssetId, credentials, visitor, visitorData })
+        : null;
 
     return res.json({ success: true, collected, xpResult });
   } catch (error) {

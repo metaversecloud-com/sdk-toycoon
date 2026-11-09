@@ -3,5 +3,6 @@ export * from "./clearBooth.js";
 export * from "./clearBoothsWhere.js";
 export * from "./getBoothData.js";
 export * from "./getBoothIndex.js";
+export * from "./getBoothOwnerStats.js";
 export * from "./getOwnedBoothSceneDropId.js";
 export * from "./boothSpots.js";

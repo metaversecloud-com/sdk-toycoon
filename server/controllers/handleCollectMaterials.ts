@@ -3,7 +3,7 @@ import { awardBonusXp, collectFromBin, errorHandler, getCredentials, getMaterial
 
 /**
  * Step 2 of 2: collects one unit from a ready bin (server-validated timer) and resets the bin to idle.
- * Blocked once the visitor is at the material's inventory cap. Each unit collected earns a little XP.
+ * Blocked once the visitor is at the material's inventory cap. Each unit collected earns the material's XP (none if it's set to 0).
  */
 export const handleCollectMaterial = async (req: Request, res: Response) => {
   try {
@@ -18,8 +18,11 @@ export const handleCollectMaterial = async (req: Request, res: Response) => {
 
     // The XP is granted at the same time as the material (not after), so the collect costs one less round trip
     const result = await collectFromBin({
-      alongsideGrant: () =>
-        awardBonusXp({ amount: material.xpReward, boothKeyAssetId: booth.keyAssetId, credentials, visitor, visitorData }),
+      alongsideGrant:
+        material.xpReward > 0
+          ? () =>
+              awardBonusXp({ amount: material.xpReward, boothKeyAssetId: booth.keyAssetId, credentials, visitor, visitorData })
+          : undefined,
       credentials,
       generationStartedAt: generationStartedAt!,
       material,

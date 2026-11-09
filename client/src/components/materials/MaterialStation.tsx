@@ -35,7 +35,7 @@ export const MaterialStation = ({
   secondsRemaining: number;
   state: MaterialBinStateType;
 }) => {
-  const { displayName, icon, name, spawnIntervalSeconds, stationImageUrl, unlockLevel } = material;
+  const { displayName, icon, name, spawnIntervalSeconds, stationImageUrl, unlockLevel, xpReward } = material;
 
   const renderBubble = () => {
     if (isLocked) {
@@ -82,7 +82,7 @@ export const MaterialStation = ({
           aria-label={`Collect ${displayName}`}
           onClick={onCollect}
         >
-          {isBusy ? "Collecting..." : "Collect!"}
+          {isBusy ? "Collecting..." : `Collect!${xpReward > 0 ? ` +${xpReward} XP` : ""}`}
         </button>
       );
     }

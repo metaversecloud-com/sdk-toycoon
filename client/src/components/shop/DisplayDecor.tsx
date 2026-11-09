@@ -15,7 +15,6 @@ import {
   DECOR_SPOT_LABELS,
   DECOR_SPOTS,
   DecorSlotType,
-  getClaimedSignText,
   getDecorSlotType,
   getOwnedDecorCount,
   PlacedDecorationsType,
@@ -37,7 +36,6 @@ export const DisplayDecor = () => {
 
   const [searchParams] = useSearchParams();
   const urlSlug = searchParams.get("urlSlug") || "";
-  const displayName = searchParams.get("displayName") || "";
 
   const placedDecorations = visitorData?.placedDecorations;
 
@@ -94,9 +92,6 @@ export const DisplayDecor = () => {
       <h3 id="tc-display-decor-title" className="tc-panel__title">
         Decorate your display
       </h3>
-      <p className="tc-shop__sign">
-        <span aria-hidden="true">🪧 </span>Your sign reads “{getClaimedSignText(displayName)}”
-      </p>
       <ul className="tc-spots">
         {Object.keys(DECOR_SPOTS).map((spot) => {
           const currentName = placedDecorations?.[spot]?.[urlSlug];

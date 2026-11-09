@@ -2,7 +2,7 @@
  * Shared types between client and server for visitor data
  */
 
-export type InventoryItemCategory = "material" | "toy" | "decoration";
+export type InventoryItemCategory = "material" | "toy" | "decoration" | "badge";
 
 export type VisitorInventoryItemType = {
   id: string;
@@ -20,7 +20,7 @@ export type VisitorInventoryItemType = {
   // Economy
   cost: number; // decor price in Toy Tokens
   reward: number; // Toy Tokens earned when a toy is sold (metadata: rewardTokens)
-  xpReward: number; // XP earned when a toy is sold (metadata: rewardXP)
+  xpReward: number; // XP earned when a toy is sold or a material is collected (metadata: rewardXP)
   unlockLevel: number;
 
   // Materials
@@ -43,6 +43,9 @@ export type VisitorInventoryType = {
     [itemId: string]: VisitorInventoryItemType;
   };
   decorations: {
+    [itemId: string]: VisitorInventoryItemType;
+  };
+  badges: {
     [itemId: string]: VisitorInventoryItemType;
   };
 };

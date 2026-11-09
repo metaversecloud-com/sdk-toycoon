@@ -23,7 +23,6 @@ import { TOY_RECIPES } from "@shared/constants";
  */
 export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
   const { ownsBoothInThisWorld, visitorInventory } = useContext(GlobalStateContext);
-  const badges = Object.values(visitorInventory?.badges || {});
   const { claimBooth, claimResult, isClaiming } = useClaimBooth();
   const resultRef = useRef<HTMLHeadingElement>(null);
   const allTakenRef = useRef<HTMLParagraphElement>(null);
@@ -102,26 +101,6 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
         {isOwnedByVisitor && (claimResult === "claimed" || !hasStarted) && renderNextStep()}
 
         {isOwnedByVisitor && <DisplayDecor />}
-
-        {isOwnedByVisitor && (
-          <section className="tc-display-decor" aria-labelledby="tc-badges-title">
-            <h3 id="tc-badges-title" className="tc-panel__title">
-              Your badges
-            </h3>
-            {badges.length > 0 ? (
-              <ul className="tc-badges">
-                {badges.map(({ ecosystemItemId, displayName, icon }) => (
-                  <li key={ecosystemItemId} className="tc-badges__item">
-                    {icon && <img src={icon} alt="" />}
-                    {displayName}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="tc-badges__empty">No badges yet.</p>
-            )}
-          </section>
-        )}
 
         {ownerStatRows.length > 0 && (
           <ul className="tc-panel tc-booth-stats">

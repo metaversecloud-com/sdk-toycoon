@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getCraftedToyItem, getToyRecipeById, ToyTypeId } from "@shared/constants/index.js";
+import { getCraftedToyItem, getToyRecipeById, RECENT_CRAFT_TIMES_KEPT, ToyTypeId } from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
   awardBonusXp,
@@ -11,6 +11,7 @@ import {
   initializeVisitorData,
   modifyVisitorInventoryItem,
   requireBoothInWorld,
+  saveBadgeProgress,
 } from "@utils/index.js";
 
 /**
@@ -26,7 +27,7 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     const recipe = getToyRecipeById(req.body?.recipeId as ToyTypeId);
     if (!recipe) throw "Valid recipeId is required";
 
-    const [{ ecosystemToys }, { visitor, visitorData }, { booths }] = await Promise.all([
+    const [{ ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths }] = await Promise.all([
       getInventoryItems(credentials),
       initializeVisitorData(credentials),
       getBoothIndex(credentials),
@@ -44,9 +45,14 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     // Clear the timer and count the craft under a one-shot lock, so a double-click can't collect the toy twice
     const timerPath = `toyCraftStartedAt.${recipe.id}`;
     const totalToysCrafted = (visitorData.totalToysCrafted || 0) + 1;
+    // Badge progress (per-toy counts, and when the last few toys were made) is counted with the craft itself
+    const typePath = `toysCraftedByType.${recipe.id}`;
+    const previousTypeCount = visitorData.toysCraftedByType?.[recipe.id] || 0;
+    const previousCraftTimes = visitorData.recentCraftTimes || [];
+    const recentCraftTimes = [...previousCraftTimes, Date.now()].slice(-RECENT_CRAFT_TIMES_KEPT);
     const claimed = await claimActionLock({
       action: `collect_toy_${recipe.id}`,
-      alsoWrite: { [timerPath]: null, totalToysCrafted },
+      alsoWrite: { [timerPath]: null, totalToysCrafted, [typePath]: previousTypeCount + 1, recentCraftTimes },
       profileId,
       visitor,
       visitorData,
@@ -71,7 +77,15 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     } catch (grantError) {
       // Put the craft back to ready and undo the count, so the toy isn't lost
       await visitor
-        .updateDataObject({ [timerPath]: craftStartedAt, totalToysCrafted: totalToysCrafted - 1 }, {})
+        .updateDataObject(
+          {
+            [timerPath]: craftStartedAt,
+            totalToysCrafted: totalToysCrafted - 1,
+            [typePath]: previousTypeCount,
+            recentCraftTimes: previousCraftTimes,
+          },
+          {},
+        )
         .catch((error: any) => errorHandler({ error, functionName: "handleCollectToy", message: "Error restoring craft" }));
       throw grantError;
     }
@@ -84,6 +98,19 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     visitor
       .updateDataObject({}, { analytics })
       .catch((error: any) => errorHandler({ error, functionName: "handleCollectToy", message: "Error tracking analytics" }));
+
+    saveBadgeProgress({
+      credentials,
+      level: xpResult?.level ?? visitorInventory.level,
+      update: {},
+      visitor,
+      visitorData: {
+        ...visitorData,
+        totalToysCrafted,
+        toysCraftedByType: { ...visitorData.toysCraftedByType, [recipe.id]: previousTypeCount + 1 },
+        recentCraftTimes,
+      },
+    });
 
     return res.json({ success: true, recipeId: recipe.id, toy: toyItem, totalToysCrafted, xpResult });
   } catch (error) {

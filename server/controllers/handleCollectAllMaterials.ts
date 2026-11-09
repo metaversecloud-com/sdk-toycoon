@@ -10,6 +10,7 @@ import {
   getInventoryItems,
   initializeVisitorData,
   requireBoothInWorld,
+  saveBadgeProgress,
 } from "@utils/index.js";
 import { VisitorInventoryItemType } from "../types/index.js";
 
@@ -67,6 +68,14 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
       xpEarned > 0
         ? await awardBonusXp({ amount: xpEarned, boothKeyAssetId: booth.keyAssetId, credentials, visitor, visitorData })
         : null;
+
+    saveBadgeProgress({
+      credentials,
+      level: xpResult?.level ?? visitorInventory.level,
+      update: { materialsCollected: (visitorData.materialsCollected || 0) + Object.keys(collected).length },
+      visitor,
+      visitorData,
+    });
 
     return res.json({ success: true, collected, xpResult });
   } catch (error) {

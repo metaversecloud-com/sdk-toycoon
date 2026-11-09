@@ -9,8 +9,10 @@ import {
   getInventoryItems,
   getOwnedBoothSceneDropId,
   initializeVisitorData,
+  saveBadgeProgress,
 } from "@utils/index.js";
 import { DroppedAssetInterface } from "@rtsdk/topia";
+import { MAX_SHOPS_VISITED_TRACKED } from "@shared/constants/index.js";
 import { GameStateResponseType, TargetBoothType } from "@shared/types/BoothTypes.js";
 
 /**
@@ -30,12 +32,13 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       getBoothIndex(credentials, forceRefreshBooths),
     ]);
     // Cached (and already refreshed above if forced), so this doesn't cost an extra API call
-    const { ecosystemDecorations, ecosystemMaterials, ecosystemToys } = await getInventoryItems(credentials);
+    const { ecosystemBadges, ecosystemDecorations, ecosystemMaterials, ecosystemToys } = await getInventoryItems(credentials);
 
     const ownedBoothSceneDropId = getOwnedBoothSceneDropId({ booths, profileId, urlSlug, visitorData });
 
     let targetBooth: TargetBoothType | null = null;
     let ownedBoothAsset: DroppedAssetInterface | null = null;
+    let visitedOwnerId: string | null = null; // whose display this is, when it's someone else's
     const targetEntry = sceneDropId ? booths[sceneDropId] : undefined;
 
     if (targetEntry) {
@@ -53,6 +56,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       };
 
       if (isOwnedByVisitor) ownedBoothAsset = boothAsset;
+      else visitedOwnerId = boothData.ownerId;
     }
 
     // Any app open by an owner (booth, Main Scene, gameplay drawer) counts as activity for their booth's 14-day
@@ -70,6 +74,20 @@ export const handleGetGameState = async (req: Request, res: Response) => {
         );
     }
 
+    // Badge progress: today counts as a day played, and opening someone else's display counts as visiting their shop.
+    // Also catches up on any badge already earned (e.g. one just added to the ecosystem). Runs after the reply.
+    const badgeUpdate: { [path: string]: boolean } = {};
+    const today = new Date(Date.now()).toISOString().slice(0, 10);
+    if (!visitorData.daysPlayed?.[today]) badgeUpdate[`daysPlayed.${today}`] = true;
+    if (
+      visitedOwnerId &&
+      !visitorData.shopsVisited?.[visitedOwnerId] &&
+      Object.keys(visitorData.shopsVisited || {}).length < MAX_SHOPS_VISITED_TRACKED
+    ) {
+      badgeUpdate[`shopsVisited.${visitedOwnerId}`] = true;
+    }
+    saveBadgeProgress({ credentials, level: visitorInventory.level, update: badgeUpdate, visitor, visitorData });
+
     const isAdmin = !!visitor.isAdmin;
 
     const gameState: GameStateResponseType = {
@@ -78,6 +96,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       ecosystemMaterials,
       ecosystemToys,
       ecosystemDecorations,
+      ecosystemBadges,
       ownsBoothInThisWorld: !!ownedBoothSceneDropId,
       ownedBoothSceneDropId,
       targetBooth,

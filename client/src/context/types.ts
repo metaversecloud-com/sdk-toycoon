@@ -47,6 +47,7 @@ export interface InitialState {
   ecosystemMaterials?: { [itemId: string]: InventoryItemType };
   ecosystemToys?: { [itemId: string]: InventoryItemType };
   ecosystemDecorations?: { [itemId: string]: InventoryItemType };
+  ecosystemBadges?: { [itemId: string]: InventoryItemType };
   ownsBoothInThisWorld?: boolean;
   ownedBoothSceneDropId?: string | null;
   targetBooth?: TargetBoothType | null;

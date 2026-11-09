@@ -32,40 +32,42 @@ type BadgeContextType = {
   decorItems: { id: string; name: string; type?: string; slot?: string; unlockLevel: number }[];
 };
 
-// From toycoon_badges.xlsx, in its order ("Are We There Yet?" left out). Descriptions use the in-game names.
+// From toycoon_badges.xlsx, in its order. Descriptions are its short description2 column, with the in-game names
+// (Materials Box, Toy Assembly, Cashier, display, Toy Tokens) in place of the sheet's Supply Bin, Workstation, Gift Shop
+// Register, shop and coins.
 export const BADGES: (BadgeDefinitionType & { isEarned: (context: BadgeContextType) => boolean })[] = [
   {
     id: "stocked_up",
     name: "Stocked Up",
-    description: "Collect materials at the Materials Box for the first time.",
+    description: "Collect materials from the Materials Box.",
     term: "short",
     isEarned: ({ progress }) => (progress.materialsCollected || 0) >= 1,
   },
   {
     id: "first_creation",
     name: "First Creation",
-    description: "Finish your very first toy at Toy Assembly.",
+    description: "Finish your 1st toy at Toy Assembly.",
     term: "short",
     isEarned: ({ progress }) => (progress.totalToysCrafted || 0) >= 1,
   },
   {
     id: "first_sale",
     name: "First Sale",
-    description: "Sell your first toy at the Cashier.",
+    description: "Sell a toy at the Cashier.",
     term: "short",
     isEarned: ({ progress }) => (progress.totalToysSold || 0) >= 1,
   },
   {
     id: "finishing_touch",
     name: "Finishing Touch",
-    description: "Put your first decoration on your display.",
+    description: "Place a decoration on your display.",
     term: "short",
     isEarned: (context) => getPlacedDecorNames(context).size >= 1,
   },
   {
     id: "teddy_time",
     name: "Teddy Time",
-    description: "Reach Level 2 and unlock the Teddy Bear.",
+    description: "Reach Level 2 and unlock Teddy Bear.",
     term: "short",
     isEarned: ({ level }) => level >= 2,
   },
@@ -79,7 +81,7 @@ export const BADGES: (BadgeDefinitionType & { isEarned: (context: BadgeContextTy
   {
     id: "all_aboard",
     name: "All Aboard!",
-    description: "Reach Level 3 and unlock the Train.",
+    description: "Reach Level 3 and unlock Train.",
     term: "medium",
     isEarned: ({ level }) => level >= 3,
   },
@@ -100,28 +102,28 @@ export const BADGES: (BadgeDefinitionType & { isEarned: (context: BadgeContextTy
   {
     id: "piggy_bank",
     name: "Piggy Bank",
-    description: "Earn 500 Toy Tokens in total.",
+    description: "Earn 500 Toy Tokens.",
     term: "medium",
     isEarned: ({ progress }) => (progress.totalCoinsEarned || 0) >= 500,
   },
   {
     id: "supply_run",
     name: "Supply Run",
-    description: "Collect 250 materials at the Materials Box.",
+    description: "Collect 250 materials from the Materials Box.",
     term: "medium",
     isEarned: ({ progress }) => (progress.materialsCollected || 0) >= 250,
   },
   {
     id: "light_it_up",
     name: "Light It Up",
-    description: "Hang lights on your display.",
+    description: "Hang fairy lights on your display.",
     term: "medium",
     isEarned: (context) => getPlacedDecorItems(context).some((item) => getDecorSlotType(item) === "lights"),
   },
   {
     id: "color_coordinated",
     name: "Color Coordinated",
-    description: "Put a rug and an awning of the same color on your display.",
+    description: "Place a rug and an awning in the same color.",
     term: "medium",
     isEarned: ({ progress, urlSlug }) => {
       const placedName = (slotType: "rug" | "awning") => {
@@ -166,14 +168,14 @@ export const BADGES: (BadgeDefinitionType & { isEarned: (context: BadgeContextTy
   {
     id: "big_bank",
     name: "Big Bank",
-    description: "Earn 5,000 Toy Tokens in total.",
+    description: "Earn 5,000 Toy Tokens.",
     term: "long",
     isEarned: ({ progress }) => (progress.totalCoinsEarned || 0) >= 5000,
   },
   {
     id: "showstopper_shop",
     name: "Showstopper Shop",
-    description: "Put every decoration you've unlocked, in every color, on your display at least once.",
+    description: "Decorate your display with every decoration you've unlocked, in every color.",
     term: "long",
     isEarned: (context) => {
       const placed = getPlacedDecorNames(context);

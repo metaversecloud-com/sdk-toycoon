@@ -16,6 +16,7 @@ import {
   handleResetLeaderboard,
   handleResetWorld,
   handleSellToy,
+  handleSetTimerSpeed,
   handleStartMaterial,
   handleTeleportToMainScene,
   handleTeleportToMyBooth,
@@ -69,5 +70,6 @@ router.post("/admin/clear-booth", requireAdmin, handleClearBooth);
 router.post("/admin/clear-inactive-booths", requireAdmin, handleClearInactiveBooths);
 router.post("/admin/reset-world", requireAdmin, handleResetWorld);
 router.post("/admin/reset-leaderboard", requireAdmin, handleResetLeaderboard);
+router.post("/admin/timer-speed", requireAdmin, handleSetTimerSpeed);
 
 export default router;

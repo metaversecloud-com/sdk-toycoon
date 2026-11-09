@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getMaterialCap } from "@shared/constants/index.js";
+import { getMaterialCap, getTimerSeconds } from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
   awardBonusXp,
@@ -24,7 +24,7 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
   try {
     const credentials = getCredentials(req.query);
 
-    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths }] = await Promise.all([
+    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths, worldData }] = await Promise.all([
       getInventoryItems(credentials),
       initializeVisitorData(credentials),
       getBoothIndex(credentials),
@@ -38,7 +38,8 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
       return (
         visitorInventory.level >= material.unlockLevel &&
         owned < getMaterialCap(material.name) &&
-        getMaterialBinState(generationStartedAt, material.spawnIntervalSeconds, now).state === "ready"
+        getMaterialBinState(generationStartedAt, getTimerSeconds(material.spawnIntervalSeconds, worldData?.timerSpeed), now)
+          .state === "ready"
       );
     });
 

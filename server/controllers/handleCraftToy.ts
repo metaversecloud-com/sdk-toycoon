@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import {
+  getTimerSeconds,
   countOwnedToys,
   describeMissingMaterials,
   getCraftedToyItem,
@@ -38,7 +39,7 @@ export const handleCraftToy = async (req: Request, res: Response) => {
     const recipe = getToyRecipeById(req.body?.recipeId as ToyTypeId);
     if (!recipe) throw "Valid recipeId is required";
 
-    const [{ ecosystemMaterials, ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths }] =
+    const [{ ecosystemMaterials, ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths, worldData }] =
       await Promise.all([getInventoryItems(credentials), initializeVisitorData(credentials), getBoothIndex(credentials)]);
     await requireBoothInWorld(credentials, visitorData, "crafting toys", booths);
 
@@ -49,7 +50,9 @@ export const handleCraftToy = async (req: Request, res: Response) => {
       throw `${recipe.displayName} unlocks at level ${recipe.unlockLevel}.`;
     }
 
-    const { state } = getMaterialBinState(visitorData.toyCraftStartedAt?.[recipe.id], recipe.craftSeconds);
+    // This world's craft time (an admin can speed timers up or slow them down)
+    const craftSeconds = getTimerSeconds(recipe.craftSeconds, worldData?.timerSpeed);
+    const { state } = getMaterialBinState(visitorData.toyCraftStartedAt?.[recipe.id], craftSeconds);
     if (state === "generating") throw `A ${recipe.displayName} is already being made.`;
     if (state === "ready") throw `Your ${recipe.displayName} is ready — collect it first.`;
 
@@ -108,7 +111,7 @@ export const handleCraftToy = async (req: Request, res: Response) => {
       success: true,
       recipeId: recipe.id,
       craftStartedAt,
-      craftSeconds: recipe.craftSeconds,
+      craftSeconds,
       materials,
     });
   } catch (error) {

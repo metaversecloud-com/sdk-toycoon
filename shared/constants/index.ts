@@ -3,3 +3,4 @@ export * from "./recipes.js";
 export * from "./materialNames.js";
 export * from "./decor.js";
 export * from "./badges.js";
+export * from "./timerSpeed.js";

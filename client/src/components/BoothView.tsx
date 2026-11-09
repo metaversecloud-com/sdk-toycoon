@@ -74,26 +74,33 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
     );
   };
 
-  // The owner's lifetime stats, leaving out any that couldn't be read
-  const ownerStatRows = [
-    { label: "Toys created", value: ownerStats?.totalToysCrafted },
-    { label: "Toys sold", value: ownerStats?.totalToysSold },
-    { label: "Experience Points", value: ownerStats?.totalXp },
-  ].filter(({ value }) => value != null);
-
   const title = !isClaimed ? "Open Display" : isOwnedByVisitor ? "Your Display" : `${ownerDisplayName}'s Display`;
   const claimedOn = claimDate ? new Date(claimDate).toLocaleDateString() : null;
+  const isOthersDisplay = isClaimed && !isOwnedByVisitor;
+
+  // About someone else's display: the owner's lifetime stats (any that couldn't be read are left out) and when they
+  // claimed it. One row each, so it fits a narrow drawer.
+  const ownerStatRows = isOthersDisplay
+    ? [
+        { label: "Toys created", value: ownerStats?.totalToysCrafted?.toLocaleString() },
+        { label: "Toys sold", value: ownerStats?.totalToysSold?.toLocaleString() },
+        { label: "Experience Points", value: ownerStats?.totalXp?.toLocaleString() },
+        { label: "Claimed", value: claimedOn },
+      ].filter((row): row is { label: string; value: string } => !!row.value)
+    : [];
 
   return (
     <div className="tc-workshop">
       <div className="tc-workshop__top">
         <h2 className="tc-sign">{title}</h2>
         <p className="tc-hint">
-          {isClaimed
-            ? `Level ${level}${claimedOn ? ` · Claimed ${claimedOn}` : ""}`
-            : ownsBoothInThisWorld
-              ? "You already have a display in this world."
-              : "Claim it to show off the toys you make!"}
+          {isOthersDisplay
+            ? `Level ${level}`
+            : isClaimed
+              ? `Level ${level}${claimedOn ? ` · Claimed ${claimedOn}` : ""}`
+              : ownsBoothInThisWorld
+                ? "You already have a display in this world."
+                : "Claim it to show off the toys you make!"}
         </p>
       </div>
 
@@ -103,14 +110,14 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
         {isOwnedByVisitor && <DisplayDecor />}
 
         {ownerStatRows.length > 0 && (
-          <ul className="tc-panel tc-booth-stats">
+          <dl className="tc-panel tc-booth-stats">
             {ownerStatRows.map(({ label, value }) => (
-              <li key={label} className="tc-booth-stats__item">
-                <span className="tc-booth-stats__value">{value?.toLocaleString()}</span>
-                {label}
-              </li>
+              <div key={label} className="tc-booth-stats__row">
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
             ))}
-          </ul>
+          </dl>
         )}
 
         <div className="tc-panel tc-booth-actions">

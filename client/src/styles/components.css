@@ -1333,30 +1333,36 @@ button.tc-bubble:focus-visible,
   opacity: 0.4;
 }
 
-/* One equal column per stat, however wide the drawer is (a grid of fixed-width columns left empty ones on wide screens) */
+/* Someone else's display: one row per stat, label left and number right, so it fits any drawer width */
 .tc-booth-stats {
-  display: flex;
+  justify-items: stretch;
+  gap: 0;
   margin: 0;
-  list-style: none;
-  font-size: 0.85rem;
+  padding: 6px 16px;
+}
+
+.tc-booth-stats__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  text-align: left;
+}
+
+.tc-booth-stats__row + .tc-booth-stats__row {
+  border-top: 1px solid var(--tc-cream-edge);
+}
+
+.tc-booth-stats__row dt {
   font-weight: 700;
 }
 
-.tc-booth-stats__item {
-  display: grid;
-  flex: 1 1 0;
-  align-content: start;
-  gap: 2px;
-  min-width: 0;
-}
-
-.tc-booth-stats__item + .tc-booth-stats__item {
-  border-left: 1px solid var(--tc-cream-edge);
-}
-
-.tc-booth-stats__value {
-  font-size: 1.2rem;
+.tc-booth-stats__row dd {
+  margin: 0;
+  font-size: 1.1rem;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 /* Claim / go-to / abandon and "Back to the workshop" at the bottom of a display */

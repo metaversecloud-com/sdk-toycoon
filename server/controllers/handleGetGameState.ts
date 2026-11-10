@@ -41,6 +41,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       boothKeyAssetId: ownedBoothSceneDropId ? booths[ownedBoothSceneDropId].keyAssetId : "",
       credentials,
       ecosystemMaterials,
+      timerSpeed: worldData?.timerSpeed,
       visitor,
       visitorData,
       visitorInventory,

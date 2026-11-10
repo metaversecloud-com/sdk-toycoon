@@ -60,10 +60,9 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
   console.log(
     `[inventory] ${allItems.length} ecosystem items: ${Object.keys(ecosystemMaterials).length} materials, ` +
       `${Object.keys(ecosystemToys).length} toys, ${Object.keys(ecosystemDecorations).length} decorations, ` +
-      `${Object.keys(ecosystemBoosters).length} boosters` + // BOOSTERS
-      (uncategorized.length ? `; not a material/toy/decoration/booster: ${uncategorized.join(", ")}` : ""),
+      `${Object.keys(ecosystemBoosters).length} boosters, ` + // BOOSTERS
       `${Object.keys(ecosystemBadges).length} badges` +
-      (uncategorized.length ? `; not a material/toy/decoration: ${uncategorized.join(", ")}` : ""),
+      (uncategorized.length ? `; not a material/toy/decoration/booster/badge: ${uncategorized.join(", ")}` : ""),
   );
   // What each material resolved to — a level/timer/cap of 1/0s/10 usually means its name didn't match a known material
   if (Object.keys(ecosystemMaterials).length) {

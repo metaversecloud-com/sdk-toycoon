@@ -33,12 +33,11 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
     if (owned >= cap) throw `Your ${material.displayName} is full (${owned}/${cap}). Use some before collecting more.`;
 
     const generationStartedAt = visitorData.materialGenerationStartedAt?.[material.name] ?? null;
-    const { state } = getMaterialBinState(
-      generationStartedAt,
-      getTimerSeconds(material.spawnIntervalSeconds, worldData?.timerSpeed),
-    );
+    // How long this station takes in this world (an admin can speed timers up or slow them down)
+    const timerSeconds = getTimerSeconds(material.spawnIntervalSeconds, worldData?.timerSpeed);
+    const { state } = getMaterialBinState(generationStartedAt, timerSeconds);
 
-    return { booth, cap, generationStartedAt, material, owned, state, visitor, visitorData, visitorInventory };
+    return { booth, cap, generationStartedAt, material, owned, state, timerSeconds, visitor, visitorData, visitorInventory };
   } catch (error) {
     throw standardizeError(error);
   }

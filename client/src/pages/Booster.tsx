@@ -57,15 +57,17 @@ export const Boosters = () => {
   const [searchParams] = useSearchParams();
   const forceRefreshInventory = searchParams.get("forceRefreshInventory") === "true";
 
-  // ----- Load the game state when the page opens -----
-  const refresh = async () => {
-    const { data } = await backendAPI.get("/game-state", { params: { forceRefreshInventory } });
+  // ----- Load the game state when the page opens (isOpening = counted as an app open; refreshes aren't) -----
+  const refresh = async (isOpening = false) => {
+    const { data } = await backendAPI.get("/game-state", {
+      params: { forceRefreshInventory, page: isOpening ? "boosters" : undefined },
+    });
     setGameState(dispatch, data);
   };
 
   useEffect(() => {
     if (hasInteractiveParams) {
-      refresh()
+      refresh(true)
         .catch((error) => setErrorMessage(dispatch, error as ErrorType))
         .finally(() => setIsLoading(false));
     }

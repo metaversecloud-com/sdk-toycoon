@@ -9,6 +9,7 @@ const PAGE_VIEWS: { [page: string]: string } = {
   sell: "pageViews-cashier",
   decorations: "pageViews-decorations",
   trophy: "pageViews-trophy",
+  boosters: "pageViews-boosters",
 };
 
 // Return windows after a player's first day, matching the Monster Mash goals (1-week return = opens again 7–13 days

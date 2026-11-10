@@ -1,11 +1,14 @@
 import { Request, Response } from "express";
 import {
-  getTimerSeconds,
+  BOOSTERS,
   countOwnedToys,
   describeMissingMaterials,
+  getActiveBooster,
+  getBackdatedStart,
   getCraftedToyItem,
   getMaterialCountsByName,
   getMissingMaterials,
+  getTimerSeconds,
   getToyRecipeById,
   toCanonicalMaterialName,
   ToyTypeId,
@@ -73,12 +76,22 @@ export const handleCraftToy = async (req: Request, res: Response) => {
       return { id: material.id, quantity };
     });
 
+    // Instant Craft booster: the craft is ready the moment it starts (its start is back-dated by the whole craft time,
+    // so craft XP is unchanged) and it uses up one of the booster's uses, written with the craft
+    const now = Date.now();
+    const instantCraft = getActiveBooster(visitorData.activeBoosters, "instant_craft", now);
+    const usesLeftPath = "activeBoosters.instant_craft.usesLeft";
+    const usesLeftBefore = instantCraft?.usesLeft ?? BOOSTERS.instant_craft.maxUses ?? 0;
+    const instantCraftUpdate = instantCraft ? { [usesLeftPath]: usesLeftBefore - 1 } : {};
+
     // Start the timer under a one-shot lock: a double-click (or two tabs) can't start this craft twice
     const timerPath = `toyCraftStartedAt.${recipe.id}`;
-    const craftStartedAt = Date.now();
+    const craftStartedAt = instantCraft
+      ? getBackdatedStart(now, craftSeconds, BOOSTERS.instant_craft.timeMultiplier ?? 1)
+      : now;
     const claimed = await claimActionLock({
       action: `craft_${recipe.id}`,
-      alsoWrite: { [timerPath]: craftStartedAt },
+      alsoWrite: { [timerPath]: craftStartedAt, ...instantCraftUpdate },
       profileId,
       visitor,
       visitorData,
@@ -99,8 +112,9 @@ export const handleCraftToy = async (req: Request, res: Response) => {
           errorHandler({ error, functionName: "handleCraftToy", message: `Error refunding material ${id}` }),
         );
       }
+      // ... and give back the Instant Craft use
       await visitor
-        .updateDataObject({ [timerPath]: null }, {})
+        .updateDataObject({ [timerPath]: null, ...(instantCraft ? { [usesLeftPath]: usesLeftBefore } : {}) }, {})
         .catch((error: any) => errorHandler({ error, functionName: "handleCraftToy", message: "Error clearing craft timer" }));
       throw craftError;
     }

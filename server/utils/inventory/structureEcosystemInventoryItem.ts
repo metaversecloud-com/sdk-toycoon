@@ -57,7 +57,10 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
 
   const normalizedType = typeof type === "string" ? type.toLowerCase() : undefined;
   const itemType =
-    normalizedType === "material" || normalizedType === "toy" || normalizedType === "decoration"
+    normalizedType === "material" ||
+    normalizedType === "toy" ||
+    normalizedType === "decoration" ||
+    normalizedType === "booster"
       ? normalizedType
       : undefined;
   const isMaterial = itemType === "material";
@@ -76,7 +79,7 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
     displayName: displayName || name || "Unknown",
     icon: image_path || "",
     description: description || "",
-    type: itemType, // "material" | "toy" | "decoration"
+    type: itemType, // "material" | "toy" | "decoration" | "booster"
     sortOrder: num(sortOrder),
 
     // ----- Economy -----

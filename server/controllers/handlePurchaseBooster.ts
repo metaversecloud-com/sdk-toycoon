@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { AxiosError } from "axios";
 import { BOOSTERS, BoosterIdType, getBoosterForItem } from "@shared/constants/index.js";
 import {
+  claimActionLock,
   errorHandler,
   getCredentials,
   getInventoryItems,
@@ -27,9 +28,13 @@ export const handlePurchaseBooster = async (req: Request, res: Response) => {
     const item = Object.values(ecosystemBoosters).find((candidate) => getBoosterForItem(candidate)?.id === booster.id);
     if (!item) throw `${booster.displayName} isn't set up in the ecosystem yet.`;
 
-    const { visitor, visitorInventory } = await initializeVisitorData(credentials);
+    const { visitor, visitorData, visitorInventory } = await initializeVisitorData(credentials);
     if (visitorInventory.level < booster.unlockLevel) throw `${booster.displayName} unlocks at level ${booster.unlockLevel}.`;
     if (visitorInventory.coins < booster.cost) throw "Not enough Toy Tokens.";
+
+    // One purchase at a time, so a double-tap can't buy (and charge for) two
+    const claimed = await claimActionLock({ action: "buy_booster", profileId, visitor, visitorData });
+    if (!claimed) return res.status(409).json({ success: false, message: "Already buying — try again in a moment." });
 
     // ----- 2. Take the Toy Tokens -----
     const tokens = await modifyVisitorInventoryItem({

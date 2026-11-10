@@ -4,7 +4,7 @@ import { BoosterActiveStateType } from "../constants/economy.js";
  * Shared types between client and server for visitor data
  */
 
-export type InventoryItemCategory = "material" | "toy" | "decoration" | "badge";
+export type InventoryItemCategory = "material" | "toy" | "decoration" | "booster" | "badge";
 
 export type VisitorInventoryItemType = {
   id: string;

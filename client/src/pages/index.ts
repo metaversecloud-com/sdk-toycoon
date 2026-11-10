@@ -6,3 +6,4 @@ export * from "./Teleport";
 export * from "./Workshop";
 export * from "./Decorations";
 export * from "./Trophy";
+export * from "./Booster";

@@ -10,7 +10,10 @@ import { errorHandler, getCredentials, getMaterialBin, trackAnalytics } from "@u
 export const handleStartMaterial = async (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
-    const { material, state, visitor, visitorData } = await getMaterialBin(credentials, req.body?.materialId);
+    const { material, state, timerSeconds, visitor, visitorData } = await getMaterialBin(
+      credentials,
+      req.body?.materialId,
+    );
 
     if (state === "generating") throw `${material.displayName} is already being made.`;
     if (state === "ready") throw `${material.displayName} is ready — collect it first.`;
@@ -19,7 +22,8 @@ export const handleStartMaterial = async (req: Request, res: Response) => {
     const now = Date.now();
     const speedUp = getActiveBooster(visitorData.activeBoosters, "material_speed", now);
     const multiplier = speedUp ? (BOOSTERS.material_speed.timeMultiplier ?? 1) : 1;
-    const generationStartedAt = getBackdatedStart(now, material.spawnIntervalSeconds, multiplier);
+    // This world's station time, so Speed-Up still halves the wait when an admin has changed the timer speed
+    const generationStartedAt = getBackdatedStart(now, timerSeconds, multiplier);
 
     // Dot-path so other materials' bins are untouched
     await visitor.updateDataObject({ [`materialGenerationStartedAt.${material.name}`]: generationStartedAt }, {});

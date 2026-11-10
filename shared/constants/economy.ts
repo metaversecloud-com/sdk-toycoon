@@ -35,7 +35,7 @@ export type MaterialConfigType = {
   spawnSeconds: number; // time for a station to make one unit
   unlockLevel: number; // level at which the station opens
   cap: number; // max units a player can hold
-  collectXp: number; // XP granted each time one unit is collected; 0 = none. Keep it the smallest reward in the loop (collect < craft < sell)
+  collectXp?: number; // optional fixed XP per unit collected (0 = none); left out = based on the timer (getCollectXpForSeconds). Keep it the smallest reward in the loop (collect < craft < sell)
 };
 
 // TO ADD A MATERIAL: add one line here. Ecosystem metadata (spawnIntervalSeconds, unlockLevel, rewardXP) overrides it.

@@ -1,5 +1,5 @@
 import { VisitorInterface } from "@rtsdk/topia";
-import { BoosterActiveStateType, getMaterialCap } from "@shared/constants/index.js";
+import { BoosterActiveStateType, getMaterialCap, getTimerSeconds } from "@shared/constants/index.js";
 import {
   Credentials,
   InventoryItemType,
@@ -35,6 +35,7 @@ export const settleAutoCollect = async ({
   boothKeyAssetId,
   credentials,
   ecosystemMaterials,
+  timerSpeed,
   visitor,
   visitorData,
   visitorInventory,
@@ -42,6 +43,7 @@ export const settleAutoCollect = async ({
   boothKeyAssetId: string;
   credentials: Credentials;
   ecosystemMaterials: { [itemId: string]: InventoryItemType };
+  timerSpeed?: string | null; // this world's timer speed, so stations cycle as fast as they do for everyone else
   visitor: VisitorInterface;
   visitorData: VisitorDataObjectType;
   visitorInventory: VisitorInventoryType;
@@ -62,7 +64,7 @@ export const settleAutoCollect = async ({
     for (const material of Object.values(ecosystemMaterials)) {
       if (visitorInventory.level < material.unlockLevel || material.spawnIntervalSeconds <= 0) continue;
 
-      const cycleMs = material.spawnIntervalSeconds * 1000;
+      const cycleMs = getTimerSeconds(material.spawnIntervalSeconds, timerSpeed) * 1000;
       const cursor = cursors[material.name] ?? state.startedAt; // a station starts cycling when the booster is activated
       const produced = Math.floor((settleUntil - cursor) / cycleMs);
       if (produced < 1) continue;

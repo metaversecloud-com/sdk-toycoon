@@ -23,6 +23,7 @@ const globalReducer = (state: InitialState, action: ActionType) => {
         visitorInventory: payload.visitorInventory,
         ecosystemMaterials: payload.ecosystemMaterials,
         ecosystemToys: payload.ecosystemToys,
+        ecosystemBoosters: payload.ecosystemBoosters,
         ecosystemDecorations: payload.ecosystemDecorations,
         ownsBoothInThisWorld: payload.ownsBoothInThisWorld,
         ownedBoothSceneDropId: payload.ownedBoothSceneDropId,

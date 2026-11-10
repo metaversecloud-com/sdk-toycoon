@@ -1,7 +1,7 @@
 
 export type MetadataType = {
   displayName?: string;
-  type?: "material" | "toy" | "decoration";
+  type?: "material" | "toy" | "decoration" | "booster";
   sortOrder?: number | string;
   cost?: number | string;
   rewardTokens?: number | string; // Toy Tokens earned when a toy is sold

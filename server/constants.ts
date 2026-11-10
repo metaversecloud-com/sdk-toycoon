@@ -65,4 +65,5 @@ export const DEFAULT_VISITOR_DATA: VisitorDataObjectType = {
   placedDecorations: {},
   decorToys: {},
   boothIds: {},
+  activeBoosters: {},
 };

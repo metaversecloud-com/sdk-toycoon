@@ -11,6 +11,7 @@ import {
 } from "@utils/index.js";
 import { DroppedAssetInterface } from "@rtsdk/topia";
 import { GameStateResponseType, TargetBoothType } from "@shared/types/BoothTypes.js";
+import { settleAutoCollect } from "@utils/index.js";
 
 /**
  * Resolves the relationship between the visiting player and every booth scene in this world:
@@ -29,9 +30,16 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       getBoothIndex(credentials, forceRefreshBooths),
     ]);
     // Cached (and already refreshed above if forced), so this doesn't cost an extra API call
-    const { ecosystemDecorations, ecosystemMaterials, ecosystemToys } = await getInventoryItems(credentials);
-
+    const { ecosystemBoosters, ecosystemDecorations, ecosystemMaterials, ecosystemToys } = await getInventoryItems(credentials);
     const ownedBoothSceneDropId = getOwnedBoothSceneDropId({ booths, profileId, urlSlug, visitorData });
+    const autoCollect = await settleAutoCollect({
+      boothKeyAssetId: ownedBoothSceneDropId ? booths[ownedBoothSceneDropId].keyAssetId : "",
+      credentials,
+      ecosystemMaterials,
+      visitor,
+      visitorData,
+      visitorInventory,
+    });
 
     let targetBooth: TargetBoothType | null = null;
     let ownedBoothAsset: DroppedAssetInterface | null = null;
@@ -73,6 +81,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
     const gameState: GameStateResponseType = {
       visitorData,
       visitorInventory,
+      ecosystemBoosters,
       ecosystemMaterials,
       ecosystemToys,
       ecosystemDecorations,
@@ -83,6 +92,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       isAdmin,
       boothsFullAlert: isAdmin ? worldData?.boothsFullAlert || null : null,
       serverTime: Date.now(),
+      autoCollect,
     };
 
     return res.json({ ...gameState, success: true });

@@ -123,10 +123,16 @@ export const BOOSTERS: { [id in BoosterIdType]: BoosterConfigType } = {
 export const BOOSTER_RULES = { stackDifferentTypes: true, blockActivateWhileActive: true };
 
 // What is stored in visitorData.activeBoosters[boosterId] while a booster runs
+// What is stored in visitorData.activeBoosters[boosterId] while a booster runs (and until it is fully settled)
 export type BoosterActiveStateType = {
   startedAt: number; // server ms timestamp of activation
   endsAt: number; // server ms timestamp it expires
-  usesLeft?: number; // only for boosters with maxUses
+  usesLeft?: number; // only for boosters with maxUses (Instant Craft)
+  // Auto-Collector only: per material, the ms timestamp its virtual cycle is settled up to. Moves forward by whole
+  // units so partial progress is never lost between loads.
+  cursors?: { [materialName: string]: number };
+  // Auto-Collector only: set once the booster has ended AND its last units were granted
+  done?: boolean;
 };
 
 // Case, spaces and dashes don't matter: "Speed Up", "speed-up" and "Speed-Up" all match

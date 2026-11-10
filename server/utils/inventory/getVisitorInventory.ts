@@ -9,11 +9,13 @@ import { structureVisitorInventoryItem } from "./structureVisitorInventoryItem.j
 
 type ItemMap = { [itemId: string]: VisitorInventoryItemType };
 
+// Sorts a group of items by their sortOrder
 const sortByOrder = (items: ItemMap): ItemMap =>
   Object.fromEntries(Object.entries(items).sort(([, a], [, b]) => a.sortOrder - b.sortOrder));
 
 /**
- * Aggregates the visitor's Toy Tokens (as `coins`), XP, level, materials, toys, and decorations into one client-ready object
+ * Aggregates the visitor's Toy Tokens (as `coins`), XP, level, materials, toys, decorations, and boosters into one
+ * client-ready object. Boosters here are ones the player has BOUGHT but not activated yet (quantity = how many).
  */
 export const getVisitorInventory = async ({
   credentials,
@@ -33,11 +35,13 @@ export const getVisitorInventory = async ({
       (visitor.inventoryItems || []).map((visitorItem) => structureVisitorInventoryItem(visitorItem, credentials)),
     );
 
+    // ----- Sort every owned item into its group -----
     let coins = 0;
     let xp = 0;
     const materials: ItemMap = {};
     const toys: ItemMap = {};
     const decorations: ItemMap = {};
+    const boosters: ItemMap = {}; // BOOSTERS
 
     for (const itemData of structured) {
       const { ecosystemItemId, name, status, quantity, type } = itemData;
@@ -48,6 +52,7 @@ export const getVisitorInventory = async ({
       else if (type === "material") materials[ecosystemItemId] = itemData;
       else if (type === "toy") toys[ecosystemItemId] = itemData;
       else if (type === "decoration") decorations[ecosystemItemId] = itemData;
+      else if (type === "booster") boosters[ecosystemItemId] = itemData; // BOOSTERS
     }
 
     return {
@@ -57,6 +62,7 @@ export const getVisitorInventory = async ({
       materials: sortByOrder(materials),
       toys: sortByOrder(toys),
       decorations: sortByOrder(decorations),
+      boosters: sortByOrder(boosters), // BOOSTERS
     };
   } catch (error) {
     throw standardizeError(error);

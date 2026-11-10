@@ -17,3 +17,4 @@ export * from "./standardizeError.js";
 export * from "./teleportVisitorToAsset.js";
 export * from "./topiaInit.js";
 export * from "./getImageSize.js";
+export * from "./boosters/settleAutoCollect.js";

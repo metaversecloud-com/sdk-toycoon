@@ -55,7 +55,11 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
     layerUrl,
   } = parseMetadata(metadata);
 
-  const itemType = typeof type === "string" ? (type.toLowerCase() as MetadataType["type"]) : undefined;
+  const normalizedType = typeof type === "string" ? type.toLowerCase() : undefined;
+  const itemType =
+    normalizedType === "material" || normalizedType === "toy" || normalizedType === "decoration"
+      ? normalizedType
+      : undefined;
   const isMaterial = itemType === "material";
   const materialName = name || displayName || "";
   // Decorations and toys unlock by name (Teddy Bears at level 2, Trains at level 3, ...)

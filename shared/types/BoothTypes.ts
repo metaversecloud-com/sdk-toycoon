@@ -58,6 +58,8 @@ export interface GameStateResponseType {
   isAdmin: boolean;
   boothsFullAlert: BoothsFullAlertType | null; // only populated for admins
   serverTime: number; // server's Date.now() when this was built, so the client can correct for clock differences
+  ecosystemBoosters: { [itemId: string]: InventoryItemType };
+  autoCollect?: { unitsCollected: number; xpEarned: number; levelsGained: number[] } | null;// Set when an Auto-Collector just granted units on this load (the inventory in this response already includes them)
 }
 
 export type ClaimBoothResultType = "claimed" | "alreadyOwned" | "allBoothsTaken";

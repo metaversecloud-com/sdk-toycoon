@@ -1,3 +1,5 @@
+import { BoosterActiveStateType } from "../constants/economy.js";
+
 /**
  * Shared types between client and server for visitor data
  */
@@ -45,6 +47,9 @@ export type VisitorInventoryType = {
   decorations: {
     [itemId: string]: VisitorInventoryItemType;
   };
+    boosters: {
+    [itemId: string]: VisitorInventoryItemType; // bought but not yet activated (quantity = how many)
+  };
 };
 
 export type VisitorDataObjectType = {
@@ -77,5 +82,9 @@ export type VisitorDataObjectType = {
   };
   boothIds: {
     [urlSlug: string]: string; // sceneDropId of this visitor's booth in that world (one booth per world)
+  };
+    // Boosters currently running, by booster id. null/missing = not active. See getActiveBooster.
+  activeBoosters: {
+    [boosterId: string]: BoosterActiveStateType | null;
   };
 };

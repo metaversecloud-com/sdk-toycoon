@@ -9,18 +9,27 @@ import { isActiveInventoryItem, structureEcosystemInventoryItem } from "./struct
 // Pass forceRefresh (from the forceRefreshInventory query param) to pick up newly uploaded items immediately.
 const CACHE_DURATION_MS = 6 * 60 * 60 * 1000;
 
+/* ---------------------------------------------------------------------------------------------------------
+ * TYPES
+ * Every item defined in the ecosystem, grouped by its metadata "type".
+ * ------------------------------------------------------------------------------------------------------- */
 export type EcosystemInventoryType = {
   allItems: InventoryItemInterface[];
   ecosystemMaterials: { [itemId: string]: InventoryItemType };
   ecosystemToys: { [itemId: string]: InventoryItemType };
   ecosystemDecorations: { [itemId: string]: InventoryItemType };
+  ecosystemBoosters: { [itemId: string]: InventoryItemType }; // BOOSTERS: items with metadata type "booster"
 };
 
 const cache = new Map<string, { data: EcosystemInventoryType; timestamp: number }>();
 
+// Sorts a group of items by their sortOrder (set in Lina's metadata)
 const sortByOrder = (items: { [itemId: string]: InventoryItemType }) =>
   Object.fromEntries(Object.entries(items).sort(([, a], [, b]) => a.sortOrder - b.sortOrder));
 
+/* ---------------------------------------------------------------------------------------------------------
+ * FETCH: asks Topia for every ecosystem item and sorts each one into its group
+ * ------------------------------------------------------------------------------------------------------- */
 const fetchEcosystemInventory = async (credentials: Credentials): Promise<EcosystemInventoryType> => {
   const ecosystem = await Ecosystem.create({ credentials });
   await ecosystem.fetchInventoryItems();
@@ -29,6 +38,7 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
   const ecosystemMaterials: { [itemId: string]: InventoryItemType } = {};
   const ecosystemToys: { [itemId: string]: InventoryItemType } = {};
   const ecosystemDecorations: { [itemId: string]: InventoryItemType } = {};
+  const ecosystemBoosters: { [itemId: string]: InventoryItemType } = {}; // BOOSTERS
 
   const uncategorized: string[] = [];
   for (const item of allItems) {
@@ -38,14 +48,16 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
     if (data.type === "material") ecosystemMaterials[data.id] = data;
     else if (data.type === "toy") ecosystemToys[data.id] = data;
     else if (data.type === "decoration") ecosystemDecorations[data.id] = data;
+    else if (data.type === "booster") ecosystemBoosters[data.id] = data; // BOOSTERS
     else uncategorized.push(`${data.name} (status: ${item.status ?? "none"}, metadata.type: ${data.type ?? "none"})`);
   }
 
   // One line per fetch (every few hours, or on forceRefreshInventory) so misconfigured items are easy to spot
   console.log(
     `[inventory] ${allItems.length} ecosystem items: ${Object.keys(ecosystemMaterials).length} materials, ` +
-      `${Object.keys(ecosystemToys).length} toys, ${Object.keys(ecosystemDecorations).length} decorations` +
-      (uncategorized.length ? `; not a material/toy/decoration: ${uncategorized.join(", ")}` : ""),
+      `${Object.keys(ecosystemToys).length} toys, ${Object.keys(ecosystemDecorations).length} decorations, ` +
+      `${Object.keys(ecosystemBoosters).length} boosters` + // BOOSTERS
+      (uncategorized.length ? `; not a material/toy/decoration/booster: ${uncategorized.join(", ")}` : ""),
   );
   // What each material resolved to — a level/timer/cap of 1/0s/10 usually means its name didn't match a known material
   if (Object.keys(ecosystemMaterials).length) {
@@ -63,9 +75,13 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
     ecosystemMaterials: sortByOrder(ecosystemMaterials),
     ecosystemToys: sortByOrder(ecosystemToys),
     ecosystemDecorations: sortByOrder(ecosystemDecorations),
+    ecosystemBoosters: sortByOrder(ecosystemBoosters), // BOOSTERS
   };
 };
 
+/* ---------------------------------------------------------------------------------------------------------
+ * CACHED LOOKUP: returns the cached items if they're fresh, otherwise fetches them again
+ * ------------------------------------------------------------------------------------------------------- */
 export const getInventoryItems = async (credentials: Credentials, forceRefresh = false) => {
   const key = credentials.interactivePublicKey;
   const cached = cache.get(key);

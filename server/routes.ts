@@ -1,6 +1,7 @@
 import express from "express";
 import {
   handleAbandonBooth,
+  handleActivateBooster,
   handleClaimBooth,
   handleClearBooth,
   handleClearInactiveBooths,
@@ -12,6 +13,7 @@ import {
   handleGetLeaderboard,
   handleGrantTokens,
   handlePlaceDecoration,
+  handlePurchaseBooster,
   handlePurchaseDecoration,
   handleRemoveDecoration,
   handleResetLeaderboard,
@@ -62,6 +64,8 @@ router.post("/sell-toy", handleSellToy);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);
 router.post("/teleport/:station(materials|assembly|cashier|shop)", handleTeleportToStation);
+router.post("/purchase-booster", handlePurchaseBooster);
+router.post("/activate-booster", handleActivateBooster);
 
 // Admin — every route here is gated by requireAdmin
 router.post("/admin/clear-booth", requireAdmin, handleClearBooth);

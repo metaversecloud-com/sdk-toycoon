@@ -8,49 +8,37 @@ import { ActionAlert, ClaimBoothFirst, PageContainer, PlayerStats } from "@/comp
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
 import { ErrorType } from "@/context/types";
 
+// hooks
+import { useServerNow } from "@/hooks/useServerNow";
+
 // utils
 import { backendAPI, getErrorText, setErrorMessage, setGameState } from "@/utils";
-import { BOOSTERS, BoosterConfigType, BoosterIdType } from "@shared/constants";
+import { BOOSTERS, BoosterConfigType, BoosterIdType, getActiveBooster, getBoosterForItem } from "@shared/constants";
 
 /**
- * Boosters page: one card per booster from BOOSTERS (shared/constants/economy.ts).
- * Boosters are one-time use: buy one with Toy Tokens, activate it, and it expires.
- *
- * STATUS: this is the UI only. The server side is NOT built yet:
- *   - POST /purchase-booster  { boosterId }   -> take Toy Tokens, add one booster to the player
- *   - POST /activate-booster  { boosterId }   -> start the booster's timer (and use count)
- *   - game state needs to return what the player owns and what is active (see getBoosterState below)
- * Until those exist, pressing Buy or Activate will show the server's error in the alert.
+ * Boosters page: one card per booster in BOOSTERS (shared/constants/economy.ts).
+ * Flow: Buy (Toy Tokens -> adds one to your inventory) -> Activate (starts its timer) -> it expires.
+ * The server decides everything; this page just shows state and calls /purchase-booster and /activate-booster.
  */
 
-// What the server will eventually send for each booster. Adjust once the visitor data shape is decided.
-type BoosterStateType = {
-  owned: number; // boosters bought but not activated yet
-  activeUntil: number | null; // server ms timestamp when the active booster ends; null = not active
-  usesLeft: number | null; // for boosters with maxUses (Instant Craft)
-};
-
-// Reads booster state from game state. Returns "nothing owned, nothing active" until the server provides it.
-// TODO: replace the cast with a real field on VisitorDataObjectType (for example visitorData.boosters).
-const getBoosterState = (visitorData: unknown, id: BoosterIdType): BoosterStateType => {
-  const boosters = (visitorData as { boosters?: { [id: string]: Partial<BoosterStateType> } } | undefined)?.boosters;
-  const state = boosters?.[id];
-  return { owned: state?.owned ?? 0, activeUntil: state?.activeUntil ?? null, usesLeft: state?.usesLeft ?? null };
-};
-
-// Placeholder art (an up-arrow style icon per booster) until real art exists
+// Placeholder card art until real icons exist
 const BOOSTER_EMOJI: { [id in BoosterIdType]: string } = {
   auto_collect: "🤖",
   material_speed: "⏩",
   instant_craft: "⚡",
 };
 
-// Short, player-facing description of what each booster does
+const formatTime = (totalSeconds: number) =>
+  `${Math.floor(totalSeconds / 60)}:${(totalSeconds % 60).toString().padStart(2, "0")}`;
+
+// What each booster does, in player words
 const describe = (booster: BoosterConfigType) => {
   const minutes = Math.round(booster.durationSeconds / 60);
   const time = minutes >= 1 ? `${minutes} min` : `${booster.durationSeconds}s`;
-  if (booster.id === "auto_collect") return `Stations start and collect on their own for ${time}.`;
-  if (booster.id === "material_speed") return `Material stations run twice as fast for ${time}.`;
+  if (booster.id === "auto_collect") {
+    return `Your stations make and collect materials on their own for ${time}, even while you're away.`;
+  }
+  if (booster.id === "material_speed") return `Material stations you start take half the time for ${time}.`;
   return `Your next ${booster.maxUses} crafts finish instantly (within ${time}).`;
 };
 
@@ -60,6 +48,7 @@ export const Boosters = () => {
 
   // ----- Page state -----
   const [isLoading, setIsLoading] = useState(true);
+  const now = useServerNow(); // keeps the "time left" countdown ticking
   const [busyKey, setBusyKey] = useState<string | null>(null); // "<boosterId>:buy" or "<boosterId>:activate"
   const [statusMessage, setStatusMessage] = useState(""); // read aloud by screen readers
   const [actionError, setActionError] = useState("");
@@ -89,8 +78,7 @@ export const Boosters = () => {
     setStatusMessage("");
     setActionError("");
     try {
-      const path = action === "buy" ? "/purchase-booster" : "/activate-booster";
-      await backendAPI.post(path, { boosterId: booster.id });
+      await backendAPI.post(action === "buy" ? "/purchase-booster" : "/activate-booster", { boosterId: booster.id });
       await refresh();
       setStatusMessage(action === "buy" ? `Bought ${booster.displayName}.` : `${booster.displayName} is active!`);
     } catch (error) {
@@ -102,7 +90,7 @@ export const Boosters = () => {
 
   const level = visitorInventory?.level || 1;
   const tokens = visitorInventory?.coins || 0;
-  const boosters = Object.values(BOOSTERS);
+  const ownedItems = Object.values(visitorInventory?.boosters || {});
 
   // ----- Players without a booth in this world can't use boosters yet -----
   if (!ownsBoothInThisWorld && !isLoading) {
@@ -125,17 +113,19 @@ export const Boosters = () => {
 
         {/* One card per booster */}
         <ul className="tc-recipes" aria-label="Boosters">
-          {boosters.map((booster) => {
-            const { owned, activeUntil, usesLeft } = getBoosterState(visitorData, booster.id);
-            const isActive = activeUntil !== null && activeUntil > Date.now();
+          {Object.values(BOOSTERS).map((booster) => {
+            const owned = ownedItems
+              .filter((item) => getBoosterForItem(item)?.id === booster.id)
+              .reduce((total, item) => total + (item.quantity || 0), 0);
+            const active = getActiveBooster(visitorData?.activeBoosters, booster.id, now);
             const isLocked = level < booster.unlockLevel;
             const canAfford = tokens >= booster.cost;
+            const isBusy = busyKey !== null;
 
-            // Why the button is disabled (shown under it), if it is
+            // Why a button is disabled (shown under the buttons), if it is
             let reason: string | null = null;
             if (isLocked) reason = `Reach level ${booster.unlockLevel} to unlock.`;
-            else if (isActive) reason = "Already running.";
-            else if (owned < 1 && !canAfford) reason = `Need ${booster.cost} Toy Tokens.`;
+            else if (!canAfford) reason = `Need ${booster.cost} Toy Tokens to buy.`;
 
             return (
               <li key={booster.id} className="tc-recipe">
@@ -153,32 +143,35 @@ export const Boosters = () => {
 
                 <p className="p2">{describe(booster)}</p>
 
-                {isActive && (
-                  <p className="tc-recipe__meta">
-                    Active{usesLeft !== null ? ` · ${usesLeft} uses left` : ""}
+                {/* Countdown while running */}
+                {active && (
+                  <p className="tc-recipe__meta" aria-live="off">
+                    <span aria-hidden="true">🕒 </span>Active · {formatTime(Math.max(0, Math.ceil((active.endsAt - now) / 1000)))} left
+                    {active.usesLeft !== undefined ? ` · ${active.usesLeft} uses left` : ""}
                   </p>
                 )}
 
-                {/* Owned and not running: Activate. Otherwise: Buy. */}
-                {owned > 0 && !isActive && !isLocked ? (
+                {/* Activate (only if you own one and it isn't already running) */}
+                {owned > 0 && !isLocked && (
                   <button
                     type="button"
                     className="tc-cta"
-                    disabled={busyKey !== null}
+                    disabled={isBusy || !!active}
                     onClick={() => runAction(booster, "activate")}
                   >
-                    {busyKey === `${booster.id}:activate` ? "Activating..." : "Activate"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="tc-cta"
-                    disabled={busyKey !== null || isLocked || isActive || !canAfford}
-                    onClick={() => runAction(booster, "buy")}
-                  >
-                    {busyKey === `${booster.id}:buy` ? "Buying..." : `Buy · ${booster.cost} Toy Tokens`}
+                    {busyKey === `${booster.id}:activate` ? "Activating..." : active ? "Running" : "Activate"}
                   </button>
                 )}
+
+                {/* Buy (always available when unlocked and affordable) */}
+                <button
+                  type="button"
+                  className="tc-cta"
+                  disabled={isBusy || isLocked || !canAfford}
+                  onClick={() => runAction(booster, "buy")}
+                >
+                  {busyKey === `${booster.id}:buy` ? "Buying..." : `Buy · ${booster.cost} Toy Tokens`}
+                </button>
                 {reason && <p className="tc-recipe__blocked">{reason}</p>}
               </li>
             );

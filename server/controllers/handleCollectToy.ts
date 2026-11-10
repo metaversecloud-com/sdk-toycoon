@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getCraftedToyItem, getToyRecipeById, ToyTypeId } from "@shared/constants/index.js";
+import { getCraftedToyItem, getCraftXp, getToyRecipeById, ToyTypeId } from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
   awardBonusXp,
@@ -15,14 +15,15 @@ import {
 
 /**
  * Step 2 of 2: collects a finished toy ({ recipeId }) once its craft timer is done (server-validated), puts it on the
- * player's shelf, counts the craft, and earns the recipe's craftXp. If granting the toy fails, the craft stays ready so
- * nothing is lost.
+ * player's shelf, counts the craft, and earns the craft XP (based on the recipe's craft time, see getCraftXp).
+ * If granting the toy fails, the craft stays ready so nothing is lost.
  */
 export const handleCollectToy = async (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
     const { profileId, urlSlug } = credentials;
 
+    // ----- 1. Check the request -----
     const recipe = getToyRecipeById(req.body?.recipeId as ToyTypeId);
     if (!recipe) throw "Valid recipeId is required";
 
@@ -36,12 +37,13 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     const toy = getCraftedToyItem(recipe, Object.values(ecosystemToys));
     if (!toy) throw `The ${recipe.displayName} toy item isn't set up in the ecosystem.`;
 
+    // ----- 2. Make sure the craft is actually finished (the server decides, not the client) -----
     const craftStartedAt = visitorData.toyCraftStartedAt?.[recipe.id] ?? null;
     const { state } = getMaterialBinState(craftStartedAt, recipe.craftSeconds);
     if (state === "idle") throw `You aren't crafting a ${recipe.displayName}.`;
     if (state === "generating") throw `Your ${recipe.displayName} isn't finished yet.`;
 
-    // Clear the timer and count the craft under a one-shot lock, so a double-click can't collect the toy twice
+    // ----- 3. Clear the timer and count the craft under a one-shot lock, so a double-click can't collect twice -----
     const timerPath = `toyCraftStartedAt.${recipe.id}`;
     const totalToysCrafted = (visitorData.totalToysCrafted || 0) + 1;
     const claimed = await claimActionLock({
@@ -53,14 +55,13 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     });
     if (!claimed) return res.status(409).json({ success: false, message: "Already collecting — try again in a moment." });
 
-    // The craft's XP (which also refreshes the leaderboard) is granted at the same time as the toy, so it doesn't add a
-    // round trip. awardBonusXp never throws.
+    // ----- 4. Give the toy and the craft XP at the same time (one round trip). awardBonusXp never throws. -----
     let toyItem, xpResult;
     try {
       [toyItem, xpResult] = await Promise.all([
         modifyVisitorInventoryItem({ credentials, visitor, id: toy.id, quantity: 1 }),
         awardBonusXp({
-          amount: recipe.craftXp,
+          amount: getCraftXp(recipe), // time-based XP from shared/constants/economy.ts
           boothKeyAssetId: booth.keyAssetId,
           credentials,
           totalToysCrafted,
@@ -76,7 +77,7 @@ export const handleCollectToy = async (req: Request, res: Response) => {
       throw grantError;
     }
 
-    // Analytics are best-effort — the toy is already on the shelf
+    // ----- 5. Analytics (best effort: the toy is already on the shelf) -----
     const analytics = [{ analyticName: "toycoon_toy_crafted", profileId, urlSlug, uniqueKey: profileId }];
     if (recipe.id === "teddy_bear") {
       analytics.push({ analyticName: "toycoon_bear_crafted", profileId, urlSlug, uniqueKey: profileId });

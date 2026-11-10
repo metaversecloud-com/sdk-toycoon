@@ -27,6 +27,7 @@ import {
   countOwnedToys,
   describeMissingMaterials,
   getCraftedToyItem,
+  getCraftXp,
   getMaterialCountsByName,
   getMissingMaterials,
   toCanonicalMaterialName,
@@ -40,11 +41,12 @@ import { getLevelFromXp } from "@shared/levels";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
 
 /**
- * Toy Assembly (the Workshop page): craft toys from materials. One workbench per toy the player's level has unlocked (L1 Rocking Horse,
- * L2 + Teddy Bear, L3 + Train), each crafting one at a time: Craft (materials used) → wait craftSeconds → Collect.
+ * Toy Assembly (the Workshop page): craft toys from materials. One workbench per toy the player's level has unlocked
+ * (L1 Rocking Horse, L2 + Teddy Bear, L3 + Train), each crafting one at a time: Craft (materials used) -> wait
+ * craftSeconds -> Collect.
  * Countdowns mirror the server's timer; taps update the screen immediately and are corrected (or undone) by the server.
- * Collecting a finished toy earns the recipe's craftXp. Toys are always called by their type ("Teddy Bear"), never the
- * crafted item's color variant name ("Brown Teddy Bear").
+ * Collecting a finished toy earns craft XP based on the recipe's craft time (see getCraftXp in shared/constants).
+ * Toys are always called by their type ("Teddy Bear"), never the crafted item's color name ("Brown Teddy Bear").
  */
 export const Workshop = () => {
   const dispatch = useContext(GlobalDispatchContext);
@@ -58,10 +60,11 @@ export const Workshop = () => {
     visitorInventory,
   } = useContext(GlobalStateContext);
 
+  // ----- Page state -----
   const [isLoading, setIsLoading] = useState(true);
   const now = useServerNow();
-  const [busyRecipes, setBusyRecipes] = useState<Set<ToyTypeId>>(new Set());
-  const [statusMessage, setStatusMessage] = useState("");
+  const [busyRecipes, setBusyRecipes] = useState<Set<ToyTypeId>>(new Set()); // recipes with a request in flight
+  const [statusMessage, setStatusMessage] = useState(""); // read aloud by screen readers
   const [actionError, setActionError] = useState("");
   const [levelUp, setLevelUp] = useState<XpResultType>(null);
 
@@ -69,6 +72,7 @@ export const Workshop = () => {
   const [searchParams] = useSearchParams();
   const forceRefreshInventory = searchParams.get("forceRefreshInventory") === "true";
 
+  // ----- Load the game state when the page opens -----
   useEffect(() => {
     if (hasInteractiveParams) {
       backendAPI
@@ -79,6 +83,7 @@ export const Workshop = () => {
     }
   }, [hasInteractiveParams, dispatch]);
 
+  // ----- Values worked out from game state -----
   const level = visitorInventory?.level || 1;
   const materialCounts = getMaterialCountsByName(visitorInventory?.materials);
   const materialIcons = getMaterialIcons(ecosystemMaterials);
@@ -86,6 +91,7 @@ export const Workshop = () => {
   const unlockedRecipes = TOY_RECIPES.filter(({ unlockLevel }) => unlockLevel <= level);
   const nextRecipe = TOY_RECIPES.find(({ unlockLevel }) => unlockLevel > level);
 
+  // Marks a recipe as busy (or not) so it can't be tapped twice
   const setBusy = (recipeId: ToyTypeId, isBusy: boolean) =>
     setBusyRecipes((current) => {
       const next = new Set(current);
@@ -106,6 +112,7 @@ export const Workshop = () => {
     return updated;
   };
 
+  // ----- Craft button: use materials and start the timer -----
   const handleCraft = async (recipe: ToyRecipeType) => {
     if (busyRecipes.has(recipe.id)) return;
     const previousMaterials = Object.fromEntries(
@@ -113,7 +120,10 @@ export const Workshop = () => {
     );
 
     // Start the timer and use the materials right away; the server's reply confirms (or corrects) both
-    patchGame(dispatch, { craftTimers: { [recipe.id]: Date.now() + (serverTimeOffset ?? 0) }, materials: materialsAfterCraft(recipe) });
+    patchGame(dispatch, {
+      craftTimers: { [recipe.id]: Date.now() + (serverTimeOffset ?? 0) },
+      materials: materialsAfterCraft(recipe),
+    });
     setBusy(recipe.id, true);
     setStatusMessage("");
     setActionError("");
@@ -122,6 +132,7 @@ export const Workshop = () => {
       patchGame(dispatch, { craftTimers: { [recipe.id]: data.craftStartedAt }, materials: data.materials });
       setStatusMessage(`Started making a ${recipe.displayName}.`);
     } catch (error) {
+      // The server said no: undo the instant update
       patchGame(dispatch, { craftTimers: { [recipe.id]: null }, materials: previousMaterials });
       setActionError(getErrorText(error as ErrorType));
     } finally {
@@ -129,6 +140,7 @@ export const Workshop = () => {
     }
   };
 
+  // ----- Collect button: put the finished toy on the shelf and earn craft XP -----
   const handleCollect = async (recipe: ToyRecipeType, toyItem: InventoryItemType) => {
     if (busyRecipes.has(recipe.id)) return;
     const previousTimer = visitorData?.toyCraftStartedAt?.[recipe.id] ?? null;
@@ -137,13 +149,14 @@ export const Workshop = () => {
       ({ ...toyItem, ecosystemItemId: toyItem.id, quantity: 0, availableQuantity: 0 } as VisitorInventoryItemType);
     const previousCrafted = visitorData?.totalToysCrafted || 0;
     const previousXp = visitorInventory?.xp ?? 0;
+    const craftXp = getCraftXp(recipe); // time-based XP for this recipe (same number the server uses)
 
     // Put it on the shelf right away; the server's reply has the confirmed totals
     patchGame(dispatch, {
       craftTimers: { [recipe.id]: null },
       toys: { [toyItem.id]: { ...previousToy, quantity: previousToy.quantity + 1 } },
       visitorData: { totalToysCrafted: previousCrafted + 1 },
-      inventory: { xp: previousXp + recipe.craftXp, level: getLevelFromXp(previousXp + recipe.craftXp) },
+      inventory: { xp: previousXp + craftXp, level: getLevelFromXp(previousXp + craftXp) },
     });
     setBusy(recipe.id, true);
     setStatusMessage("");
@@ -156,8 +169,9 @@ export const Workshop = () => {
       });
       applyXpResult(dispatch, data.xpResult);
       if (data.xpResult?.levelsGained.length) setLevelUp(data.xpResult);
-      setStatusMessage(`Your ${recipe.displayName} is done! +${recipe.craftXp} XP`);
+      setStatusMessage(`Your ${recipe.displayName} is done! +${craftXp} XP`);
     } catch (error) {
+      // The server said no: undo the instant update
       patchGame(dispatch, {
         craftTimers: { [recipe.id]: previousTimer },
         toys: { [toyItem.id]: previousToy },
@@ -170,6 +184,7 @@ export const Workshop = () => {
     }
   };
 
+  // ----- Players without a booth in this world can't craft yet -----
   if (!ownsBoothInThisWorld && !isLoading) {
     return (
       <PageContainer isLoading={isLoading}>
@@ -181,6 +196,7 @@ export const Workshop = () => {
     );
   }
 
+  // ----- The page -----
   return (
     <PageContainer isLoading={isLoading}>
       <div className="tc-workshop">
@@ -190,6 +206,7 @@ export const Workshop = () => {
           <PlayerStats visitorInventory={visitorInventory} />
         </div>
 
+        {/* One workbench card per unlocked recipe */}
         <ul className="tc-recipes" aria-label="Toys you can craft">
           {unlockedRecipes.map((recipe) => {
             // Each recipe crafts one item (Brown Teddy Bear, Black Train); other colors are decoration-only
@@ -202,6 +219,7 @@ export const Workshop = () => {
               now,
             );
 
+            // Why the Craft button is disabled (shown under it), if it is
             let blockedReason: string | null = null;
             if (!toyItem) blockedReason = `The ${recipe.displayName} isn't set up yet.`;
             else if (ownedToyCount >= recipe.cap) blockedReason = `Your shelf is full — sell some at the ${WORLD_OBJECTS.cashier}.`;
@@ -226,6 +244,7 @@ export const Workshop = () => {
           })}
         </ul>
 
+        {/* Hint about the next toy to unlock */}
         {nextRecipe && (
           <p className="tc-hint tc-unlock-hint">
             <span aria-hidden="true">🔒</span>
@@ -234,14 +253,17 @@ export const Workshop = () => {
         )}
       </div>
 
+      {/* Read aloud by screen readers */}
       <p className="sr-only" role="status">
         {statusMessage}
       </p>
 
+      {/* Error messages */}
       <div className="tc-dock">
         <ActionAlert message={actionError} onDismiss={() => setActionError("")} />
       </div>
 
+      {/* Level-up celebration */}
       {levelUp && (
         <LevelUpModal
           level={levelUp.level}

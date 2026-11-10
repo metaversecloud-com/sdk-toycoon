@@ -1,9 +1,15 @@
 import { InventoryItemInterface } from "@rtsdk/topia";
-import { getDecorUnlockLevel, getMaterialSpawnSeconds, getMaterialUnlockLevel } from "@shared/constants/index.js";
+import {
+  getCollectXpForSeconds,
+  getDecorUnlockLevel,
+  getMaterialSpawnSeconds,
+  getMaterialUnlockLevel,
+  MATERIALS,
+  toCanonicalMaterialName,
+} from "@shared/constants/index.js";
 import { InventoryItemType, MetadataType } from "../../types/index.js";
-import { getMaterialCollectXp } from "@shared/constants/economy.js";
 
-// Ecosystem metadata may arrive as strings, so coerce numeric fields defensively
+// Ecosystem metadata may arrive as strings, so turn numeric fields into numbers safely
 const num = (value: unknown, fallback = 0) => {
   const n = Number(value);
   return value === undefined || value === null || value === "" || Number.isNaN(n) ? fallback : n;
@@ -22,12 +28,13 @@ const parseMetadata = (metadata: unknown): MetadataType => {
   return metadata as MetadataType;
 };
 
-// Items without a status are treated as active; only an explicit non-ACTIVE status hides an item
+// Items without a status count as active; only an explicit non-ACTIVE status hides an item
 export const isActiveInventoryItem = (item: { status?: string | null }) =>
   !item.status || item.status.toUpperCase() === "ACTIVE";
 
 /**
- * Turns a raw ecosystem inventory item into the app's item shape, reading game config from its metadata
+ * Turns a raw ecosystem inventory item into the app's item shape.
+ * Every number is read from the item's metadata first, then falls back to the constants in shared/constants.
  */
 export const structureEcosystemInventoryItem = (item: InventoryItemInterface): InventoryItemType => {
   const { id, name, description, image_path, metadata } = item;
@@ -51,8 +58,13 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
   const itemType = typeof type === "string" ? (type.toLowerCase() as MetadataType["type"]) : undefined;
   const isMaterial = itemType === "material";
   const materialName = name || displayName || "";
-  // Decorations and toys are sold at the Decorations shop, unlocking by name (Teddy Bears at 2, Trains at 3, …)
+  // Decorations and toys unlock by name (Teddy Bears at level 2, Trains at level 3, ...)
   const isShopItem = itemType === "decoration" || itemType === "toy";
+
+  // The station timer first, so the XP below always matches the time the player really waits
+  const resolvedSpawnSeconds = num(spawnIntervalSeconds, isMaterial ? getMaterialSpawnSeconds(materialName) : 0);
+  // A fixed XP for this material in constants (optional). If there isn't one, XP comes from the timer.
+  const configuredCollectXp = isMaterial ? MATERIALS[toCanonicalMaterialName(materialName)]?.collectXp : undefined;
 
   return {
     id,
@@ -63,21 +75,24 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
     type: itemType, // "material" | "toy" | "decoration"
     sortOrder: num(sortOrder),
 
-    // Economy
+    // ----- Economy -----
     cost: num(cost),
     reward: num(rewardTokens ?? reward), // Lina's metadata uses rewardTokens / rewardXP
-    xpReward: num(rewardXP ?? xpReward, isMaterial ? getMaterialCollectXp(materialName) : 0),
-    // Materials and shop items fall back to the brief's unlock levels / generation times when metadata doesn't set them
+    // XP priority: 1) metadata rewardXP  2) fixed collectXp in constants  3) formula from the timer (materials only)
+    xpReward: num(
+      rewardXP ?? xpReward,
+      isMaterial ? (configuredCollectXp ?? getCollectXpForSeconds(resolvedSpawnSeconds)) : 0,
+    ),
     unlockLevel: num(
       unlockLevel,
       isMaterial ? getMaterialUnlockLevel(materialName) : isShopItem ? getDecorUnlockLevel(materialName) : 1,
     ),
 
-    // Materials
-    spawnIntervalSeconds: num(spawnIntervalSeconds, isMaterial ? getMaterialSpawnSeconds(materialName) : 0),
+    // ----- Materials -----
+    spawnIntervalSeconds: resolvedSpawnSeconds,
     stationImageUrl,
 
-    // Decorations
+    // ----- Decorations -----
     slot,
     layerUrl,
   };

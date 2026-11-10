@@ -1,31 +1,35 @@
+import { getTimeBasedXp, XP_PER_SECOND } from "./economy.js";
 import { toCanonicalMaterialName } from "./materialNames.js";
 
 // Toy recipes and economy, from toycoon-economy-model.xlsx (v2, "Recipes & Sustainable Output" tab) and the brief's
-// level table (§3). Crafting, selling, and the UI should all read from here so the numbers live in one place.
+// level table (section 3). Crafting, selling, and the UI all read from here so the numbers live in one place.
 
 export type ToyTypeId = "rocking_horse" | "teddy_bear" | "train";
 
 export interface ToyRecipeType {
   id: ToyTypeId;
   displayName: string;
-  unlockLevel: number;
-  // Material name (as in the ecosystem, e.g. "Wood") → quantity used per craft
+  unlockLevel: number; // player level needed to craft it
+  // Material name (as in the ecosystem, e.g. "Wood") -> quantity used per craft
   materials: { [materialName: string]: number };
-  // Fixed sell price (V1 has no order-matching). Ecosystem metadata rewardTokens / rewardXP override these per item.
-  sellTokens: number;
-  sellXp: number;
-  // XP for collecting a finished toy from the workbench: more than a material, less than selling it
-  craftXp: number;
+  // Fixed sell price (V1 has no order matching). Ecosystem metadata rewardTokens / rewardXP override these per item.
+  sellTokens: number; // Toy Tokens earned when sold
+  sellXp: number; // XP earned when sold
+  // OPTIONAL fixed XP for collecting a finished toy. Leave it out and the XP comes from craftSeconds (see getCraftXp)
+  craftXp?: number;
   // Max finished toys of this type a player can hold unsold (a toy being crafted counts too)
   cap: number;
-  // How long crafting takes. ~2/3 of the recipe's material bottleneck time (economy model: Rocking Horse 45s,
-  // Teddy Bear 100s, Train 300s), so materials can be gathered while a toy is being made and the model's rates hold.
+  // How long crafting takes. About 2/3 of the recipe's material bottleneck time, so materials can be gathered while
+  // a toy is being made. Also drives the craft XP.
   craftSeconds: number;
-  // Crafting always produces this one item. Other colors of a toy (e.g. White Teddy Bear, Silver Train) are decoration
-  // variants only, never crafted. Set when the toy item's name carries a color.
+  // Crafting always produces this one item. Other colors (White Teddy Bear, Silver Train) are decoration variants
+  // only and are never crafted.
   craftedColor?: string;
 }
 
+/* ---------------------------------------------------------------------------------------------------------
+ * THE THREE RECIPES
+ * ------------------------------------------------------------------------------------------------------- */
 export const TOY_RECIPES: ToyRecipeType[] = [
   {
     id: "rocking_horse",
@@ -34,7 +38,6 @@ export const TOY_RECIPES: ToyRecipeType[] = [
     materials: { Wood: 3, Fabric: 1 },
     sellTokens: 3,
     sellXp: 10,
-    craftXp: 3,
     cap: 10,
     craftSeconds: 30,
   },
@@ -45,7 +48,6 @@ export const TOY_RECIPES: ToyRecipeType[] = [
     materials: { Stuffing: 2, Thread: 1, Fabric: 1 },
     sellTokens: 5,
     sellXp: 25,
-    craftXp: 8,
     cap: 8,
     craftSeconds: 60,
     craftedColor: "Brown",
@@ -57,30 +59,34 @@ export const TOY_RECIPES: ToyRecipeType[] = [
     materials: { Wood: 5, Wheels: 4, Gears: 2, Paint: 1 },
     sellTokens: 20,
     sellXp: 100,
-    craftXp: 30,
     cap: 5,
     craftSeconds: 180,
     craftedColor: "Black",
   },
 ];
 
-// XP for each material unit collected — the smallest reward in the loop (collect < craft < sell), so the XP bar moves
-// from the very first collect
-export const material = {
-  xpReward: 1
-};
-
-// Toy Tokens granted once when a player reaches a level (economy model, Leveling tab)
+/* ---------------------------------------------------------------------------------------------------------
+ * LEVEL-UP REWARDS
+ * Toy Tokens paid once when a player reaches a level (economy model, Leveling tab)
+ * ------------------------------------------------------------------------------------------------------- */
 export const LEVEL_UP_TOKEN_REWARDS: { [level: number]: number } = {
   2: 10,
   3: 30,
 };
 
+/* ---------------------------------------------------------------------------------------------------------
+ * LOOKUPS
+ * ------------------------------------------------------------------------------------------------------- */
 export const getToyRecipeById = (id: ToyTypeId) => TOY_RECIPES.find((recipe) => recipe.id === id);
 
+// XP for collecting a finished toy: the recipe's own craftXp if set, otherwise based on its craft time.
+// Uses the BASE craftSeconds, so a booster that shortens crafting never lowers XP.
+export const getCraftXp = (recipe: ToyRecipeType) =>
+  recipe.craftXp ?? getTimeBasedXp(recipe.craftSeconds, XP_PER_SECOND.craft);
+
 /**
- * Maps an item to its toy type by the type's name appearing in the item's name (e.g. "Brown Teddy Bear" or
- * "Teddy Bear Brown" → Teddy Bear). Returns undefined for anything that isn't a known toy.
+ * Maps an item to its toy type by the type's name appearing in the item's name (for example "Brown Teddy Bear" or
+ * "Teddy Bear Brown" -> Teddy Bear). Returns undefined for anything that isn't a known toy.
  */
 export const getToyRecipeForItem = (itemName: string) => {
   const normalized = itemName.toLowerCase();
@@ -89,9 +95,11 @@ export const getToyRecipeForItem = (itemName: string) => {
 
 export const getUnlockedRecipes = (level: number) => TOY_RECIPES.filter((recipe) => recipe.unlockLevel <= level);
 
-/**
- * What's still needed to craft a recipe, given the player's material counts by name. Empty object = can craft.
- */
+/* ---------------------------------------------------------------------------------------------------------
+ * CRAFTING CHECKS
+ * ------------------------------------------------------------------------------------------------------- */
+
+// What's still needed to craft a recipe, given the player's material counts by name. Empty object = can craft.
 export const getMissingMaterials = (
   recipe: ToyRecipeType,
   ownedByName: { [materialName: string]: number },
@@ -107,9 +115,7 @@ export const canCraft = (recipe: ToyRecipeType, ownedByName: { [materialName: st
 
 type OwnedItemType = { name: string; quantity: number };
 
-/**
- * The player's materials as { materialName: quantity }, for comparing against recipes (which use material names)
- */
+// The player's materials as { materialName: quantity }, for comparing against recipes (which use material names)
 export const getMaterialCountsByName = (materials: { [itemId: string]: OwnedItemType } = {}) =>
   Object.values(materials).reduce<{ [materialName: string]: number }>((counts, { name, quantity }) => {
     const materialName = toCanonicalMaterialName(name);
@@ -117,16 +123,17 @@ export const getMaterialCountsByName = (materials: { [itemId: string]: OwnedItem
     return counts;
   }, {});
 
-/**
- * How many of the recipe's crafted toy the player holds (for its shelf cap). Only the crafted item counts — other
- * colors are decoration variants and don't take shelf space.
- */
-export const countOwnedToys = (recipe: ToyRecipeType, toys: { [itemId: string]: OwnedItemType & { displayName?: string } } = {}) =>
+// How many of the recipe's crafted toy the player holds (for its shelf cap). Only the crafted item counts; other
+// colors are decoration variants and don't take shelf space.
+export const countOwnedToys = (
+  recipe: ToyRecipeType,
+  toys: { [itemId: string]: OwnedItemType & { displayName?: string } } = {},
+) =>
   Object.values(toys)
     .filter((toy) => getCraftedToyItem(recipe, [toy]))
     .reduce((total, { quantity }) => total + (quantity || 0), 0);
 
-// "2 more Wood and 1 more Paint"
+// Turns missing materials into text: "2 more Wood and 1 more Paint"
 export const describeMissingMaterials = (missing: { [materialName: string]: number }) =>
   Object.entries(missing)
     .map(([name, short]) => `${short} more ${name}`)

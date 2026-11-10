@@ -16,6 +16,7 @@ const sortByOrder = (items: ItemMap): ItemMap =>
 /**
  * Aggregates the visitor's Toy Tokens (as `coins`), XP, level, materials, toys, decorations, and boosters into one
  * client-ready object. Boosters here are ones the player has BOUGHT but not activated yet (quantity = how many).
+ * Aggregates the visitor's Toy Tokens (as `coins`), XP, level, materials, toys, decorations, and badges into one client-ready object
  */
 export const getVisitorInventory = async ({
   credentials,
@@ -42,6 +43,7 @@ export const getVisitorInventory = async ({
     const toys: ItemMap = {};
     const decorations: ItemMap = {};
     const boosters: ItemMap = {}; // BOOSTERS
+    const badges: ItemMap = {};
 
     for (const itemData of structured) {
       const { ecosystemItemId, name, status, quantity, type } = itemData;
@@ -53,6 +55,7 @@ export const getVisitorInventory = async ({
       else if (type === "toy") toys[ecosystemItemId] = itemData;
       else if (type === "decoration") decorations[ecosystemItemId] = itemData;
       else if (type === "booster") boosters[ecosystemItemId] = itemData; // BOOSTERS
+      else if (type === "badge") badges[ecosystemItemId] = itemData;
     }
 
     return {
@@ -63,6 +66,7 @@ export const getVisitorInventory = async ({
       toys: sortByOrder(toys),
       decorations: sortByOrder(decorations),
       boosters: sortByOrder(boosters), // BOOSTERS
+      badges: sortByOrder(badges),
     };
   } catch (error) {
     throw standardizeError(error);

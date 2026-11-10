@@ -27,7 +27,7 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
   const resultRef = useRef<HTMLHeadingElement>(null);
   const allTakenRef = useRef<HTMLParagraphElement>(null);
 
-  const { claimDate, isClaimed, isOwnedByVisitor, level, ownerDisplayName, sceneDropId } = booth;
+  const { claimDate, isClaimed, isOwnedByVisitor, level, ownerDisplayName, ownerStats, sceneDropId } = booth;
   const hasStarted = (visitorInventory?.xp ?? 0) > 0;
 
   // The claim button disappears once used, so move focus to the result instead of stranding keyboard users
@@ -76,17 +76,31 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
 
   const title = !isClaimed ? "Open Display" : isOwnedByVisitor ? "Your Display" : `${ownerDisplayName}'s Display`;
   const claimedOn = claimDate ? new Date(claimDate).toLocaleDateString() : null;
+  const isOthersDisplay = isClaimed && !isOwnedByVisitor;
+
+  // About someone else's display: the owner's lifetime stats (any that couldn't be read are left out) and when they
+  // claimed it. One row each, so it fits a narrow drawer.
+  const ownerStatRows = isOthersDisplay
+    ? [
+        { label: "Toys created", value: ownerStats?.totalToysCrafted?.toLocaleString() },
+        { label: "Toys sold", value: ownerStats?.totalToysSold?.toLocaleString() },
+        { label: "Experience Points", value: ownerStats?.totalXp?.toLocaleString() },
+        { label: "Claimed", value: claimedOn },
+      ].filter((row): row is { label: string; value: string } => !!row.value)
+    : [];
 
   return (
     <div className="tc-workshop">
       <div className="tc-workshop__top">
         <h2 className="tc-sign">{title}</h2>
         <p className="tc-hint">
-          {isClaimed
-            ? `Level ${level}${claimedOn ? ` · Claimed ${claimedOn}` : ""}`
-            : ownsBoothInThisWorld
-              ? "You already have a display in this world."
-              : "Claim it to show off the toys you make!"}
+          {isOthersDisplay
+            ? `Level ${level}`
+            : isClaimed
+              ? `Level ${level}${claimedOn ? ` · Claimed ${claimedOn}` : ""}`
+              : ownsBoothInThisWorld
+                ? "You already have a display in this world."
+                : "Claim it to show off the toys you make!"}
         </p>
       </div>
 
@@ -94,6 +108,17 @@ export const BoothView = ({ booth }: { booth: TargetBoothType }) => {
         {isOwnedByVisitor && (claimResult === "claimed" || !hasStarted) && renderNextStep()}
 
         {isOwnedByVisitor && <DisplayDecor />}
+
+        {ownerStatRows.length > 0 && (
+          <dl className="tc-panel tc-booth-stats">
+            {ownerStatRows.map(({ label, value }) => (
+              <div key={label} className="tc-booth-stats__row">
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
 
         <div className="tc-panel tc-booth-actions">
           {renderAction()}

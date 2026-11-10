@@ -34,6 +34,7 @@ import {
   TOY_RECIPES,
   ToyRecipeType,
   ToyTypeId,
+  getTimerSeconds,
 } from "@shared/constants";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 import { VisitorInventoryItemType } from "@shared/types/VisitorData";
@@ -56,6 +57,7 @@ export const Workshop = () => {
     hasInteractiveParams,
     ownsBoothInThisWorld,
     serverTimeOffset,
+    timerSpeed,
     visitorData,
     visitorInventory,
   } = useContext(GlobalStateContext);
@@ -76,7 +78,7 @@ export const Workshop = () => {
   useEffect(() => {
     if (hasInteractiveParams) {
       backendAPI
-        .get("/game-state", { params: { forceRefreshInventory } })
+        .get("/game-state", { params: { forceRefreshInventory, page: "workshop" } })
         .then((response) => setGameState(dispatch, response.data))
         .catch((error) => setErrorMessage(dispatch, error as ErrorType))
         .finally(() => setIsLoading(false));
@@ -88,7 +90,11 @@ export const Workshop = () => {
   const materialCounts = getMaterialCountsByName(visitorInventory?.materials);
   const materialIcons = getMaterialIcons(ecosystemMaterials);
   const toyItems = Object.values(ecosystemToys || {});
-  const unlockedRecipes = TOY_RECIPES.filter(({ unlockLevel }) => unlockLevel <= level);
+  // Craft times follow this world's timer speed (set by an admin)
+  const unlockedRecipes = TOY_RECIPES.filter(({ unlockLevel }) => unlockLevel <= level).map((recipe) => ({
+    ...recipe,
+    craftSeconds: getTimerSeconds(recipe.craftSeconds, timerSpeed),
+  }));
   const nextRecipe = TOY_RECIPES.find(({ unlockLevel }) => unlockLevel > level);
 
   // Marks a recipe as busy (or not) so it can't be tapped twice

@@ -18,6 +18,8 @@ import {
   getFitScale,
   getSpotBox,
   requireBoothInWorld,
+  saveBadgeProgress,
+  trackAnalytics,
 } from "@utils/index.js";
 
 /**
@@ -74,9 +76,12 @@ export const handlePlaceDecoration = async (req: Request, res: Response) => {
 
     // One decor change at a time, so a double-tap can't place one copy on two spots
     const placementPath = `placedDecorations.${spot}.${urlSlug}`;
+    // Remembered for good (for badges like Showstopper Shop), even after it's taken down again
+    const placedEverPath = `decorPlacedEver.${item.id}`;
+    const wasPlacedBefore = visitorData.decorPlacedEver?.[item.id] ?? null;
     const claimed = await claimActionLock({
       action: "decor",
-      alsoWrite: { [placementPath]: item.name },
+      alsoWrite: { [placementPath]: item.name, [placedEverPath]: true },
       profileId,
       visitor,
       visitorData,
@@ -89,7 +94,7 @@ export const handlePlaceDecoration = async (req: Request, res: Response) => {
     } catch (swapError) {
       // The picture didn't change, so the placement didn't happen
       await visitor
-        .updateDataObject({ [placementPath]: current }, {})
+        .updateDataObject({ [placementPath]: current, [placedEverPath]: wasPlacedBefore }, {})
         .catch((error: any) =>
           errorHandler({ error, functionName: "handlePlaceDecoration", message: "Error undoing placement record" }),
         );
@@ -123,6 +128,18 @@ export const handlePlaceDecoration = async (req: Request, res: Response) => {
       ...visitorData.placedDecorations,
       [spot]: { ...visitorData.placedDecorations?.[spot], [urlSlug]: item.name },
     };
+    trackAnalytics({ credentials, events: [{ name: `decorPlacements-${spotType}` }], visitor });
+    saveBadgeProgress({
+      credentials,
+      level: visitorInventory.level,
+      update: {},
+      visitor,
+      visitorData: {
+        ...visitorData,
+        placedDecorations,
+        decorPlacedEver: { ...visitorData.decorPlacedEver, [item.id]: true },
+      },
+    });
     return res.json({ success: true, spot, itemName: item.name, replaced: current, placedDecorations });
   } catch (error) {
     return errorHandler({

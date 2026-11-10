@@ -4,6 +4,7 @@ export * from "./ActionAlert.js";
 export * from "./Accordion.js";
 export * from "./AdminView.js";
 export * from "./AdminIconButton.js";
+export * from "./BadgeCase.js";
 export * from "./BoothView.js";
 export * from "./ClaimBoothFirst.js";
 export * from "./ConfirmationModal.js";

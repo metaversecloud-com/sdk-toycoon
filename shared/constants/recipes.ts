@@ -69,6 +69,7 @@ export const TOY_RECIPES: ToyRecipeType[] = [
  * LEVEL-UP REWARDS
  * Toy Tokens paid once when a player reaches a level (economy model, Leveling tab)
  * ------------------------------------------------------------------------------------------------------- */
+// Toy Tokens granted once when a player reaches a level (economy model, Leveling tab)
 export const LEVEL_UP_TOKEN_REWARDS: { [level: number]: number } = {
   2: 10,
   3: 30,

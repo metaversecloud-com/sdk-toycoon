@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getMaterialCap } from "@shared/constants/index.js";
+import { getMaterialCap, getTimerSeconds } from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
   awardBonusXp,
@@ -10,6 +10,8 @@ import {
   getInventoryItems,
   initializeVisitorData,
   requireBoothInWorld,
+  saveBadgeProgress,
+  trackAnalytics,
 } from "@utils/index.js";
 import { VisitorInventoryItemType } from "../types/index.js";
 
@@ -22,7 +24,7 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
   try {
     const credentials = getCredentials(req.query);
 
-    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths }] = await Promise.all([
+    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths, worldData }] = await Promise.all([
       getInventoryItems(credentials),
       initializeVisitorData(credentials),
       getBoothIndex(credentials),
@@ -36,7 +38,8 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
       return (
         visitorInventory.level >= material.unlockLevel &&
         owned < getMaterialCap(material.name) &&
-        getMaterialBinState(generationStartedAt, material.spawnIntervalSeconds, now).state === "ready"
+        getMaterialBinState(generationStartedAt, getTimerSeconds(material.spawnIntervalSeconds, worldData?.timerSpeed), now)
+          .state === "ready"
       );
     });
 
@@ -61,17 +64,22 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
 
     if (Object.keys(collected).length === 0) throw "Couldn't collect anything — try again in a moment.";
 
-    // Each collected material pays its own XP, so add them up (skipped bins contribute nothing)
-    const collectedXp = Object.keys(collected).reduce(
-      (total, materialId) => total + (ecosystemMaterials[materialId]?.xpReward ?? 0),
-      0,
-    );
-
     // One XP grant for the whole batch
-    const xpResult = await awardBonusXp({
-      amount: collectedXp,
-      boothKeyAssetId: booth.keyAssetId,
+    const xpEarned = readyBins.reduce((total, { id, xpReward }) => total + (collected[id] ? xpReward : 0), 0);
+    const xpResult =
+      xpEarned > 0
+        ? await awardBonusXp({ amount: xpEarned, boothKeyAssetId: booth.keyAssetId, credentials, visitor, visitorData })
+        : null;
+
+    trackAnalytics({
       credentials,
+      events: [{ name: "materialCollects", incrementBy: Object.keys(collected).length }, { name: "collectAllUses" }],
+      visitor,
+    });
+    saveBadgeProgress({
+      credentials,
+      level: xpResult?.level ?? visitorInventory.level,
+      update: { materialsCollected: (visitorData.materialsCollected || 0) + Object.keys(collected).length },
       visitor,
       visitorData,
     });

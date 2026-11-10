@@ -15,12 +15,17 @@ export const handleTeleportToStation = async (req: Request, res: Response) => {
     if (!station) throw "Unknown station";
 
     const world = World.create(urlSlug, { credentials });
-    const [{ visitor }, [stationAsset]] = await Promise.all([
-      getVisitor(credentials),
-      world.fetchDroppedAssetsWithUniqueName({ uniqueName: station.uniqueName }),
-    ]);
+    // The station's asset under the first of its unique names that's in this world
+    const findStationAsset = async () => {
+      for (const uniqueName of station.uniqueNames) {
+        const [asset] = await world.fetchDroppedAssetsWithUniqueName({ uniqueName });
+        if (asset) return asset;
+      }
+      return undefined;
+    };
+    const [{ visitor }, stationAsset] = await Promise.all([getVisitor(credentials), findStationAsset()]);
 
-    if (!stationAsset) throw `No "${station.uniqueName}" asset found in this world.`;
+    if (!stationAsset) throw `No "${station.uniqueNames.join('" or "')}" asset found in this world.`;
 
     await teleportVisitorToAsset({
       baseUrl: getBaseUrl(req.hostname),

@@ -1033,20 +1033,342 @@ button.tc-bubble:focus-visible,
   text-align: center;
 }
 
+/* ===================== Toycoon: Admin Tools ===================== */
+.tc-admin-section,
+.tc-admin-alert {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 3px solid var(--tc-wood-dark);
+  background: var(--tc-cream);
+  box-shadow: var(--tc-shadow-soft);
+}
+
+.tc-admin-alert {
+  border-color: var(--tc-red);
+  background: var(--tc-red-bg);
+}
+
+.tc-admin-section--danger {
+  border-color: var(--tc-red);
+}
+
+.tc-admin-section__title {
+  margin: 0;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.tc-admin-section__text {
+  margin: 0;
+  color: var(--tc-ink-soft);
+  font-size: 0.85rem;
+}
+
+.tc-speed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tc-speed-option {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  padding: 12px 8px 10px;
+  border-radius: 12px;
+  border: 2px solid var(--tc-cream-edge);
+  background: var(--tc-wall);
+  text-align: center;
+  cursor: pointer;
+}
+
+.tc-speed-option:has(input:checked) {
+  border-color: var(--tc-gold-dark);
+  background: var(--tc-gold);
+  box-shadow: 0 3px 0 var(--tc-gold-dark);
+}
+
+.tc-speed-option:has(input:focus-visible) {
+  outline: 3px solid var(--tc-ink);
+  outline-offset: 2px;
+}
+
+.tc-speed-option:has(input:disabled) {
+  cursor: default;
+}
+
+.tc-speed-option__multiplier {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.tc-speed-option__label {
+  font-weight: 800;
+}
+
+.tc-speed-option__description {
+  color: var(--tc-ink-soft);
+  font-size: 0.75rem;
+}
+
+.tc-speed-option:has(input:checked) .tc-speed-option__description {
+  color: var(--tc-ink);
+}
+
+.tc-speed-option__current {
+  margin-top: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--tc-green);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.tc-admin-tool {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--tc-cream-edge);
+}
+
+.tc-admin-section__title + .tc-admin-tool {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.tc-admin-tool__name {
+  margin: 0;
+  font-weight: 800;
+}
+
+.tc-admin-tool .btn {
+  white-space: nowrap;
+}
+
+.tc-admin-status {
+  justify-self: center;
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--tc-cream-edge);
+  background: var(--tc-cream);
+  color: var(--tc-ink);
+  font-weight: 700;
+  text-align: center;
+}
+
+.tc-admin-status:empty {
+  display: none;
+}
+
+@media (max-width: 360px) {
+  .tc-admin-tool {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===================== Toycoon: Trophy Case ===================== */
+.tc-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.tc-tab {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 3px solid var(--tc-wood-dark);
+  background: var(--tc-cream);
+  color: var(--tc-ink);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tc-tab[aria-selected="true"] {
+  border-color: var(--tc-gold-dark);
+  background: var(--tc-gold);
+  box-shadow: 0 3px 0 var(--tc-gold-dark);
+}
+
+.tc-tab:focus-visible,
+.tc-tabpanel:focus-visible {
+  outline: 3px solid var(--tc-ink);
+  outline-offset: 3px;
+}
+
+.tc-tabpanel {
+  justify-items: stretch;
+  text-align: left;
+}
+
+.tc-leaderboard {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tc-leaderboard__row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid var(--tc-cream-edge);
+  background: var(--tc-cream);
+}
+
+.tc-leaderboard__row--me {
+  border-color: var(--tc-gold-dark);
+  background: var(--tc-wall);
+}
+
+.tc-leaderboard__rank {
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tc-leaderboard__player {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tc-leaderboard__name {
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.tc-leaderboard__stats {
+  color: var(--tc-ink-soft);
+  font-size: 0.8rem;
+}
+
+.tc-badge-case {
+  display: grid;
+  gap: 14px;
+}
+
+.tc-badge-case__count {
+  margin: 0;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tc-badge-case__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.tc-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tc-badge {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 2px solid var(--tc-cream-edge);
+  background: var(--tc-wall);
+  text-align: center;
+}
+
+.tc-badge__art {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  font-size: 2.5rem;
+}
+
+.tc-badge__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.tc-badge__name {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.tc-badge__description {
+  color: var(--tc-ink-soft);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+/* Not earned yet: grey and faded art; the words stay readable */
+.tc-badge--locked {
+  background: var(--tc-cream);
+}
+
+.tc-badge--locked .tc-badge__art {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+/* Someone else's display: one row per stat, label left and number right, so it fits any drawer width */
+.tc-booth-stats {
+  justify-items: stretch;
+  gap: 0;
+  margin: 0;
+  padding: 6px 16px;
+}
+
+.tc-booth-stats__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  text-align: left;
+}
+
+.tc-booth-stats__row + .tc-booth-stats__row {
+  border-top: 1px solid var(--tc-cream-edge);
+}
+
+.tc-booth-stats__row dt {
+  font-weight: 700;
+}
+
+.tc-booth-stats__row dd {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 /* Claim / go-to / abandon and "Back to the workshop" at the bottom of a display */
 .tc-booth-actions {
   justify-items: stretch;
   gap: 8px;
-}
-
-.tc-shop__sign {
-  margin: 0;
-  padding: 6px 12px;
-  border-radius: 10px;
-  background: var(--tc-cream);
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-align: center;
 }
 
 /* Your display: one row per spot — picture, name, picker */

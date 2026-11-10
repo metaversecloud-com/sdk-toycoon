@@ -32,10 +32,10 @@ export const getTimeBasedXp = (seconds: number, xpPerSecond: number) =>
  * SECTION 2: MATERIALS
  * ------------------------------------------------------------------------------------------------------- */
 export type MaterialConfigType = {
-  spawnSeconds: number; // seconds a station takes to make one unit (also drives collect XP)
-  unlockLevel: number; // player level at which the station opens
-  cap: number; // most units a player can hold; the station can't start or collect at the cap
-  collectXp?: number; // optional: set a fixed XP for this material. Leave out to use the time formula
+  spawnSeconds: number; // time for a station to make one unit
+  unlockLevel: number; // level at which the station opens
+  cap: number; // max units a player can hold
+  collectXp: number; // XP granted each time one unit is collected; 0 = none. Keep it the smallest reward in the loop (collect < craft < sell)
 };
 
 // TO ADD A MATERIAL: add one line here. Ecosystem metadata (spawnIntervalSeconds, unlockLevel, rewardXP) overrides it.

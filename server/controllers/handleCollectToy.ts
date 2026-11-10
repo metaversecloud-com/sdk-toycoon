@@ -1,5 +1,12 @@
 import { Request, Response } from "express";
-import { getCraftedToyItem, getCraftXp, getToyRecipeById, ToyTypeId } from "@shared/constants/index.js";
+import {
+  getCraftedToyItem,
+  getCraftXp,
+  getTimerSeconds,
+  getToyRecipeById,
+  RECENT_CRAFT_TIMES_KEPT,
+  ToyTypeId,
+} from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import {
   awardBonusXp,
@@ -11,6 +18,7 @@ import {
   initializeVisitorData,
   modifyVisitorInventoryItem,
   requireBoothInWorld,
+  saveBadgeProgress,
 } from "@utils/index.js";
 
 /**
@@ -27,7 +35,7 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     const recipe = getToyRecipeById(req.body?.recipeId as ToyTypeId);
     if (!recipe) throw "Valid recipeId is required";
 
-    const [{ ecosystemToys }, { visitor, visitorData }, { booths }] = await Promise.all([
+    const [{ ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths, worldData }] = await Promise.all([
       getInventoryItems(credentials),
       initializeVisitorData(credentials),
       getBoothIndex(credentials),
@@ -39,16 +47,21 @@ export const handleCollectToy = async (req: Request, res: Response) => {
 
     // ----- 2. Make sure the craft is actually finished (the server decides, not the client) -----
     const craftStartedAt = visitorData.toyCraftStartedAt?.[recipe.id] ?? null;
-    const { state } = getMaterialBinState(craftStartedAt, recipe.craftSeconds);
+    const { state } = getMaterialBinState(craftStartedAt, getTimerSeconds(recipe.craftSeconds, worldData?.timerSpeed));
     if (state === "idle") throw `You aren't crafting a ${recipe.displayName}.`;
     if (state === "generating") throw `Your ${recipe.displayName} isn't finished yet.`;
 
     // ----- 3. Clear the timer and count the craft under a one-shot lock, so a double-click can't collect twice -----
     const timerPath = `toyCraftStartedAt.${recipe.id}`;
     const totalToysCrafted = (visitorData.totalToysCrafted || 0) + 1;
+    // Badge progress (per-toy counts, and when the last few toys were made) is counted with the craft itself
+    const typePath = `toysCraftedByType.${recipe.id}`;
+    const previousTypeCount = visitorData.toysCraftedByType?.[recipe.id] || 0;
+    const previousCraftTimes = visitorData.recentCraftTimes || [];
+    const recentCraftTimes = [...previousCraftTimes, Date.now()].slice(-RECENT_CRAFT_TIMES_KEPT);
     const claimed = await claimActionLock({
       action: `collect_toy_${recipe.id}`,
-      alsoWrite: { [timerPath]: null, totalToysCrafted },
+      alsoWrite: { [timerPath]: null, totalToysCrafted, [typePath]: previousTypeCount + 1, recentCraftTimes },
       profileId,
       visitor,
       visitorData,
@@ -72,19 +85,43 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     } catch (grantError) {
       // Put the craft back to ready and undo the count, so the toy isn't lost
       await visitor
-        .updateDataObject({ [timerPath]: craftStartedAt, totalToysCrafted: totalToysCrafted - 1 }, {})
+        .updateDataObject(
+          {
+            [timerPath]: craftStartedAt,
+            totalToysCrafted: totalToysCrafted - 1,
+            [typePath]: previousTypeCount,
+            recentCraftTimes: previousCraftTimes,
+          },
+          {},
+        )
         .catch((error: any) => errorHandler({ error, functionName: "handleCollectToy", message: "Error restoring craft" }));
       throw grantError;
     }
 
-    // ----- 5. Analytics (best effort: the toy is already on the shelf) -----
-    const analytics = [{ analyticName: "toycoon_toy_crafted", profileId, urlSlug, uniqueKey: profileId }];
+    // Analytics are best-effort — the toy is already on the shelf
+    const analytics = [
+      { analyticName: "toycoon_toy_crafted", profileId, urlSlug, uniqueKey: profileId },
+      { analyticName: `toysCrafted-${recipe.id}`, profileId, urlSlug, uniqueKey: profileId },
+    ];
     if (recipe.id === "teddy_bear") {
       analytics.push({ analyticName: "toycoon_bear_crafted", profileId, urlSlug, uniqueKey: profileId });
     }
     visitor
       .updateDataObject({}, { analytics })
       .catch((error: any) => errorHandler({ error, functionName: "handleCollectToy", message: "Error tracking analytics" }));
+
+    saveBadgeProgress({
+      credentials,
+      level: xpResult?.level ?? visitorInventory.level,
+      update: {},
+      visitor,
+      visitorData: {
+        ...visitorData,
+        totalToysCrafted,
+        toysCraftedByType: { ...visitorData.toysCraftedByType, [recipe.id]: previousTypeCount + 1 },
+        recentCraftTimes,
+      },
+    });
 
     return res.json({ success: true, recipeId: recipe.id, toy: toyItem, totalToysCrafted, xpResult });
   } catch (error) {

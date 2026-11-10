@@ -11,7 +11,6 @@ import {
   handleCraftToy,
   handleGetGameState,
   handleGetLeaderboard,
-  handleGrantTokens,
   handlePlaceDecoration,
   handlePurchaseBooster,
   handlePurchaseDecoration,
@@ -19,10 +18,12 @@ import {
   handleResetLeaderboard,
   handleResetWorld,
   handleSellToy,
+  handleSetTimerSpeed,
   handleStartMaterial,
   handleTeleportToMainScene,
   handleTeleportToMyBooth,
   handleTeleportToStation,
+  handleTrackEvent,
 } from "./controllers/index.js";
 import { requireAdmin } from "./middleware/requireAdmin.js";
 import { getVersion } from "@utils/getVersion.js";
@@ -61,6 +62,7 @@ router.post("/collect-all-materials", handleCollectAllMaterials);
 router.post("/craft-toy", handleCraftToy);
 router.post("/collect-toy", handleCollectToy);
 router.post("/sell-toy", handleSellToy);
+router.post("/track-event", handleTrackEvent);
 router.post("/teleport/my-booth", handleTeleportToMyBooth);
 router.post("/teleport/main-scene", handleTeleportToMainScene);
 router.post("/teleport/:station(materials|assembly|cashier|shop)", handleTeleportToStation);
@@ -72,6 +74,6 @@ router.post("/admin/clear-booth", requireAdmin, handleClearBooth);
 router.post("/admin/clear-inactive-booths", requireAdmin, handleClearInactiveBooths);
 router.post("/admin/reset-world", requireAdmin, handleResetWorld);
 router.post("/admin/reset-leaderboard", requireAdmin, handleResetLeaderboard);
-router.post("/admin/grant-tokens", requireAdmin, handleGrantTokens);
+router.post("/admin/timer-speed", requireAdmin, handleSetTimerSpeed);
 
 export default router;

@@ -8,6 +8,7 @@ import {
   getInventoryItems,
   initializeVisitorData,
   modifyVisitorInventoryItem,
+  trackAnalytics,
 } from "@utils/index.js";
 import { CURRENCY_ITEM_NAME } from "../constants.js";
 
@@ -33,8 +34,9 @@ export const handlePurchaseDecoration = async (req: Request, res: Response) => {
     if (!item || !getDecorSlotType(item)) throw "That isn't sold at Decorations.";
 
     const price = getDecorPrice(item);
-    const trackPurchase = () =>
-      visitor
+    const trackPurchase = () => {
+      trackAnalytics({ credentials, events: [{ name: `decorPurchases-${getDecorSlotType(item)}` }], visitor });
+      return visitor
         .updateDataObject(
           {},
           {
@@ -51,6 +53,7 @@ export const handlePurchaseDecoration = async (req: Request, res: Response) => {
         .catch((error: AxiosError) =>
           errorHandler({ error, functionName: "handlePurchaseDecoration", message: "Error tracking analytics" }),
         );
+    };
     if (visitorInventory.level < item.unlockLevel) throw `${item.displayName} unlocks at level ${item.unlockLevel}.`;
     if (visitorInventory.coins < price) throw `You need ${price - visitorInventory.coins} more Toy Tokens.`;
 

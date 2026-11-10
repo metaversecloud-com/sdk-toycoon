@@ -9,6 +9,7 @@ import {
   initializeVisitorData,
   requireBoothInWorld,
   resetSpot,
+  trackAnalytics,
 } from "@utils/index.js";
 
 /**
@@ -63,6 +64,8 @@ export const handleRemoveDecoration = async (req: Request, res: Response) => {
       ...visitorData.placedDecorations,
       [spot]: { ...visitorData.placedDecorations?.[spot], [urlSlug]: null },
     };
+    trackAnalytics({ credentials, events: [{ name: "decorRemovals" }], visitor });
+
     return res.json({ success: true, spot, removed: current, placedDecorations });
   } catch (error) {
     return errorHandler({

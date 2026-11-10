@@ -11,6 +11,7 @@ import {
   initializeVisitorData,
   modifyVisitorInventoryItem,
   requireBoothInWorld,
+  saveBadgeProgress,
 } from "@utils/index.js";
 import { CURRENCY_ITEM_NAME } from "../constants.js";
 
@@ -85,11 +86,15 @@ export const handleSellToy = async (req: Request, res: Response) => {
 
     const totalCoinsEarned = (visitorData.totalCoinsEarned || 0) + tokensEarned + levelUpTokens;
     const totalToysSold = (visitorData.totalToysSold || 0) + quantity;
-    const analytics = [{ analyticName: "toycoon_toy_sold", profileId, urlSlug, uniqueKey: profileId }];
+    const analytics: { analyticName: string; profileId: string; urlSlug: string; uniqueKey: string; incrementBy?: number }[] = [
+      { analyticName: "toycoon_toy_sold", profileId, urlSlug, uniqueKey: profileId },
+      { analyticName: `toysSold-${recipe.id}`, profileId, urlSlug, uniqueKey: profileId, incrementBy: quantity },
+    ];
     if (levelsGained.length) analytics.push({ analyticName: "toycoon_level_up", profileId, urlSlug, uniqueKey: profileId });
     await visitor
       .updateDataObject({ totalCoinsEarned, totalToysSold }, { analytics })
       .catch((error: any) => errorHandler({ error, functionName: "handleSellToy", message: "Error saving lifetime earnings" }));
+    saveBadgeProgress({ credentials, level, update: {}, visitor, visitorData: { ...visitorData, totalCoinsEarned, totalToysSold } });
 
     return res.json({
       success: true,

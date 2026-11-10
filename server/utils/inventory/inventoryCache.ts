@@ -19,6 +19,7 @@ export type EcosystemInventoryType = {
   ecosystemToys: { [itemId: string]: InventoryItemType };
   ecosystemDecorations: { [itemId: string]: InventoryItemType };
   ecosystemBoosters: { [itemId: string]: InventoryItemType }; // BOOSTERS: items with metadata type "booster"
+  ecosystemBadges: { [itemId: string]: InventoryItemType };
 };
 
 const cache = new Map<string, { data: EcosystemInventoryType; timestamp: number }>();
@@ -39,13 +40,16 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
   const ecosystemToys: { [itemId: string]: InventoryItemType } = {};
   const ecosystemDecorations: { [itemId: string]: InventoryItemType } = {};
   const ecosystemBoosters: { [itemId: string]: InventoryItemType } = {}; // BOOSTERS
+  const ecosystemBadges: { [itemId: string]: InventoryItemType } = {};
 
   const uncategorized: string[] = [];
   for (const item of allItems) {
     if (!isActiveInventoryItem(item)) continue;
     const data = structureEcosystemInventoryItem(item);
 
-    if (data.type === "material") ecosystemMaterials[data.id] = data;
+    // Badges are a Topia item type (BADGE); everything else is sorted by its metadata type
+    if (item.type === "BADGE") ecosystemBadges[data.id] = { ...data, type: "badge" };
+    else if (data.type === "material") ecosystemMaterials[data.id] = data;
     else if (data.type === "toy") ecosystemToys[data.id] = data;
     else if (data.type === "decoration") ecosystemDecorations[data.id] = data;
     else if (data.type === "booster") ecosystemBoosters[data.id] = data; // BOOSTERS
@@ -58,6 +62,8 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
       `${Object.keys(ecosystemToys).length} toys, ${Object.keys(ecosystemDecorations).length} decorations, ` +
       `${Object.keys(ecosystemBoosters).length} boosters` + // BOOSTERS
       (uncategorized.length ? `; not a material/toy/decoration/booster: ${uncategorized.join(", ")}` : ""),
+      `${Object.keys(ecosystemBadges).length} badges` +
+      (uncategorized.length ? `; not a material/toy/decoration: ${uncategorized.join(", ")}` : ""),
   );
   // What each material resolved to — a level/timer/cap of 1/0s/10 usually means its name didn't match a known material
   if (Object.keys(ecosystemMaterials).length) {
@@ -76,6 +82,7 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
     ecosystemToys: sortByOrder(ecosystemToys),
     ecosystemDecorations: sortByOrder(ecosystemDecorations),
     ecosystemBoosters: sortByOrder(ecosystemBoosters), // BOOSTERS
+    ecosystemBadges: sortByOrder(ecosystemBadges),
   };
 };
 

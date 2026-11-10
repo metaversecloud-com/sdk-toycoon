@@ -1,5 +1,6 @@
 export * from "./droppedAssets/index.js";
 export * from "./booths/index.js";
+export * from "./awardEarnedBadges.js";
 export * from "./awardXp.js";
 export * from "./claimActionLock.js";
 export * from "./cleanReturnPayload.js";
@@ -18,3 +19,5 @@ export * from "./teleportVisitorToAsset.js";
 export * from "./topiaInit.js";
 export * from "./getImageSize.js";
 export * from "./boosters/settleAutoCollect.js";
+export * from "./getOpenAnalytics.js";
+export * from "./trackAnalytics.js";

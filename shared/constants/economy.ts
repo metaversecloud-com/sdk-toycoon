@@ -72,25 +72,25 @@ export const getMaterialCollectXp = (name: string) => {
 
 /* ---------------------------------------------------------------------------------------------------------
  * SECTION 3: BOOSTERS
- * Bought with Toy Tokens for ONE-TIME use, then activated by the player and they expire.
- * Boosters are NOT decorations: they are a separate world prop (up-arrow icon) and are consumed, never placed.
- * NOTE: these are the settings only. The buy/activate logic is not built yet.
+ * One-time use. Flow: BUY with Toy Tokens (adds one to the player's inventory) -> ACTIVATE (starts a timer
+ * stored in visitor data) -> it expires. Boosters are NOT decorations: they are their own world prop.
  * Prices are about 1.2-1.5x the tokens a booster realistically earns; retune after a playtest.
+ * Each booster matches a Lina ecosystem item by NAME (type "booster"). See getBoosterForItem below.
  * ------------------------------------------------------------------------------------------------------- */
 export type BoosterIdType = "auto_collect" | "material_speed" | "instant_craft";
 
 export type BoosterConfigType = {
   id: BoosterIdType;
-  displayName: string; // name shown to players
-  cost: number; // Toy Tokens per purchase
+  displayName: string; // shown to players AND used to match Lina's ecosystem item name
+  cost: number; // Toy Tokens per purchase (this file is the source of truth, not item metadata)
   unlockLevel: number; // player level needed to buy it
-  durationSeconds: number; // how long it stays active after the player activates it
-  maxUses?: number; // if set, it also ends after this many uses, even if time remains
-  timeMultiplier?: number; // station time is multiplied by this while active (0.5 = twice as fast)
+  durationSeconds: number; // how long it stays active after activation
+  maxUses?: number; // if set, it also ends after this many uses even if time remains
+  timeMultiplier?: number; // fraction of the normal wait while active (0.5 = half the time, 0 = instant)
 };
 
 export const BOOSTERS: { [id in BoosterIdType]: BoosterConfigType } = {
-  // Stations restart and collect themselves for 5 minutes
+  // Stations restart and collect on their own for 5 minutes (NOT built yet)
   auto_collect: {
     id: "auto_collect",
     displayName: "Auto-Collector",
@@ -98,14 +98,14 @@ export const BOOSTERS: { [id in BoosterIdType]: BoosterConfigType } = {
     unlockLevel: 2,
     durationSeconds: 5 * 60,
   },
-  // Material stations take half the time for 5 minutes
+  // Material stations started while active take half the time
   material_speed: {
     id: "material_speed",
     displayName: "Speed-Up",
     cost: 15, // a bit above its real gain (~10-13 tokens) because crafting becomes the bottleneck
     unlockLevel: 2,
     durationSeconds: 5 * 60,
-    timeMultiplier: 0.5, // collect XP still uses the base seconds
+    timeMultiplier: 0.5,
   },
   // The next 10 crafts finish instantly, within 1 minute
   instant_craft: {
@@ -115,11 +115,42 @@ export const BOOSTERS: { [id in BoosterIdType]: BoosterConfigType } = {
     unlockLevel: 2,
     durationSeconds: 60,
     maxUses: 10, // ends after 10 crafts or 60 seconds, whichever comes first
+    timeMultiplier: 0, // 0 = the craft is ready the moment it starts
   },
 };
 
-// Different boosters can run together; buying the same one while it's active is blocked so a purchase isn't wasted
-export const BOOSTER_RULES = { stackDifferentTypes: true, blockReactivateWhileActive: true };
+// Different boosters can run together. Buying is always allowed; activating one that is already running is blocked.
+export const BOOSTER_RULES = { stackDifferentTypes: true, blockActivateWhileActive: true };
 
-// A station time after a booster is applied (rounded up to whole seconds)
-export const getBoostedSeconds = (baseSeconds: number, timeMultiplier = 1) => Math.ceil(baseSeconds * timeMultiplier);
+// What is stored in visitorData.activeBoosters[boosterId] while a booster runs
+export type BoosterActiveStateType = {
+  startedAt: number; // server ms timestamp of activation
+  endsAt: number; // server ms timestamp it expires
+  usesLeft?: number; // only for boosters with maxUses
+};
+
+// Case, spaces and dashes don't matter: "Speed Up", "speed-up" and "Speed-Up" all match
+const normalizeName = (value: string) => value.toLowerCase().replace(/[^a-z]/g, "");
+
+// Which booster an ecosystem item is (matched by name or displayName). undefined = not a known booster.
+export const getBoosterForItem = (item: { name: string; displayName?: string }) =>
+  Object.values(BOOSTERS).find((booster) =>
+    [item.name, item.displayName ?? ""].some((value) => normalizeName(value) === normalizeName(booster.displayName)),
+  );
+
+// The booster's running state, or null if it isn't active (never activated, expired, or out of uses)
+export const getActiveBooster = (
+  active: { [id: string]: BoosterActiveStateType | null | undefined } | undefined,
+  id: BoosterIdType,
+  now = Date.now(),
+) => {
+  const state = active?.[id];
+  if (!state || state.endsAt <= now) return null;
+  if (state.usesLeft !== undefined && state.usesLeft <= 0) return null;
+  return state;
+};
+
+// A timer start time moved back so the wait is multiplier x as long. The existing timer check then just works,
+// and XP (which uses the base seconds) is unaffected.
+export const getBackdatedStart = (now: number, baseSeconds: number, multiplier = 1) =>
+  now - Math.round(baseSeconds * 1000 * (1 - multiplier));

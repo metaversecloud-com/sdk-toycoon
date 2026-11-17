@@ -127,7 +127,7 @@ export const Boosters = () => {
             // Why a button is disabled (shown under the buttons), if it is
             let reason: string | null = null;
             if (isLocked) reason = `Reach level ${booster.unlockLevel} to unlock.`;
-            else if (!canAfford) reason = `Need ${booster.cost} Toy Tokens to buy.`;
+            else if (!canAfford) reason = `You need ${booster.cost - tokens} more Toy Tokens`;
 
             return (
               <li key={booster.id} className="tc-recipe">
@@ -138,7 +138,9 @@ export const Boosters = () => {
                   <div>
                     <h3 className="tc-recipe__title">{booster.displayName}</h3>
                     <p className="tc-recipe__meta">
-                      {booster.cost} Toy Tokens · You have {owned}
+                      <span aria-hidden="true">🪙 </span>
+                      {booster.cost}
+                      <span className="sr-only"> Toy Tokens</span> · You have {owned}
                     </p>
                   </div>
                 </div>
@@ -170,9 +172,10 @@ export const Boosters = () => {
                   type="button"
                   className="tc-cta"
                   disabled={isBusy || isLocked || !canAfford}
+                  aria-label={`Buy ${booster.displayName} for ${booster.cost} Toy Tokens`}
                   onClick={() => runAction(booster, "buy")}
                 >
-                  {busyKey === `${booster.id}:buy` ? "Buying..." : `Buy · ${booster.cost} Toy Tokens`}
+                  {busyKey === `${booster.id}:buy` ? "Buying..." : "Buy"}
                 </button>
                 {reason && <p className="tc-recipe__blocked">{reason}</p>}
               </li>

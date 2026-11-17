@@ -97,7 +97,7 @@ export const Sell = () => {
       <div className="tc-workshop">
         <div className="tc-workshop__top">
           <h2 className="tc-sign">{WORLD_OBJECTS.cashier}</h2>
-          <p className="tc-hint">Sell toys for Toy Tokens and XP!</p>
+          <p className="tc-hint">Sell toys you've crafted for Toy Tokens and XP!</p>
           <PlayerStats visitorInventory={visitorInventory} />
         </div>
 

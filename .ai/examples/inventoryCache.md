@@ -214,6 +214,7 @@ import { User } from "./topiaInit.js";
 
 // recipientProfileId is passed as a parameter (e.g., from req.body)
 const recipientUser = await User.create({
+  profileId: recipientProfileId, // must be top-level: the SDK reads it from here, not from credentials
   credentials: { ...credentials, profileId: recipientProfileId },
 });
 await recipientUser.grantInventoryItem(badge, 1);

@@ -18,7 +18,9 @@ export const ClaimBoothFirst = ({ pageTitle, unlocks }: { pageTitle: string; unl
         <h3 className="tc-panel__title">
           <span aria-hidden="true">🔒 </span>Claim a display first
         </h3>
-        <p className="p2">{unlocks} Head to the {WORLD_OBJECTS.start} to claim one — it's free!</p>
+        <p className="p2">
+          {unlocks} Head to the {WORLD_OBJECTS.start} to claim one — it's free!
+        </p>
         <TeleportButton destination="main-scene" className="tc-cta">
           Go to the {WORLD_OBJECTS.start}
         </TeleportButton>

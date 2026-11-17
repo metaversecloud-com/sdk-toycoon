@@ -43,7 +43,10 @@ export const handleTeleportToMyBooth = async (req: Request, res: Response) => {
     });
 
     visitor
-      .updateDataObject({}, { analytics: [{ analyticName: "teleport-myBooth", profileId, urlSlug, uniqueKey: profileId }] })
+      .updateDataObject(
+        {},
+        { analytics: [{ analyticName: "teleport-myBooth", profileId, urlSlug, uniqueKey: profileId }] },
+      )
       .catch((error: any) =>
         errorHandler({ error, functionName: "handleTeleportToMyBooth", message: "Error tracking teleport analytics" }),
       );

@@ -21,7 +21,9 @@ export const ensureVisitorData = async (visitor: VisitorInterface, credentials: 
   const lockId = `visitor_data_init_${credentials.profileId}_${Math.floor(Date.now() / 60000) * 60000}`;
 
   const missingDefaults = Object.fromEntries(
-    Object.entries(DEFAULT_VISITOR_DATA).filter(([key]) => dataObject[key as keyof VisitorDataObjectType] === undefined),
+    Object.entries(DEFAULT_VISITOR_DATA).filter(
+      ([key]) => dataObject[key as keyof VisitorDataObjectType] === undefined,
+    ),
   );
 
   if (Object.keys(dataObject).length === 0) {

@@ -19,10 +19,7 @@ export const MAX_TIMER_MULTIPLIER = 50;
 const LEGACY_TIMER_SPEEDS: { [name: string]: number } = { half: 0.5, default: 1, slow: 2, slower: 4, slowest: 6 };
 
 export const isValidTimerMultiplier = (value: unknown): value is number =>
-  typeof value === "number" &&
-  Number.isFinite(value) &&
-  value >= MIN_TIMER_MULTIPLIER &&
-  value <= MAX_TIMER_MULTIPLIER;
+  typeof value === "number" && Number.isFinite(value) && value >= MIN_TIMER_MULTIPLIER && value <= MAX_TIMER_MULTIPLIER;
 
 // A world's multiplier from what's saved: a number, an old preset name, or nothing (Default)
 export const getTimerMultiplier = (saved: unknown) => {

@@ -41,9 +41,14 @@ export const handleAbandonBooth = async (req: Request, res: Response) => {
     // A booth just opened up, so the "all booths taken" alert no longer applies
     world
       .updateDataObject({ boothsFullAlert: null })
-      .catch((error: any) => errorHandler({ error, functionName: "handleAbandonBooth", message: "Error clearing alert" }));
+      .catch((error: any) =>
+        errorHandler({ error, functionName: "handleAbandonBooth", message: "Error clearing alert" }),
+      );
     visitor
-      .updateDataObject({}, { analytics: [{ analyticName: "boothsAbandoned", profileId, urlSlug, uniqueKey: profileId }] })
+      .updateDataObject(
+        {},
+        { analytics: [{ analyticName: "boothsAbandoned", profileId, urlSlug, uniqueKey: profileId }] },
+      )
       .catch((error: any) =>
         errorHandler({ error, functionName: "handleAbandonBooth", message: "Error tracking analytics" }),
       );

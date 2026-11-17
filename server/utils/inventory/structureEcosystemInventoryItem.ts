@@ -88,7 +88,7 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
     // XP priority: 1) metadata rewardXP  2) fixed collectXp in constants  3) formula from the timer (materials only)
     xpReward: num(
       rewardXP ?? xpReward,
-      isMaterial ? (configuredCollectXp ?? getCollectXpForSeconds(resolvedSpawnSeconds)) : 0,
+      isMaterial ? configuredCollectXp ?? getCollectXpForSeconds(resolvedSpawnSeconds) : 0,
     ),
     unlockLevel: num(
       unlockLevel,

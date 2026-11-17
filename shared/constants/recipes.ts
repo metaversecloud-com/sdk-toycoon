@@ -144,7 +144,10 @@ export const describeMissingMaterials = (missing: { [materialName: string]: numb
  * The single ecosystem item a recipe crafts: the toy type's item, in the recipe's craftedColor if it has one
  * (Brown Teddy Bear, Black Train). Matches either word order ("Brown Teddy Bear" / "Teddy Bear Brown").
  */
-export const getCraftedToyItem = <T extends { name: string; displayName?: string }>(recipe: ToyRecipeType, items: T[]) =>
+export const getCraftedToyItem = <T extends { name: string; displayName?: string }>(
+  recipe: ToyRecipeType,
+  items: T[],
+) =>
   items.find((item) => {
     const names = [item.name, item.displayName ?? ""].map((name) => name.toLowerCase());
     return names.some(

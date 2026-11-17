@@ -49,7 +49,12 @@ export const teleportVisitorToAsset = async ({
 
     // The teleport already succeeded; a drawer that fails to open shouldn't fail the request
     await visitor
-      .openIframe({ droppedAssetId: droppedAsset.id!, link: `${baseUrl}${path}?${query}`, shouldOpenInDrawer: true, title })
+      .openIframe({
+        droppedAssetId: droppedAsset.id!,
+        link: `${baseUrl}${path}?${query}`,
+        shouldOpenInDrawer: true,
+        title,
+      })
       .catch((error: any) =>
         errorHandler({
           error,

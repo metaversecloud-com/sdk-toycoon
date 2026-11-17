@@ -16,10 +16,8 @@ import {
 export const handleCollectMaterial = async (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
-    const { booth, generationStartedAt, material, state, visitor, visitorData, visitorInventory } = await getMaterialBin(
-      credentials,
-      req.body?.materialId,
-    );
+    const { booth, generationStartedAt, material, state, visitor, visitorData, visitorInventory } =
+      await getMaterialBin(credentials, req.body?.materialId);
 
     if (state === "idle") throw `Start ${material.displayName} first.`;
     if (state === "generating") throw `${material.displayName} isn't ready yet.`;
@@ -29,7 +27,13 @@ export const handleCollectMaterial = async (req: Request, res: Response) => {
       alongsideGrant:
         material.xpReward > 0
           ? () =>
-              awardBonusXp({ amount: material.xpReward, boothKeyAssetId: booth.keyAssetId, credentials, visitor, visitorData })
+              awardBonusXp({
+                amount: material.xpReward,
+                boothKeyAssetId: booth.keyAssetId,
+                credentials,
+                visitor,
+                visitorData,
+              })
           : undefined,
       credentials,
       generationStartedAt: generationStartedAt!,
@@ -51,8 +55,19 @@ export const handleCollectMaterial = async (req: Request, res: Response) => {
       visitorData,
     });
 
-    return res.json({ success: true, materialName: material.name, item: result.item, xpResult: result.alongside ?? null });
+    return res.json({
+      success: true,
+      materialName: material.name,
+      item: result.item,
+      xpResult: result.alongside ?? null,
+    });
   } catch (error) {
-    return errorHandler({ error, functionName: "handleCollectMaterial", message: "Error collecting material", req, res });
+    return errorHandler({
+      error,
+      functionName: "handleCollectMaterial",
+      message: "Error collecting material",
+      req,
+      res,
+    });
   }
 };

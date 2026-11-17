@@ -29,7 +29,8 @@ export const handlePurchaseBooster = async (req: Request, res: Response) => {
     if (!item) throw `${booster.displayName} isn't set up in the ecosystem yet.`;
 
     const { visitor, visitorData, visitorInventory } = await initializeVisitorData(credentials);
-    if (visitorInventory.level < booster.unlockLevel) throw `${booster.displayName} unlocks at level ${booster.unlockLevel}.`;
+    if (visitorInventory.level < booster.unlockLevel)
+      throw `${booster.displayName} unlocks at level ${booster.unlockLevel}.`;
     if (visitorInventory.coins < booster.cost) throw "Not enough Toy Tokens.";
 
     // One purchase at a time, so a double-tap can't buy (and charge for) two
@@ -49,8 +50,13 @@ export const handlePurchaseBooster = async (req: Request, res: Response) => {
     try {
       boosterItem = await modifyVisitorInventoryItem({ credentials, visitor, id: item.id, quantity: 1 });
     } catch (grantError) {
-      await modifyVisitorInventoryItem({ credentials, visitor, name: CURRENCY_ITEM_NAME, quantity: booster.cost }).catch(
-        (error) => errorHandler({ error, functionName: "handlePurchaseBooster", message: "Error refunding Toy Tokens" }),
+      await modifyVisitorInventoryItem({
+        credentials,
+        visitor,
+        name: CURRENCY_ITEM_NAME,
+        quantity: booster.cost,
+      }).catch((error) =>
+        errorHandler({ error, functionName: "handlePurchaseBooster", message: "Error refunding Toy Tokens" }),
       );
       throw grantError;
     }

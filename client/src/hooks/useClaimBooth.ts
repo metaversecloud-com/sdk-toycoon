@@ -31,7 +31,8 @@ export const useClaimBooth = () => {
       setClaimResult(data.result);
 
       const isElsewhere = data.ownedBoothSceneDropId !== currentSceneDropId;
-      if (teleportAfterClaim && data.result !== "allBoothsTaken" && isElsewhere) await backendAPI.post("/teleport/my-booth");
+      if (teleportAfterClaim && data.result !== "allBoothsTaken" && isElsewhere)
+        await backendAPI.post("/teleport/my-booth");
 
       const { data: gameState } = await backendAPI.get("/game-state");
       setGameState(dispatch, gameState);

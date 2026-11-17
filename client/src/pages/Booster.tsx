@@ -150,7 +150,8 @@ export const Boosters = () => {
                 {/* Countdown while running */}
                 {active && (
                   <p className="tc-recipe__meta" aria-live="off">
-                    <span aria-hidden="true">🕒 </span>Active · {formatTime(Math.max(0, Math.ceil((active.endsAt - now) / 1000)))} left
+                    <span aria-hidden="true">🕒 </span>Active ·{" "}
+                    {formatTime(Math.max(0, Math.ceil((active.endsAt - now) / 1000)))} left
                     {active.usesLeft !== undefined ? ` · ${active.usesLeft} uses left` : ""}
                   </p>
                 )}

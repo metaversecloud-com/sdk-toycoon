@@ -8,7 +8,12 @@ export interface LeaderboardStatsType {
 }
 
 // "|" is the field separator, so it can't appear inside a display name
-export const serializeLeaderboardEntry = ({ displayName, totalXp, level, totalToysCrafted }: LeaderboardStatsType): string =>
+export const serializeLeaderboardEntry = ({
+  displayName,
+  totalXp,
+  level,
+  totalToysCrafted,
+}: LeaderboardStatsType): string =>
   `${(displayName || "Player").replace(/\|/g, "/")}|${totalXp}|${level}|${totalToysCrafted}`;
 
 /**

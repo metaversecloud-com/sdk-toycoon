@@ -30,7 +30,9 @@ export const structureVisitorInventoryItem = async (
     try {
       ecosystemItem = structureEcosystemInventoryItem(await getInventoryItem(credentials, { id: ecosystemItemId }));
     } catch {
-      console.warn(`Ecosystem item ${ecosystemItemId} (${itemName || name}) not found; falling back to visitor item data`);
+      console.warn(
+        `Ecosystem item ${ecosystemItemId} (${itemName || name}) not found; falling back to visitor item data`,
+      );
     }
   }
 

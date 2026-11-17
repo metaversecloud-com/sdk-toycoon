@@ -63,7 +63,9 @@ export const getBoothIndex = async (
               // Scenes without a booth key asset (e.g. the Main Scene) aren't booths
               if (!keyAssetId) return;
 
-              const keyAsset = DroppedAsset.create(keyAssetId, urlSlug, { credentials: { ...credentials, assetId: keyAssetId } });
+              const keyAsset = DroppedAsset.create(keyAssetId, urlSlug, {
+                credentials: { ...credentials, assetId: keyAssetId },
+              });
               const boothData = (await keyAsset.fetchDataObject()) as Partial<BoothDataObjectType> | null;
               rebuilt[id] = { keyAssetId, ownerId: boothData?.ownerId || null };
             } catch (error: any) {
@@ -77,7 +79,9 @@ export const getBoothIndex = async (
       // One line per rebuild so a world with missing/misnamed booths is easy to diagnose: lists each scene's
       // asset unique names (first few) so you can see what the booth asset is actually called once dropped
       const sceneSummaries = sceneDropIds.map((id) => {
-        const names = Object.values(scenes[id]?.droppedAssets || {}).map((asset) => asset?.metaName || "(no unique name)");
+        const names = Object.values(scenes[id]?.droppedAssets || {}).map(
+          (asset) => asset?.metaName || "(no unique name)",
+        );
         const shown = names.slice(0, 8).join(", ") + (names.length > 8 ? `, +${names.length - 8} more` : "");
         return `${id} [${names.length} assets: ${shown}]`;
       });
@@ -86,7 +90,9 @@ export const getBoothIndex = async (
           `"${BOOTH_KEY_UNIQUE_NAME}" asset` +
           (Object.keys(rebuilt).length ? ` (${Object.keys(rebuilt).join(", ")})` : "") +
           (failedSceneDropIds.length ? `; couldn't read: ${failedSceneDropIds.join("; ")}` : "") +
-          (scenesResponse?.scenes ? "" : `; unexpected fetchScenes response keys: ${Object.keys(scenesResponse || {}).join(", ")}`) +
+          (scenesResponse?.scenes
+            ? ""
+            : `; unexpected fetchScenes response keys: ${Object.keys(scenesResponse || {}).join(", ")}`) +
           (sceneSummaries.length ? `\n  scenes: ${sceneSummaries.join("\n          ")}` : ""),
       );
 

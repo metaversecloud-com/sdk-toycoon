@@ -122,9 +122,7 @@ export const RecipeCard = ({
           <h3 id={`${id}-title`} className="tc-recipe__title">
             {toyName}
           </h3>
-          <p className="tc-recipe__meta">
-            Takes {formatTime(recipe.craftSeconds)}
-          </p>
+          <p className="tc-recipe__meta">Takes {formatTime(recipe.craftSeconds)}</p>
         </div>
       </div>
 

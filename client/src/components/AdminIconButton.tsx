@@ -13,7 +13,11 @@ export const AdminIconButton = ({
       aria-expanded={showSettings}
       onClick={() => setShowSettings(showSettings)}
     >
-      <img src={`https://sdk-style.s3.amazonaws.com/icons/${showSettings ? "arrow" : "cog"}.svg`} alt="" aria-hidden="true" />
+      <img
+        src={`https://sdk-style.s3.amazonaws.com/icons/${showSettings ? "arrow" : "cog"}.svg`}
+        alt=""
+        aria-hidden="true"
+      />
     </button>
   );
 };

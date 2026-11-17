@@ -19,8 +19,13 @@ import { getCraftedToyItem, TOY_RECIPES } from "@shared/constants";
  * Once they have a display, each step gets a button that teleports them to that step's station.
  */
 export const StartHere = () => {
-  const { availableBoothCount = 0, ecosystemMaterials, ecosystemToys, ownsBoothInThisWorld, visitorInventory } =
-    useContext(GlobalStateContext);
+  const {
+    availableBoothCount = 0,
+    ecosystemMaterials,
+    ecosystemToys,
+    ownsBoothInThisWorld,
+    visitorInventory,
+  } = useContext(GlobalStateContext);
   const { claimBooth, claimResult, isClaiming } = useClaimBooth();
   const resultRef = useRef<HTMLHeadingElement>(null);
   const [hasAbandoned, setHasAbandoned] = useState(false);

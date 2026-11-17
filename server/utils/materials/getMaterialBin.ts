@@ -17,11 +17,12 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
     if (!materialId) throw "Valid materialId is required";
 
     // Independent Topia calls run in parallel so a Start/Collect tap waits on one round-trip, not three
-    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths, worldData }] = await Promise.all([
-      getInventoryItems(credentials),
-      initializeVisitorData(credentials),
-      getBoothIndex(credentials),
-    ]);
+    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths, worldData }] =
+      await Promise.all([
+        getInventoryItems(credentials),
+        initializeVisitorData(credentials),
+        getBoothIndex(credentials),
+      ]);
     const material = ecosystemMaterials[materialId];
     if (!material) throw "Invalid material";
 
@@ -37,7 +38,18 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
     const timerSeconds = getTimerSeconds(material.spawnIntervalSeconds, worldData?.timerSpeed);
     const { state } = getMaterialBinState(generationStartedAt, timerSeconds);
 
-    return { booth, cap, generationStartedAt, material, owned, state, timerSeconds, visitor, visitorData, visitorInventory };
+    return {
+      booth,
+      cap,
+      generationStartedAt,
+      material,
+      owned,
+      state,
+      timerSeconds,
+      visitor,
+      visitorData,
+      visitorInventory,
+    };
   } catch (error) {
     throw standardizeError(error);
   }

@@ -88,7 +88,9 @@ export const Materials = () => {
   const allMaterials = Object.values(ecosystemMaterials || {});
   const materials = allMaterials.filter(({ unlockLevel }) => unlockLevel <= level);
   const lockedMaterials = allMaterials.filter(({ unlockLevel }) => unlockLevel > level);
-  const nextUnlockLevel = lockedMaterials.length ? Math.min(...lockedMaterials.map(({ unlockLevel }) => unlockLevel)) : null;
+  const nextUnlockLevel = lockedMaterials.length
+    ? Math.min(...lockedMaterials.map(({ unlockLevel }) => unlockLevel))
+    : null;
   const nextUnlockCount = lockedMaterials.filter(({ unlockLevel }) => unlockLevel === nextUnlockLevel).length;
 
   const stations = materials.map((baseMaterial) => {
@@ -105,7 +107,14 @@ export const Materials = () => {
       material.spawnIntervalSeconds,
       now,
     );
-    return { material, isLocked, isFull, state, secondsRemaining, canCollect: !isLocked && !isFull && state === "ready" };
+    return {
+      material,
+      isLocked,
+      isFull,
+      state,
+      secondsRemaining,
+      canCollect: !isLocked && !isFull && state === "ready",
+    };
   });
   const readyCount = stations.filter(({ canCollect }) => canCollect).length;
 
@@ -121,7 +130,11 @@ export const Materials = () => {
   const ownedItem = (material: InventoryItemType): VisitorInventoryItemType =>
     visitorInventory?.materials[material.id] ??
     ({ ...material, ecosystemItemId: material.id, quantity: 0, availableQuantity: 0 } as VisitorInventoryItemType);
-  const withQuantity = (item: VisitorInventoryItemType, quantity: number) => ({ ...item, quantity, availableQuantity: quantity });
+  const withQuantity = (item: VisitorInventoryItemType, quantity: number) => ({
+    ...item,
+    quantity,
+    availableQuantity: quantity,
+  });
 
   // XP shown right away for collecting; the server's reply has the confirmed total (and any level-up)
   const previousXp = visitorInventory?.xp ?? 0;
@@ -206,7 +219,9 @@ export const Materials = () => {
 
     patchGame(dispatch, {
       materialTimers: Object.fromEntries(ready.map(({ name }) => [name, null])),
-      materials: Object.fromEntries(previous.map(({ material, item }) => [material.id, withQuantity(item, item.quantity + 1)])),
+      materials: Object.fromEntries(
+        previous.map(({ material, item }) => [material.id, withQuantity(item, item.quantity + 1)]),
+      ),
       ...xpPatch(previousXp + ready.reduce((total, { xpReward }) => total + xpReward, 0)),
     });
     setBusy("all", true);
@@ -282,7 +297,8 @@ export const Materials = () => {
         {nextUnlockLevel !== null && (
           <p className="tc-hint tc-unlock-hint">
             <span aria-hidden="true">🔒</span>
-            Reach level {nextUnlockLevel} to unlock {nextUnlockCount} more {nextUnlockCount === 1 ? "material" : "materials"}
+            Reach level {nextUnlockLevel} to unlock {nextUnlockCount} more{" "}
+            {nextUnlockCount === 1 ? "material" : "materials"}
           </p>
         )}
       </div>

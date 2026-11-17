@@ -1,11 +1,4 @@
-import {
-  ActionType,
-  InitialState,
-  GAME_PATCHED,
-  SET_ERROR,
-  SET_GAME_STATE,
-  SET_HAS_INTERACTIVE_PARAMS,
-} from "./types";
+import { ActionType, InitialState, GAME_PATCHED, SET_ERROR, SET_GAME_STATE, SET_HAS_INTERACTIVE_PARAMS } from "./types";
 
 const globalReducer = (state: InitialState, action: ActionType) => {
   const { type, payload } = action;
@@ -33,7 +26,7 @@ const globalReducer = (state: InitialState, action: ActionType) => {
         availableBoothCount: payload.availableBoothCount,
         boothsFullAlert: payload.boothsFullAlert,
         // How far the server's clock is from this computer's, so countdowns match the server's timers
-        serverTimeOffset: payload.serverTime ? payload.serverTime - Date.now() : (state.serverTimeOffset ?? 0),
+        serverTimeOffset: payload.serverTime ? payload.serverTime - Date.now() : state.serverTimeOffset ?? 0,
         error: "",
       };
     case GAME_PATCHED: {

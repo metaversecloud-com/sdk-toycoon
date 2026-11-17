@@ -36,8 +36,7 @@
   overflow: hidden;
   color: var(--tc-ink);
   /* Wall band on top, plank floor below */
-  background:
-    linear-gradient(to bottom, var(--tc-wall) 0, var(--tc-wall-shade) 150px, transparent 150px),
+  background: linear-gradient(to bottom, var(--tc-wall) 0, var(--tc-wall-shade) 150px, transparent 150px),
     repeating-linear-gradient(
       90deg,
       var(--tc-floor-1) 0,
@@ -563,7 +562,9 @@ button.tc-bubble:focus-visible,
   font-family: inherit;
   font-size: 1.15rem;
   font-weight: 800;
-  box-shadow: 0 4px 0 var(--tc-gold-dark), var(--tc-shadow-soft);
+  box-shadow:
+    0 4px 0 var(--tc-gold-dark),
+    var(--tc-shadow-soft);
   cursor: pointer;
 }
 
@@ -573,7 +574,9 @@ button.tc-bubble:focus-visible,
 
 .tc-cta:active:not(:disabled) {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 var(--tc-gold-dark), var(--tc-shadow-soft);
+  box-shadow:
+    0 2px 0 var(--tc-gold-dark),
+    var(--tc-shadow-soft);
 }
 
 .tc-cta:focus-visible {

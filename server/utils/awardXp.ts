@@ -67,30 +67,42 @@ export const awardXp = async ({
     }
 
     if (levelsGained.length) {
-      trackAnalytics({ credentials, events: levelsGained.map((newLevel) => ({ name: `levelUps-${newLevel}` })), visitor });
+      trackAnalytics({
+        credentials,
+        events: levelsGained.map((newLevel) => ({ name: `levelUps-${newLevel}` })),
+        visitor,
+      });
       if (saveLevelUpStats) {
         await visitor
           .updateDataObject(
             { totalCoinsEarned: (visitorData.totalCoinsEarned || 0) + levelUpTokens },
             { analytics: [{ analyticName: "toycoon_level_up", profileId, urlSlug, uniqueKey: profileId }] },
           )
-          .catch((error: any) => errorHandler({ error, functionName: "awardXp", message: "Error saving level-up stats" }));
+          .catch((error: any) =>
+            errorHandler({ error, functionName: "awardXp", message: "Error saving level-up stats" }),
+          );
       }
 
       // The booth shows its owner's level to visitors
       if (boothKeyAssetId) {
         DroppedAsset.create(boothKeyAssetId, urlSlug, { credentials: { ...credentials, assetId: boothKeyAssetId } })
           .updateDataObject({ level }, {})
-          .catch((error: any) => errorHandler({ error, functionName: "awardXp", message: "Error updating booth level" }));
+          .catch((error: any) =>
+            errorHandler({ error, functionName: "awardXp", message: "Error updating booth level" }),
+          );
       }
 
       visitor
         .fireToast({
           groupId: "toycoon-level-up",
           title: `Level ${level}!`,
-          text: levelUpTokens ? `You earned ${levelUpTokens} bonus Toy Tokens and unlocked new toys.` : "You unlocked new toys.",
+          text: levelUpTokens
+            ? `You earned ${levelUpTokens} bonus Toy Tokens and unlocked new toys.`
+            : "You unlocked new toys.",
         })
-        .catch((error: any) => errorHandler({ error, functionName: "awardXp", message: "Error firing level-up toast" }));
+        .catch((error: any) =>
+          errorHandler({ error, functionName: "awardXp", message: "Error firing level-up toast" }),
+        );
     }
 
     updateLeaderboardEntry({

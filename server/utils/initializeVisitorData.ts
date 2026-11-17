@@ -22,7 +22,10 @@ export const initializeVisitorData = async (
     ]);
 
     for (const item of Object.values(visitorInventory.decorations)) {
-      item.availableQuantity = Math.max(0, (item.quantity || 0) - countPlacements(visitorData.placedDecorations, item.name));
+      item.availableQuantity = Math.max(
+        0,
+        (item.quantity || 0) - countPlacements(visitorData.placedDecorations, item.name),
+      );
     }
 
     return { visitor, visitorData, visitorInventory };

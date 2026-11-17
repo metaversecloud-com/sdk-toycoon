@@ -228,7 +228,8 @@ export const Workshop = () => {
             // Why the Craft button is disabled (shown under it), if it is
             let blockedReason: string | null = null;
             if (!toyItem) blockedReason = `The ${recipe.displayName} isn't set up yet.`;
-            else if (ownedToyCount >= recipe.cap) blockedReason = `Your shelf is full — sell some at the ${WORLD_OBJECTS.cashier}.`;
+            else if (ownedToyCount >= recipe.cap)
+              blockedReason = `Your shelf is full — sell some at the ${WORLD_OBJECTS.cashier}.`;
             else if (Object.keys(missing).length) blockedReason = `Need ${describeMissingMaterials(missing)}.`;
 
             return (

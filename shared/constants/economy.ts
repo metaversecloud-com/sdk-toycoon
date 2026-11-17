@@ -122,7 +122,6 @@ export const BOOSTERS: { [id in BoosterIdType]: BoosterConfigType } = {
 // Different boosters can run together. Buying is always allowed; activating one that is already running is blocked.
 export const BOOSTER_RULES = { stackDifferentTypes: true, blockActivateWhileActive: true };
 
-// What is stored in visitorData.activeBoosters[boosterId] while a booster runs
 // What is stored in visitorData.activeBoosters[boosterId] while a booster runs (and until it is fully settled)
 export type BoosterActiveStateType = {
   startedAt: number; // server ms timestamp of activation

@@ -35,7 +35,8 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       getBoothIndex(credentials, forceRefreshBooths),
     ]);
     // Cached (and already refreshed above if forced), so this doesn't cost an extra API call
-    const { ecosystemBoosters, ecosystemBadges, ecosystemDecorations, ecosystemMaterials, ecosystemToys } = await getInventoryItems(credentials);
+    const { ecosystemBoosters, ecosystemBadges, ecosystemDecorations, ecosystemMaterials, ecosystemToys } =
+      await getInventoryItems(credentials);
     const ownedBoothSceneDropId = getOwnedBoothSceneDropId({ booths, profileId, urlSlug, visitorData });
     const autoCollect = await settleAutoCollect({
       boothKeyAssetId: ownedBoothSceneDropId ? booths[ownedBoothSceneDropId].keyAssetId : "",
@@ -63,7 +64,8 @@ export const handleGetGameState = async (req: Request, res: Response) => {
         ownerDisplayName: boothData.ownerDisplayName,
         level: boothData.level,
         claimDate: boothData.claimDate,
-        ownerStats: boothData.ownerId && !isOwnedByVisitor ? await getBoothOwnerStats(credentials, boothData.ownerId) : null,
+        ownerStats:
+          boothData.ownerId && !isOwnedByVisitor ? await getBoothOwnerStats(credentials, boothData.ownerId) : null,
       };
 
       if (isOwnedByVisitor) ownedBoothAsset = boothAsset;
@@ -74,7 +76,10 @@ export const handleGetGameState = async (req: Request, res: Response) => {
     // inactivity check. Not awaited: the page shouldn't wait on it.
     if (ownedBoothSceneDropId) {
       const { keyAssetId } = booths[ownedBoothSceneDropId];
-      (ownedBoothAsset || DroppedAsset.create(keyAssetId, urlSlug, { credentials: { ...credentials, assetId: keyAssetId } }))
+      (
+        ownedBoothAsset ||
+        DroppedAsset.create(keyAssetId, urlSlug, { credentials: { ...credentials, assetId: keyAssetId } })
+      )
         .updateDataObject({ lastInteractionTimestamp: Date.now() }, {})
         .catch((error: any) =>
           errorHandler({

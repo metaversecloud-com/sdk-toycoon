@@ -21,7 +21,7 @@ export const handleStartMaterial = async (req: Request, res: Response) => {
     // ----- Speed-Up booster: back-date the start so the wait is shorter -----
     const now = Date.now();
     const speedUp = getActiveBooster(visitorData.activeBoosters, "material_speed", now);
-    const multiplier = speedUp ? (BOOSTERS.material_speed.timeMultiplier ?? 1) : 1;
+    const multiplier = speedUp ? BOOSTERS.material_speed.timeMultiplier ?? 1 : 1;
     // This world's station time, so Speed-Up still halves the wait when an admin has changed the timer speed
     const generationStartedAt = getBackdatedStart(now, timerSeconds, multiplier);
 

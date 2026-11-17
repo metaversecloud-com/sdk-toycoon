@@ -43,7 +43,11 @@ export const handleCraftToy = async (req: Request, res: Response) => {
     if (!recipe) throw "Valid recipeId is required";
 
     const [{ ecosystemMaterials, ecosystemToys }, { visitor, visitorData, visitorInventory }, { booths, worldData }] =
-      await Promise.all([getInventoryItems(credentials), initializeVisitorData(credentials), getBoothIndex(credentials)]);
+      await Promise.all([
+        getInventoryItems(credentials),
+        initializeVisitorData(credentials),
+        getBoothIndex(credentials),
+      ]);
     await requireBoothInWorld(credentials, visitorData, "crafting toys", booths);
 
     const toy = getCraftedToyItem(recipe, Object.values(ecosystemToys));
@@ -115,7 +119,9 @@ export const handleCraftToy = async (req: Request, res: Response) => {
       // ... and give back the Instant Craft use
       await visitor
         .updateDataObject({ [timerPath]: null, ...(instantCraft ? { [usesLeftPath]: usesLeftBefore } : {}) }, {})
-        .catch((error: any) => errorHandler({ error, functionName: "handleCraftToy", message: "Error clearing craft timer" }));
+        .catch((error: any) =>
+          errorHandler({ error, functionName: "handleCraftToy", message: "Error clearing craft timer" }),
+        );
       throw craftError;
     }
 

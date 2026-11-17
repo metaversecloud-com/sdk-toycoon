@@ -87,7 +87,7 @@ Both writes target the same record; `totalAttempts` advances regardless of world
 
 ## Related
 
-- `.ai/examples/awardBadge.md` — cross-user grants via `User.create({ credentials: { ...credentials, profileId: recipientProfileId } })`
+- `.ai/examples/awardBadge.md` — cross-user grants via `User.create({ profileId: recipientProfileId, credentials: { ...credentials, profileId: recipientProfileId } })`
 - `.ai/examples/lockingPatterns.md` — time-based locks on shared records
 - `.ai/examples/dataMigration.md` — schema evolution within a shared record
 - `.ai/rules.md` — "VISITOR INITIALIZATION (getVisitor utility)" for the canonical per-world key pattern

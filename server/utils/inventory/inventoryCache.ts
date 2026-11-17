@@ -52,7 +52,8 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
     else if (data.type === "material") ecosystemMaterials[data.id] = data;
     else if (data.type === "toy") ecosystemToys[data.id] = data;
     else if (data.type === "decoration") ecosystemDecorations[data.id] = data;
-    else if (data.type === "booster") ecosystemBoosters[data.id] = data; // BOOSTERS
+    else if (data.type === "booster")
+      ecosystemBoosters[data.id] = data; // BOOSTERS
     else uncategorized.push(`${data.name} (status: ${item.status ?? "none"}, metadata.type: ${data.type ?? "none"})`);
   }
 
@@ -68,8 +69,9 @@ const fetchEcosystemInventory = async (credentials: Credentials): Promise<Ecosys
   if (Object.keys(ecosystemMaterials).length) {
     console.log(
       `[inventory] materials: ${Object.values(ecosystemMaterials)
-        .map(({ name, unlockLevel, spawnIntervalSeconds }) =>
-          `${name} (level ${unlockLevel}, ${spawnIntervalSeconds}s, cap ${getMaterialCap(name)})`,
+        .map(
+          ({ name, unlockLevel, spawnIntervalSeconds }) =>
+            `${name} (level ${unlockLevel}, ${spawnIntervalSeconds}s, cap ${getMaterialCap(name)})`,
         )
         .join(", ")}`,
     );

@@ -32,7 +32,11 @@ export const handleTeleportToMainScene = async (req: Request, res: Response) => 
         { analytics: [{ analyticName: "teleport-mainScene", profileId, urlSlug, uniqueKey: profileId }] },
       )
       .catch((error: any) =>
-        errorHandler({ error, functionName: "handleTeleportToMainScene", message: "Error tracking teleport analytics" }),
+        errorHandler({
+          error,
+          functionName: "handleTeleportToMainScene",
+          message: "Error tracking teleport analytics",
+        }),
       );
 
     return res.json({ success: true });

@@ -38,7 +38,11 @@ export const handleGetLeaderboard = async (req: Request, res: Response) => {
           },
         });
       } catch (error) {
-        errorHandler({ error, functionName: "handleGetLeaderboard", message: "Error refreshing visitor's leaderboard entry" });
+        errorHandler({
+          error,
+          functionName: "handleGetLeaderboard",
+          message: "Error refreshing visitor's leaderboard entry",
+        });
       }
     }
 

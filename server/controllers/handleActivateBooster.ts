@@ -42,10 +42,12 @@ export const handleActivateBooster = async (req: Request, res: Response) => {
     if (!item) throw `${booster.displayName} isn't set up in the ecosystem yet.`;
 
     const now = Date.now();
-    if (visitorInventory.level < booster.unlockLevel) throw `${booster.displayName} unlocks at level ${booster.unlockLevel}.`;
+    if (visitorInventory.level < booster.unlockLevel)
+      throw `${booster.displayName} unlocks at level ${booster.unlockLevel}.`;
 
     // Still running? (checked BEFORE the settling check so the player gets the right message)
-    if (getActiveBooster(visitorData.activeBoosters, booster.id, now)) throw `${booster.displayName} is already running.`;
+    if (getActiveBooster(visitorData.activeBoosters, booster.id, now))
+      throw `${booster.displayName} is already running.`;
 
     // The previous Auto-Collector must be fully settled first (any page load settles it)
     const previousAuto = visitorData.activeBoosters?.auto_collect;
@@ -53,7 +55,8 @@ export const handleActivateBooster = async (req: Request, res: Response) => {
       throw "Your last Auto-Collector is still settling. Reload the page and try again.";
     }
 
-    if ((visitorInventory.boosters[item.id]?.quantity ?? 0) < 1) throw `You don't have a ${booster.displayName}. Buy one first.`;
+    if ((visitorInventory.boosters[item.id]?.quantity ?? 0) < 1)
+      throw `You don't have a ${booster.displayName}. Buy one first.`;
 
     // ----- 2. Start the timer under a one-shot lock -----
     const activePath = `activeBoosters.${booster.id}`;
@@ -70,7 +73,8 @@ export const handleActivateBooster = async (req: Request, res: Response) => {
       visitor,
       visitorData,
     });
-    if (!claimed) return res.status(409).json({ success: false, message: "Already activating — try again in a moment." });
+    if (!claimed)
+      return res.status(409).json({ success: false, message: "Already activating — try again in a moment." });
 
     // ----- 3. Use up the booster; undo the timer if that fails -----
     let boosterItem;
@@ -79,7 +83,9 @@ export const handleActivateBooster = async (req: Request, res: Response) => {
     } catch (useError) {
       await visitor
         .updateDataObject({ [activePath]: null }, {})
-        .catch((error: any) => errorHandler({ error, functionName: "handleActivateBooster", message: "Error clearing timer" }));
+        .catch((error: any) =>
+          errorHandler({ error, functionName: "handleActivateBooster", message: "Error clearing timer" }),
+        );
       throw useError;
     }
 

@@ -24,11 +24,12 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
   try {
     const credentials = getCredentials(req.query);
 
-    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths, worldData }] = await Promise.all([
-      getInventoryItems(credentials),
-      initializeVisitorData(credentials),
-      getBoothIndex(credentials),
-    ]);
+    const [{ ecosystemMaterials }, { visitor, visitorData, visitorInventory }, { booths, worldData }] =
+      await Promise.all([
+        getInventoryItems(credentials),
+        initializeVisitorData(credentials),
+        getBoothIndex(credentials),
+      ]);
     const booth = await requireBoothInWorld(credentials, visitorData, "collecting materials", booths);
 
     const now = Date.now();
@@ -38,8 +39,11 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
       return (
         visitorInventory.level >= material.unlockLevel &&
         owned < getMaterialCap(material.name) &&
-        getMaterialBinState(generationStartedAt, getTimerSeconds(material.spawnIntervalSeconds, worldData?.timerSpeed), now)
-          .state === "ready"
+        getMaterialBinState(
+          generationStartedAt,
+          getTimerSeconds(material.spawnIntervalSeconds, worldData?.timerSpeed),
+          now,
+        ).state === "ready"
       );
     });
 
@@ -58,7 +62,11 @@ export const handleCollectAllMaterials = async (req: Request, res: Response) => 
         });
         if (result.status === "collected") collected[material.id] = result.item;
       } catch (error) {
-        errorHandler({ error, functionName: "handleCollectAllMaterials", message: `Error collecting ${material.name}` });
+        errorHandler({
+          error,
+          functionName: "handleCollectAllMaterials",
+          message: `Error collecting ${material.name}`,
+        });
       }
     }
 

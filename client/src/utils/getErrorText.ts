@@ -7,5 +7,7 @@ import { ErrorType } from "@/context/types";
 export const getErrorText = (error: ErrorType) => {
   console.error(error);
   if (typeof error === "string") return error;
-  return error.response?.data?.error?.message || error.response?.data?.message || error.message || "Something went wrong.";
+  return (
+    error.response?.data?.error?.message || error.response?.data?.message || error.message || "Something went wrong."
+  );
 };

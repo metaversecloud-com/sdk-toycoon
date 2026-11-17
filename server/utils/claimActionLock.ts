@@ -31,7 +31,10 @@ export const claimActionLock = async ({
   const version = visitorData.lockVersions?.[action] ?? 0;
   const tryClaim = (lockId: string) =>
     visitor
-      .updateDataObject({ [`lockVersions.${action}`]: version + 1, ...alsoWrite }, { lock: { lockId, releaseLock: false } })
+      .updateDataObject(
+        { [`lockVersions.${action}`]: version + 1, ...alsoWrite },
+        { lock: { lockId, releaseLock: false } },
+      )
       .then(() => true)
       .catch(() => false);
 

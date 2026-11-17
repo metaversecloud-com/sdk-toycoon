@@ -82,9 +82,6 @@ export const getDecorSlotType = (item: DecorItemType): DecorSlotType | null => {
   return null;
 };
 
-export const getSpotsForSlotType = (slotType: DecorSlotType) =>
-  Object.keys(DECOR_SPOTS).filter((spot) => DECOR_SPOTS[spot] === slotType);
-
 export const getDecorPrice = (item: DecorItemType) => item.cost || DEFAULT_DECOR_COST;
 
 // Lina's booth pictures for rugs, awnings, and lights (made to fit the booth): booth-<kind>-<color>.png, e.g.

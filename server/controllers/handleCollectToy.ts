@@ -66,7 +66,8 @@ export const handleCollectToy = async (req: Request, res: Response) => {
       visitor,
       visitorData,
     });
-    if (!claimed) return res.status(409).json({ success: false, message: "Already collecting — try again in a moment." });
+    if (!claimed)
+      return res.status(409).json({ success: false, message: "Already collecting — try again in a moment." });
 
     // ----- 4. Give the toy and the craft XP at the same time (one round trip). awardBonusXp never throws. -----
     let toyItem, xpResult;
@@ -94,7 +95,9 @@ export const handleCollectToy = async (req: Request, res: Response) => {
           },
           {},
         )
-        .catch((error: any) => errorHandler({ error, functionName: "handleCollectToy", message: "Error restoring craft" }));
+        .catch((error: any) =>
+          errorHandler({ error, functionName: "handleCollectToy", message: "Error restoring craft" }),
+        );
       throw grantError;
     }
 
@@ -108,7 +111,9 @@ export const handleCollectToy = async (req: Request, res: Response) => {
     }
     visitor
       .updateDataObject({}, { analytics })
-      .catch((error: any) => errorHandler({ error, functionName: "handleCollectToy", message: "Error tracking analytics" }));
+      .catch((error: any) =>
+        errorHandler({ error, functionName: "handleCollectToy", message: "Error tracking analytics" }),
+      );
 
     saveBadgeProgress({
       credentials,

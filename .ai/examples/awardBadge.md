@@ -2,14 +2,15 @@ Use the SDK to grant inventory items (badges) and display toast notifications.
 
 > **`User` and `Visitor` share the same backing dataObject record per profile** — they are two access paths to the same data. Granting an inventory item via `recipientUser.grantInventoryItem(...)` and triggering effects via `recipientVisitor.fireToast(...)` both touch the same profile. See `.ai/examples/dataObjectScoping.md` for the full mental model and key-naming conventions.
 
-**Important — `User.create` requires `profileId`**: When a user acts on their own behalf, `profileId` is already in the credentials from `req.query`. When a user triggers an action that impacts another user (e.g., an admin awarding a badge to a visitor), you must override `profileId` with the recipient's profile ID:
+**Important — `User.create` requires a top-level `profileId`**: the SDK's data-object and inventory methods read `profileId` from the top level of the options, not from `credentials`, and throw "This method requires the use of a profileId" without it. Pass it on its own every time. When a user triggers an action that impacts another user (e.g., an admin awarding a badge to a visitor), use the recipient's profile ID in both places:
 
 ```ts
-// Self — profileId comes from req.query credentials automatically
-const user = await User.create({ credentials });
+// Self — the visitor's own profileId, from req.query credentials
+const user = await User.create({ profileId: credentials.profileId, credentials });
 
 // Cross-user — override profileId with the recipient's
 const recipientUser = await User.create({
+  profileId: recipientProfileId,
   credentials: { ...credentials, profileId: recipientProfileId },
 });
 ```
@@ -100,6 +101,7 @@ export const awardBadgeToVisitor = async ({
 
     // User.create with recipient's profileId (cross-user action)
     const recipientUser = await User.create({
+      profileId: recipientProfileId,
       credentials: { ...credentials, profileId: recipientProfileId },
     });
 

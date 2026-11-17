@@ -1,10 +1,12 @@
 import { KeyboardEvent, useContext, useEffect, useId, useRef } from "react";
 
+import { Confetti } from "@/components";
 import { GlobalStateContext } from "@/context/GlobalContext";
 import { TOY_RECIPES } from "@shared/constants";
 
 /**
- * Celebrates a level-up after a sale: the new level, the bonus Toy Tokens, and what it unlocked.
+ * Celebrates a level-up (after collecting, crafting, or selling) with confetti: the new level, the bonus Toy Tokens, and
+ * what it unlocked.
  * A dialog with one action, so focus goes to (and stays on) its button; Escape or the backdrop closes it.
  */
 export const LevelUpModal = ({
@@ -56,6 +58,7 @@ export const LevelUpModal = ({
       onKeyDown={onKeyDown}
     >
       <div className="modal tc-levelup" onClick={(event) => event.stopPropagation()}>
+        <Confetti />
         <div className="tc-levelup__confetti" aria-hidden="true">
           🎉✨🎊
         </div>

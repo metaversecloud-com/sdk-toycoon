@@ -815,6 +815,7 @@ button.tc-bubble:focus-visible,
 }
 
 .tc-levelup {
+  position: relative; /* the confetti falls inside the popup */
   display: grid;
   justify-items: center;
   gap: 10px;

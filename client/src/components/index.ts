@@ -8,6 +8,7 @@ export * from "./BadgeCase.js";
 export * from "./BoothView.js";
 export * from "./ClaimBoothFirst.js";
 export * from "./ConfirmationModal.js";
+export * from "./Confetti.js";
 export * from "./Leaderboard.js";
 export * from "./Loading.js";
 export * from "./materials/index.js";

@@ -1316,7 +1316,7 @@ button.tc-bubble:focus-visible,
 
 .tc-badge-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
   padding: 0;
@@ -1328,19 +1328,56 @@ button.tc-bubble:focus-visible,
   justify-items: center;
   align-content: start;
   gap: 4px;
-  padding: 10px 8px;
+  min-width: 0;
+  padding: 8px 4px;
   border-radius: 10px;
   border: 2px solid var(--tc-cream-edge);
   background: var(--tc-wall);
   text-align: center;
+  cursor: default;
+}
+
+.tc-badge:focus-visible {
+  outline: 3px solid var(--tc-ink);
+  outline-offset: 2px;
+}
+
+/* How to earn the badge: the SDK tooltip (shown on hover), also shown on keyboard focus, placed just above the badge
+   whatever its length, and kept inside the drawer by lining the outer columns up with their edges */
+.tc-badge__tooltip {
+  top: auto;
+  bottom: calc(100% + 6px);
+  width: 160px;
+  text-align: left;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.tc-badge:focus-visible .tc-badge__tooltip {
+  visibility: visible;
+}
+
+.tc-badge[data-tip-hidden] .tc-badge__tooltip {
+  visibility: hidden;
+}
+
+.tc-badge-grid > .tc-badge:nth-child(3n + 1) .tc-badge__tooltip {
+  left: 0;
+  transform: none;
+}
+
+.tc-badge-grid > .tc-badge:nth-child(3n) .tc-badge__tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 .tc-badge__art {
   display: grid;
   place-items: center;
-  width: 64px;
-  height: 64px;
-  font-size: 2.5rem;
+  width: min(56px, 100%);
+  aspect-ratio: 1;
+  font-size: 2.2rem;
 }
 
 .tc-badge__art img {
@@ -1350,14 +1387,11 @@ button.tc-bubble:focus-visible,
 }
 
 .tc-badge__name {
-  font-size: 0.9rem;
-  font-weight: 800;
-}
-
-.tc-badge__description {
-  color: var(--tc-ink-soft);
   font-size: 0.75rem;
-  line-height: 1.3;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 /* Not earned yet: grey and faded art; the words stay readable */

@@ -9,7 +9,15 @@ import { ErrorType } from "@/context/types";
 
 // utils
 import { backendAPI, setErrorMessage, setGameState } from "@/utils";
-import { DEFAULT_TIMER_SPEED, TIMER_SPEEDS, TimerSpeedType } from "@shared/constants";
+import {
+  DEFAULT_TIMER_MULTIPLIER,
+  describeTimerMultiplier,
+  getTimerSpeedPreset,
+  isValidTimerMultiplier,
+  MAX_TIMER_MULTIPLIER,
+  MIN_TIMER_MULTIPLIER,
+  TIMER_SPEED_PRESETS,
+} from "@shared/constants";
 
 type AdminActionType = "clear-booth" | "clear-inactive-booths" | "reset-world" | "reset-leaderboard";
 
@@ -58,13 +66,21 @@ const describeResult = (
 
 export const AdminView = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { boothsFullAlert, targetBooth, timerSpeed = DEFAULT_TIMER_SPEED } = useContext(GlobalStateContext);
+  const { boothsFullAlert, targetBooth, timerSpeed = DEFAULT_TIMER_MULTIPLIER } = useContext(GlobalStateContext);
 
   const [pendingAction, setPendingAction] = useState<AdminActionType | null>(null);
   const [isWorking, setIsWorking] = useState(false);
   const [resultMessage, setResultMessage] = useState("");
 
-  const [chosenSpeed, setChosenSpeed] = useState<TimerSpeedType>(timerSpeed);
+  // A preset's id, or "custom" for a typed-in multiplier
+  const [speedChoice, setSpeedChoice] = useState<string>(getTimerSpeedPreset(timerSpeed)?.id ?? "custom");
+  const [customSpeed, setCustomSpeed] = useState(getTimerSpeedPreset(timerSpeed) ? "" : String(timerSpeed));
+  const chosenSpeed =
+    speedChoice === "custom"
+      ? Number(customSpeed)
+      : TIMER_SPEED_PRESETS.find(({ id }) => id === speedChoice)?.multiplier ?? DEFAULT_TIMER_MULTIPLIER;
+  const isChosenSpeedValid = isValidTimerMultiplier(chosenSpeed);
+  const isCustomInvalid = speedChoice === "custom" && customSpeed !== "" && !isChosenSpeedValid;
 
   // Applies to every player in this world from their next action; no confirmation, since it can be changed back
   const saveTimerSpeed = async () => {
@@ -75,7 +91,7 @@ export const AdminView = () => {
       await backendAPI.post("/admin/timer-speed", { timerSpeed: chosenSpeed });
       const { data: gameState } = await backendAPI.get("/game-state");
       setGameState(dispatch, gameState);
-      setResultMessage(`Timers are now set to ${TIMER_SPEEDS[chosenSpeed].label}.`);
+      setResultMessage(`Timers are now set to ${describeTimerMultiplier(chosenSpeed)}.`);
     } catch (error) {
       setErrorMessage(dispatch, error as ErrorType);
     } finally {
@@ -100,8 +116,6 @@ export const AdminView = () => {
       setIsWorking(false);
     }
   };
-
-  const speeds = Object.keys(TIMER_SPEEDS) as TimerSpeedType[];
 
   return (
     <div className="tc-workshop">
@@ -136,35 +150,82 @@ export const AdminView = () => {
           </p>
           <fieldset className="tc-speed-grid">
             <legend className="sr-only">Timer speed</legend>
-            {speeds.map((speed) => (
-              <label key={speed} className="tc-speed-option">
+            {TIMER_SPEED_PRESETS.map(({ id, multiplier, label, description }) => (
+              <label key={id} className="tc-speed-option">
                 <input
                   type="radio"
                   name="timer-speed"
                   className="sr-only"
-                  value={speed}
-                  checked={chosenSpeed === speed}
+                  value={id}
+                  checked={speedChoice === id}
                   disabled={isWorking}
-                  onChange={() => setChosenSpeed(speed)}
+                  onChange={() => setSpeedChoice(id)}
                 />
                 <span className="tc-speed-option__multiplier" aria-hidden="true">
-                  ×{TIMER_SPEEDS[speed].multiplier}
+                  ×{multiplier}
                 </span>
-                <span className="tc-speed-option__label">{TIMER_SPEEDS[speed].label}</span>
-                <span className="tc-speed-option__description">{TIMER_SPEEDS[speed].description}</span>
-                {speed === timerSpeed && <span className="tc-speed-option__current">Current</span>}
+                <span className="tc-speed-option__label">{label}</span>
+                <span className="tc-speed-option__description">{description}</span>
+                {multiplier === timerSpeed && <span className="tc-speed-option__current">Current</span>}
               </label>
             ))}
+            <label className="tc-speed-option">
+              <input
+                type="radio"
+                name="timer-speed"
+                className="sr-only"
+                value="custom"
+                checked={speedChoice === "custom"}
+                disabled={isWorking}
+                onChange={() => setSpeedChoice("custom")}
+              />
+              <span className="tc-speed-option__multiplier" aria-hidden="true">
+                ×?
+              </span>
+              <span className="tc-speed-option__label">Custom</span>
+              <span className="tc-speed-option__description">Type your own</span>
+              {!getTimerSpeedPreset(timerSpeed) && (
+                <span className="tc-speed-option__current">Current ×{timerSpeed}</span>
+              )}
+            </label>
           </fieldset>
+          {speedChoice === "custom" && (
+            <div className="tc-speed-custom">
+              <label htmlFor="tc-custom-speed" className="tc-speed-custom__label">
+                Multiplier ({MIN_TIMER_MULTIPLIER} to {MAX_TIMER_MULTIPLIER}; 1 = normal, 3 = 3 times as long)
+              </label>
+              <input
+                id="tc-custom-speed"
+                type="number"
+                inputMode="decimal"
+                min={MIN_TIMER_MULTIPLIER}
+                max={MAX_TIMER_MULTIPLIER}
+                step="0.1"
+                value={customSpeed}
+                disabled={isWorking}
+                aria-invalid={isCustomInvalid}
+                aria-describedby={isCustomInvalid ? "tc-custom-speed-error" : undefined}
+                onChange={(event) => setCustomSpeed(event.target.value)}
+                className="tc-speed-custom__input"
+              />
+              {isCustomInvalid && (
+                <p id="tc-custom-speed-error" className="tc-speed-custom__error">
+                  Enter a number from {MIN_TIMER_MULTIPLIER} to {MAX_TIMER_MULTIPLIER}.
+                </p>
+              )}
+            </div>
+          )}
           <button
             type="button"
             className="tc-cta"
-            disabled={isWorking || chosenSpeed === timerSpeed}
+            disabled={isWorking || !isChosenSpeedValid || chosenSpeed === timerSpeed}
             onClick={saveTimerSpeed}
           >
-            {chosenSpeed === timerSpeed
-              ? `Timers are ${TIMER_SPEEDS[timerSpeed].label}`
-              : `Set timers to ${TIMER_SPEEDS[chosenSpeed].label}`}
+            {!isChosenSpeedValid
+              ? "Set timers"
+              : chosenSpeed === timerSpeed
+                ? `Timers are ${describeTimerMultiplier(timerSpeed)}`
+                : `Set timers to ${describeTimerMultiplier(chosenSpeed)}`}
           </button>
         </section>
 

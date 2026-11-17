@@ -43,7 +43,7 @@ export const settleAutoCollect = async ({
   boothKeyAssetId: string;
   credentials: Credentials;
   ecosystemMaterials: { [itemId: string]: InventoryItemType };
-  timerSpeed?: string | null; // this world's timer speed, so stations cycle as fast as they do for everyone else
+  timerSpeed?: unknown; // this world's saved timer speed, so stations cycle as fast as they do for everyone else
   visitor: VisitorInterface;
   visitorData: VisitorDataObjectType;
   visitorInventory: VisitorInventoryType;

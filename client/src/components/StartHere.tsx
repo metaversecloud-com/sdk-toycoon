@@ -56,7 +56,7 @@ export const StartHere = () => {
       station: "cashier",
       art: "🪙",
       title: "Sell toys",
-      text: `Sell your toys at the ${WORLD_OBJECTS.cashier} for Toy Tokens. Every step earns XP!`,
+      text: `Sell toys you've crafted at the ${WORLD_OBJECTS.cashier} for Toy Tokens. Every step earns XP!`,
     },
     {
       station: "shop",

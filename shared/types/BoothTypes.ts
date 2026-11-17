@@ -4,7 +4,6 @@
 
 import { InventoryItemType } from "./InventoryItems.js";
 import { VisitorDataObjectType, VisitorInventoryType } from "./VisitorData.js";
-import { TimerSpeedType } from "../constants/timerSpeed.js";
 
 // Stored on the booth's key asset (uniqueName BOOTH_KEY_UNIQUE_NAME) data object — the source of truth for a booth
 export interface BoothDataObjectType {
@@ -35,7 +34,7 @@ export interface BoothsFullAlertType {
 export interface WorldDataObjectType {
   booths?: BoothIndexType;
   boothsFullAlert?: BoothsFullAlertType | null;
-  timerSpeed?: TimerSpeedType; // set by an admin; missing = DEFAULT_TIMER_SPEED
+  timerSpeed?: number | string; // multiplier set by an admin (older worlds: a preset name); read with getTimerMultiplier
 }
 
 // An owner's lifetime stats; a stat is null if it couldn't be read
@@ -68,7 +67,7 @@ export interface GameStateResponseType {
   availableBoothCount: number;
   isAdmin: boolean;
   boothsFullAlert: BoothsFullAlertType | null; // only populated for admins
-  timerSpeed: TimerSpeedType; // how fast this world's timers run (see shared/constants/timerSpeed.ts)
+  timerSpeed: number; // this world's timer multiplier (see shared/constants/timerSpeed.ts)
   serverTime: number; // server's Date.now() when this was built, so the client can correct for clock differences
   ecosystemBoosters: { [itemId: string]: InventoryItemType };
   autoCollect?: { unitsCollected: number; xpEarned: number; levelsGained: number[] } | null;// Set when an Auto-Collector just granted units on this load (the inventory in this response already includes them)

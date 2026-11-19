@@ -30,14 +30,16 @@
 
 /* ===================== Toycoon: Materials workshop ===================== */
 
-.tc-workshop {
-  position: relative;
-  border-radius: 16px;
-  overflow: hidden;
+/*
+ * Full-bleed: the wall-and-floor background fills the whole drawer (the page itself), with no white frame or card
+ * around it (Shelby, 2026-11). The wall band is 16px taller than the 150px it used to be inside the card, to make up
+ * for PageContainer's 16px top padding, so each sign still sits on the wall.
+ */
+html {
+  min-height: 100%;
   color: var(--tc-ink);
-  /* Wall band on top, plank floor below */
   background:
-    linear-gradient(to bottom, var(--tc-wall) 0, var(--tc-wall-shade) 150px, transparent 150px),
+    linear-gradient(to bottom, var(--tc-wall) 0, var(--tc-wall-shade) 166px, transparent 166px),
     repeating-linear-gradient(
       90deg,
       var(--tc-floor-1) 0,
@@ -49,7 +51,17 @@
       var(--tc-floor-seam) 90px,
       var(--tc-floor-seam) 92px
     );
-  box-shadow: var(--tc-shadow);
+  background-color: var(--tc-floor-1);
+}
+
+/* One background for the whole drawer: the body stays see-through so it doesn't start the pattern over */
+body {
+  background: transparent;
+}
+
+.tc-workshop {
+  position: relative;
+  color: var(--tc-ink);
 }
 
 .tc-workshop__top {

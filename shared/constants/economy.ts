@@ -138,11 +138,23 @@ export type BoosterActiveStateType = {
 // Case, spaces and dashes don't matter: "Speed Up", "speed-up" and "Speed-Up" all match
 const normalizeName = (value: string) => value.toLowerCase().replace(/[^a-z]/g, "");
 
-// Which booster an ecosystem item is (matched by name or displayName). undefined = not a known booster.
-export const getBoosterForItem = (item: { name: string; displayName?: string }) =>
-  Object.values(BOOSTERS).find((booster) =>
-    [item.name, item.displayName ?? ""].some((value) => normalizeName(value) === normalizeName(booster.displayName)),
+// Words that pick out each booster when an item isn't named exactly like it ("Speed Boost", "Auto Collect Booster")
+const BOOSTER_KEYWORDS: { [id in BoosterIdType]: string[] } = {
+  auto_collect: ["auto"],
+  material_speed: ["speed"],
+  instant_craft: ["instant"],
+};
+
+// Which booster an ecosystem item is: by its name or displayName ("Speed Up" and "speed-up" match "Speed-Up"), or else
+// by a word in it ("Speed Boost" is the Speed-Up). undefined = not a known booster.
+export const getBoosterForItem = (item: { name: string; displayName?: string }) => {
+  const names = [item.name, item.displayName ?? ""].map(normalizeName).filter(Boolean);
+  const boosters = Object.values(BOOSTERS);
+  return (
+    boosters.find((booster) => names.includes(normalizeName(booster.displayName))) ??
+    boosters.find((booster) => names.some((name) => BOOSTER_KEYWORDS[booster.id].some((word) => name.includes(word))))
   );
+};
 
 // The booster's running state, or null if it isn't active (never activated, expired, or out of uses)
 export const getActiveBooster = (

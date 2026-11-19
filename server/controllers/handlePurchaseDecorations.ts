@@ -13,9 +13,9 @@ import {
 import { CURRENCY_ITEM_NAME } from "../constants.js";
 
 /**
- * Buys one decoration ({ decorationId }) at the Decorations shop for its cost in Toy Tokens: rugs, awnings, lights, and every
- * toy (Rocking Horse, both Teddy Bears, both Trains). Players can own several copies, e.g. to show two White Teddy
- * Bears.
+ * Buys one decoration ({ decorationId }) at the Decorations shop for its cost in Toy Tokens: rugs, awnings, lights, and
+ * every toy color that isn't crafted (White and Pink Teddy Bears, Silver and Blue Trains, White Rocking Horse). Players
+ * can own several copies, e.g. to show two White Teddy Bears.
  * Toys bought here are display pieces: they're counted on the player's data object (decorToys), not added to the
  * Topia inventory, so they never show up at the Cashier. Crafted toys are the ones that are sold.
  */

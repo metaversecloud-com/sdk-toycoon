@@ -1,6 +1,8 @@
 import { InventoryItemInterface } from "@rtsdk/topia";
 import {
   getCollectXpForSeconds,
+  DECOR_TOY_COLORS,
+  getDecorToyRecipe,
   getDecorUnlockLevel,
   getMaterialSpawnSeconds,
   getMaterialUnlockLevel,
@@ -56,11 +58,15 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
   } = parseMetadata(metadata);
 
   const normalizedType = typeof type === "string" ? type.toLowerCase() : undefined;
-  const itemType =
-    normalizedType === "material" ||
-    normalizedType === "toy" ||
-    normalizedType === "decoration" ||
-    normalizedType === "booster"
+  // The new decoration colors (Pink Teddy Bear, Blue Train, White Rocking Horse) are known by name, whatever their
+  // metadata says (some arrive with it cut short): always a toy (sold at Decorations, never crafted), unlocked with it
+  const decorToyRecipe = getDecorToyRecipe({ name: name || "", displayName });
+  const itemType = decorToyRecipe
+    ? "toy"
+    : normalizedType === "material" ||
+        normalizedType === "toy" ||
+        normalizedType === "decoration" ||
+        normalizedType === "booster"
       ? normalizedType
       : undefined;
   const isMaterial = itemType === "material";
@@ -76,7 +82,11 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
   return {
     id,
     name: name || "Unknown",
-    displayName: displayName || name || "Unknown",
+    // Without a display name, a decoration toy reads "Pink Teddy Bear" rather than its raw name ("teddy bear pink")
+    displayName:
+      displayName ||
+      (decorToyRecipe ? `${DECOR_TOY_COLORS[decorToyRecipe.id]} ${decorToyRecipe.displayName}` : name) ||
+      "Unknown",
     icon: image_path || "",
     description: description || "",
     type: itemType, // "material" | "toy" | "decoration" | "booster"
@@ -88,11 +98,17 @@ export const structureEcosystemInventoryItem = (item: InventoryItemInterface): I
     // XP priority: 1) metadata rewardXP  2) fixed collectXp in constants  3) formula from the timer (materials only)
     xpReward: num(
       rewardXP ?? xpReward,
-      isMaterial ? (configuredCollectXp ?? getCollectXpForSeconds(resolvedSpawnSeconds)) : 0,
+      isMaterial ? configuredCollectXp ?? getCollectXpForSeconds(resolvedSpawnSeconds) : 0,
     ),
     unlockLevel: num(
       unlockLevel,
-      isMaterial ? getMaterialUnlockLevel(materialName) : isShopItem ? getDecorUnlockLevel(materialName) : 1,
+      isMaterial
+        ? getMaterialUnlockLevel(materialName)
+        : decorToyRecipe
+          ? decorToyRecipe.unlockLevel
+          : isShopItem
+            ? getDecorUnlockLevel(materialName)
+            : 1,
     ),
 
     // ----- Materials -----

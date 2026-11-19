@@ -43,7 +43,10 @@ export const DisplayDecor = () => {
   const catalog = [...Object.values(ecosystemToys || {}), ...Object.values(ecosystemDecorations || {})]
     .map((item) => ({ item, slotType: getDecorSlotType(item) }))
     .filter((entry): entry is { item: InventoryItemType; slotType: DecorSlotType } => !!entry.slotType);
-  const itemsByName = Object.fromEntries(catalog.map(({ item }) => [item.name, item]));
+  // Crafted toys too, only so one set out before they left the Decorations shop still shows on its spot
+  const itemsByName = Object.fromEntries(
+    [...Object.values(ecosystemToys || {}), ...catalog.map(({ item }) => item)].map((item) => [item.name, item]),
+  );
 
   // Toys here are the ones bought at Decorations, never crafted ones (those are for selling)
   const ownedCount = (item: InventoryItemType) => getOwnedDecorCount(item, visitorInventory, visitorData);

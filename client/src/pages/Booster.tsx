@@ -21,7 +21,7 @@ import { BOOSTERS, BoosterConfigType, BoosterIdType, getActiveBooster, getBooste
  * The server decides everything; this page just shows state and calls /purchase-booster and /activate-booster.
  */
 
-// Placeholder card art until real icons exist
+// Card art for a booster whose ecosystem item has no picture
 const BOOSTER_EMOJI: { [id in BoosterIdType]: string } = {
   auto_collect: "🤖",
   material_speed: "⏩",
@@ -44,7 +44,8 @@ const describe = (booster: BoosterConfigType) => {
 
 export const Boosters = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { hasInteractiveParams, ownsBoothInThisWorld, visitorData, visitorInventory } = useContext(GlobalStateContext);
+  const { ecosystemBoosters, hasInteractiveParams, ownsBoothInThisWorld, visitorData, visitorInventory } =
+    useContext(GlobalStateContext);
 
   // ----- Page state -----
   const [isLoading, setIsLoading] = useState(true);
@@ -116,6 +117,10 @@ export const Boosters = () => {
         {/* One card per booster */}
         <ul className="tc-recipes" aria-label="Boosters">
           {Object.values(BOOSTERS).map((booster) => {
+            // Lina's ecosystem item for this booster, for its picture
+            const item = Object.values(ecosystemBoosters || {}).find(
+              (candidate) => getBoosterForItem(candidate)?.id === booster.id,
+            );
             const owned = ownedItems
               .filter((item) => getBoosterForItem(item)?.id === booster.id)
               .reduce((total, item) => total + (item.quantity || 0), 0);
@@ -133,7 +138,7 @@ export const Boosters = () => {
               <li key={booster.id} className="tc-recipe">
                 <div className="tc-recipe__header">
                   <span className="tc-recipe__art" aria-hidden="true">
-                    {BOOSTER_EMOJI[booster.id]}
+                    {item?.icon ? <img src={item.icon} alt="" /> : BOOSTER_EMOJI[booster.id]}
                   </span>
                   <div>
                     <h3 className="tc-recipe__title">{booster.displayName}</h3>
@@ -150,7 +155,8 @@ export const Boosters = () => {
                 {/* Countdown while running */}
                 {active && (
                   <p className="tc-recipe__meta" aria-live="off">
-                    <span aria-hidden="true">🕒 </span>Active · {formatTime(Math.max(0, Math.ceil((active.endsAt - now) / 1000)))} left
+                    <span aria-hidden="true">🕒 </span>Active ·{" "}
+                    {formatTime(Math.max(0, Math.ceil((active.endsAt - now) / 1000)))} left
                     {active.usesLeft !== undefined ? ` · ${active.usesLeft} uses left` : ""}
                   </p>
                 )}

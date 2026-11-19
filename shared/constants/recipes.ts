@@ -144,8 +144,12 @@ export const describeMissingMaterials = (missing: { [materialName: string]: numb
  * The single ecosystem item a recipe crafts: the toy type's item, in the recipe's craftedColor if it has one
  * (Brown Teddy Bear, Black Train). Matches either word order ("Brown Teddy Bear" / "Teddy Bear Brown").
  */
-export const getCraftedToyItem = <T extends { name: string; displayName?: string }>(recipe: ToyRecipeType, items: T[]) =>
+export const getCraftedToyItem = <T extends { name: string; displayName?: string }>(
+  recipe: ToyRecipeType,
+  items: T[],
+) =>
   items.find((item) => {
+    if (getDecorToyRecipe(item)) return false; // the decoration colors are never crafted
     const names = [item.name, item.displayName ?? ""].map((name) => name.toLowerCase());
     return names.some(
       (name) =>
@@ -153,3 +157,25 @@ export const getCraftedToyItem = <T extends { name: string; displayName?: string
         (!recipe.craftedColor || name.includes(recipe.craftedColor.toLowerCase())),
     );
   });
+/* ---------------------------------------------------------------------------------------------------------
+ * DECORATION TOYS
+ * Lina's decoration-only color of each toy (2026-11-19). They're sold at Decorations and never crafted; the crafted
+ * toys (Rocking Horse, Brown Teddy Bear, Black Train) are only for crafting and selling.
+ * ------------------------------------------------------------------------------------------------------- */
+export const DECOR_TOY_COLORS: { [recipeId in ToyTypeId]: string } = {
+  rocking_horse: "White",
+  teddy_bear: "Pink",
+  train: "Blue",
+};
+
+// The toy a decoration toy is a color of, matched by name in either word order ("Pink Teddy Bear" / "teddy bear pink"),
+// so the items work even without metadata. undefined = not a decoration toy.
+export const getDecorToyRecipe = (item: { name: string; displayName?: string }) => {
+  const names = [item.name, item.displayName ?? ""].map((name) => name.toLowerCase());
+  return TOY_RECIPES.find((recipe) =>
+    names.some(
+      (name) =>
+        name.includes(recipe.displayName.toLowerCase()) && name.includes(DECOR_TOY_COLORS[recipe.id].toLowerCase()),
+    ),
+  );
+};

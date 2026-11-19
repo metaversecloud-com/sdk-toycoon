@@ -2,6 +2,8 @@
 // Every booth scene has one web-image asset per spot, with the spot's unique name. Placing a decoration swaps that
 // asset's picture; one item per spot.
 
+import { getCraftedToyItem, TOY_RECIPES } from "./recipes.js";
+
 export type DecorSlotType = "rug" | "awning" | "lights" | "toy";
 
 // Spot unique name → what can go there. Rug, awning, and lights each have one spot; toys can go on any of the three.
@@ -61,13 +63,18 @@ type DecorItemType = { type?: string; slot?: string; name: string; cost?: number
 
 const SLOT_TYPES: DecorSlotType[] = ["rug", "awning", "lights", "toy"];
 
+// The toys players craft and sell (Rocking Horse, Brown Teddy Bear, Black Train): only in the crafting flow, never
+// sold at Decorations. Every other toy color (White Teddy Bear, Silver Train, Pink Teddy Bear, ...) is a decoration.
+export const isCraftedToy = (item: { name: string; displayName?: string }) =>
+  TOY_RECIPES.some((recipe) => !!getCraftedToyItem(recipe, [item]));
+
 /**
- * Which spots an item can go on. Toys go on the toy spots. Decorations use their metadata.slot if set ("rug",
+ * Which spots an item can go on. Toys that aren't crafted go on the toy spots. Decorations use their metadata.slot if set ("rug",
  * "awning", "lights", or a spot's unique name), otherwise their name ("Blue Rug" → rug, "Fairy Lights" → lights).
  * null = not a booth decoration.
  */
 export const getDecorSlotType = (item: DecorItemType): DecorSlotType | null => {
-  if (item.type === "toy") return "toy";
+  if (item.type === "toy") return isCraftedToy(item) ? null : "toy";
   if (item.type !== "decoration") return null;
 
   const slot = (item.slot || "").trim().toLowerCase();

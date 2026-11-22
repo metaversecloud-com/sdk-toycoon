@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { BOOSTERS, getActiveBooster, getBackdatedStart } from "@shared/constants/index.js";
-import { errorHandler, getCredentials, getMaterialBin, trackAnalytics } from "@utils/index.js";
+import { errorHandler, getCredentials, getMaterialBin } from "@utils/index.js";
 
 /**
- * Step 1 of 2: starts an idle material bin. The server records when it started; after the material's
- * spawnIntervalSeconds the bin is ready to collect (see getMaterialBinState). Bins never start on their own.
+ * Step 1 of 2: starts an idle material bin. The server records when it started; after the station's time in this
+ * world (see getMaterialBin's timerSeconds) the bin is ready to collect. Bins never start on their own.
  * While a Speed-Up booster is active, the start time is moved back so the wait is shorter (collect XP is unchanged).
  */
 export const handleStartMaterial = async (req: Request, res: Response) => {
@@ -22,13 +22,10 @@ export const handleStartMaterial = async (req: Request, res: Response) => {
     const now = Date.now();
     const speedUp = getActiveBooster(visitorData.activeBoosters, "material_speed", now);
     const multiplier = speedUp ? (BOOSTERS.material_speed.timeMultiplier ?? 1) : 1;
-    // This world's station time, so Speed-Up still halves the wait when an admin has changed the timer speed
-    const generationStartedAt = getBackdatedStart(now, timerSeconds, multiplier);
+    const generationStartedAt = getBackdatedStart(now, timerSeconds, multiplier); // uses the world's scaled time
 
     // Dot-path so other materials' bins are untouched
     await visitor.updateDataObject({ [`materialGenerationStartedAt.${material.name}`]: generationStartedAt }, {});
-
-    trackAnalytics({ credentials, events: [{ name: "materialStarts" }], visitor });
 
     return res.json({ success: true, materialName: material.name, generationStartedAt, boosted: !!speedUp });
   } catch (error) {

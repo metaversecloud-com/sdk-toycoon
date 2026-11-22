@@ -1609,3 +1609,174 @@ button.tc-bubble:focus-visible,
   outline: 3px solid var(--tc-ink);
   outline-offset: 2px;
 }
+
+/* ===================== Toycoon: Auto-Collector ===================== */
+
+/* "Auto-Collector running" strip at the top of the Materials page */
+.tc-auto-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 2px solid var(--tc-green-dark);
+  background: var(--tc-green);
+  color: #fff;
+  box-shadow: var(--tc-shadow-soft);
+}
+
+.tc-auto-banner__gear {
+  font-size: 1.6rem;
+  line-height: 1;
+  animation: tc-spin 3s linear infinite;
+}
+
+.tc-auto-banner__title {
+  margin: 0;
+  font-weight: 800;
+}
+
+.tc-auto-banner__text {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A station's bubble while the Auto-Collector runs: green, with a bar that fills and loops on its own */
+.tc-bubble--auto {
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 12px 6px;
+  background: var(--tc-green);
+  border-color: var(--tc-green-dark);
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.tc-bubble--auto .tc-progress {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.tc-bubble__gear {
+  display: inline-block;
+  animation: tc-spin 3s linear infinite;
+}
+
+/* The looping fill: duration and starting point are set inline from the station's real cycle */
+.tc-progress__fill--loop {
+  width: 100%;
+  background: #fff;
+  transform-origin: left center;
+  transition: none;
+  animation-name: tc-cycle;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* The station bobs gently while it works */
+.tc-station--auto .tc-station__art {
+  animation: tc-bob 1.4s ease-in-out infinite;
+}
+
+/* "+1" floating up when a unit lands */
+.tc-auto-pop {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 2px solid var(--tc-gold-dark);
+  background: var(--tc-gold);
+  color: var(--tc-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+  pointer-events: none;
+  animation: tc-float-up 1.8s ease-out forwards;
+  z-index: 2;
+}
+
+/* "Auto-Collector delivered!" welcome-back card */
+.tc-away {
+  display: grid;
+  gap: 6px;
+  margin: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 3px solid var(--tc-gold-dark);
+  background: var(--tc-cream);
+  text-align: center;
+  box-shadow: var(--tc-shadow);
+  animation: tc-pop 0.5s ease-out;
+}
+
+.tc-away__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.tc-away__text {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes tc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes tc-cycle {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes tc-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes tc-float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -38px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tc-auto-banner__gear,
+  .tc-bubble__gear,
+  .tc-station--auto .tc-station__art,
+  .tc-away {
+    animation: none;
+  }
+
+  /* No motion: the bar stays empty and the countdown text carries the information */
+  .tc-progress__fill--loop {
+    animation: none;
+    transform: scaleX(0);
+  }
+
+  .tc-auto-pop {
+    animation: none;
+  }
+}

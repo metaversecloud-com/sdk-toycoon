@@ -1,4 +1,4 @@
-import { getMaterialCap, getTimerSeconds } from "@shared/constants/index.js";
+import { getActiveBooster, getMaterialCap, getTimerSeconds } from "@shared/constants/index.js";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState.js";
 import { Credentials } from "../../types/index.js";
 import { initializeVisitorData } from "../initializeVisitorData.js";
@@ -9,8 +9,8 @@ import { requireBoothInWorld } from "./requireBoothInWorld.js";
 
 /**
  * Loads everything a material bin action needs and runs the checks shared by start and collect:
- * the visitor owns a booth in this world, the material exists, is unlocked at the visitor's level, and the visitor
- * isn't already at its inventory cap.
+ * the visitor owns a booth in this world, the material exists, is unlocked at the visitor's level, the visitor
+ * isn't already at its inventory cap, and no Auto-Collector is running (it runs the stations itself).
  */
 export const getMaterialBin = async (credentials: Credentials, materialId: string) => {
   try {
@@ -27,6 +27,11 @@ export const getMaterialBin = async (credentials: Credentials, materialId: strin
 
     const booth = await requireBoothInWorld(credentials, visitorData, "collecting materials", booths);
     if (visitorInventory.level < material.unlockLevel) throw "Material not unlocked yet.";
+
+    // The Auto-Collector starts and collects every station itself, so manual play would double up
+    if (getActiveBooster(visitorData.activeBoosters, "auto_collect")) {
+      throw "Your Auto-Collector is handling your stations right now.";
+    }
 
     const owned = visitorInventory.materials[materialId]?.quantity ?? 0;
     const cap = getMaterialCap(material.name);

@@ -4,6 +4,8 @@ import { useSearchParams } from "react-router-dom";
 // components
 import {
   ActionAlert,
+  AutoCollectAwayCard,
+  AutoCollectBanner,
   ClaimBoothFirst,
   LevelUpModal,
   MaterialStation,
@@ -14,7 +16,7 @@ import {
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
-import { ErrorType } from "@/context/types";
+import { AUTO_COLLECT_DISMISSED, ErrorType } from "@/context/types";
 
 // hooks
 import { useServerNow } from "@/hooks/useServerNow";
@@ -30,11 +32,18 @@ import {
   WORLD_OBJECTS,
   XpResultType,
 } from "@/utils";
-import { getMaterialCap, getTimerSeconds } from "@shared/constants";
+import { getActiveBooster, getMaterialCap, getTimerSeconds, LEVEL_UP_TOKEN_REWARDS } from "@shared/constants";
 import { getLevelFromXp } from "@shared/levels";
 import { InventoryItemType } from "@shared/types/InventoryItems";
 import { VisitorInventoryItemType } from "@shared/types/VisitorData";
 import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
+
+// What the level-up popup needs
+type LevelUpInfo = { level: number; levelUpTokens: number; levelsGained: number[] };
+
+// Toy Tokens paid for reaching these levels (the server pays them; this is just for the popup text)
+const getLevelUpBonus = (levelsGained: number[]) =>
+  levelsGained.reduce((total, gained) => total + (LEVEL_UP_TOKEN_REWARDS[gained] ?? 0), 0);
 
 /**
  * The materials workshop. Every material item in the ecosystem gets a station automatically — adding a material later
@@ -43,10 +52,15 @@ import { getMaterialBinState } from "@shared/utils/getMaterialBinState";
  * the server decides when a station is ready. Each material is capped (Wood 20, Fabric 10, …).
  * Taps update the screen immediately (optimistic) and are corrected by the server's reply — or undone if it refuses,
  * with the reason shown right above the dock. Each unit collected earns its material's xpReward.
+ *
+ * While an Auto-Collector booster runs, the stations run themselves: manual Start/Collect are off, each station shows
+ * a looping progress bar, and the page refreshes game state right after each station finishes a cycle (the server
+ * grants the units when game state loads) so counts and XP climb live.
  */
 export const Materials = () => {
   const dispatch = useContext(GlobalDispatchContext);
   const {
+    autoCollectAway,
     ecosystemMaterials,
     hasInteractiveParams,
     ownsBoothInThisWorld,
@@ -67,12 +81,14 @@ export const Materials = () => {
   const collectsInFlight = useRef<{ [materialId: string]: Promise<boolean> }>({});
   const [statusMessage, setStatusMessage] = useState("");
   const [actionError, setActionError] = useState("");
-  const [levelUp, setLevelUp] = useState<XpResultType>(null);
+  const [levelUp, setLevelUp] = useState<LevelUpInfo | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0); // bumps after each live refresh so the next one gets scheduled
 
   // Lets Topia bust the server's ecosystem inventory cache when new items are uploaded
   const [searchParams] = useSearchParams();
   const forceRefreshInventory = searchParams.get("forceRefreshInventory") === "true";
 
+  // ----- Load the game state when the page opens -----
   useEffect(() => {
     if (hasInteractiveParams) {
       backendAPI
@@ -82,6 +98,10 @@ export const Materials = () => {
         .finally(() => setIsLoading(false));
     }
   }, [hasInteractiveParams, dispatch]);
+
+  // ----- Auto-Collector: is one running right now? (uses the server's clock) -----
+  const autoState = getActiveBooster(visitorData?.activeBoosters, "auto_collect", now);
+  const autoActive = !!autoState;
 
   // Only materials the player's level has unlocked are shown (L1: Rocking Horse materials, L2: + Teddy Bear, L3: all)
   const level = visitorInventory?.level || 1;
@@ -105,9 +125,73 @@ export const Materials = () => {
       material.spawnIntervalSeconds,
       now,
     );
-    return { material, isLocked, isFull, state, secondsRemaining, canCollect: !isLocked && !isFull && state === "ready" };
+    return {
+      material,
+      owned,
+      isLocked,
+      isFull,
+      state,
+      secondsRemaining,
+      canCollect: !isLocked && !isFull && state === "ready",
+    };
   });
-  const readyCount = stations.filter(({ canCollect }) => canCollect).length;
+  const stationsRef = useRef(stations); // lets the live-refresh timer read the latest stations without re-arming
+  stationsRef.current = stations;
+  // Manual collecting is off while the Auto-Collector runs
+  const readyCount = autoActive ? 0 : stations.filter(({ canCollect }) => canCollect).length;
+
+  // ----- Live refresh while the Auto-Collector runs -----
+  // Quiet reload of game state (the server grants finished units when it loads). Level-ups open the popup.
+  const refreshQuietly = async () => {
+    try {
+      const { data } = await backendAPI.get("/game-state");
+      // autoCollect is cleared so live deliveries don't pile into the "while you were away" card
+      setGameState(dispatch, { ...data, autoCollect: null });
+      const gained: number[] = data.autoCollect?.levelsGained ?? [];
+      if (gained.length) {
+        setLevelUp({
+          level: data.visitorInventory?.level ?? level,
+          levelUpTokens: getLevelUpBonus(gained),
+          levelsGained: gained,
+        });
+      }
+    } catch {
+      // A missed refresh just means units show up on the next one
+    }
+  };
+
+  // Schedules the next refresh for just after the first station finishes a cycle (or the booster ends)
+  useEffect(() => {
+    if (!autoState) return;
+    const serverNow = Date.now() + (serverTimeOffset ?? 0);
+    const waits = stationsRef.current
+      .filter(({ isLocked, material }) => !isLocked && material.spawnIntervalSeconds > 0)
+      .map(({ material }) => {
+        const cycleMs = material.spawnIntervalSeconds * 1000;
+        return cycleMs - ((serverNow - autoState.startedAt) % cycleMs);
+      });
+    const wait = Math.min(autoState.endsAt - serverNow, ...waits);
+    // +1.2s so the server's clock has passed the boundary; never faster than every 2.5s however many stations line up
+    const timer = setTimeout(async () => {
+      await refreshQuietly();
+      setRefreshTick((tick) => tick + 1);
+    }, Math.max(2500, wait + 1200));
+    return () => clearTimeout(timer);
+  }, [autoActive, autoState?.startedAt, autoState?.endsAt, refreshTick]);
+
+  // One last refresh just after the booster ends, so its final units are delivered and it is closed out
+  const wasAutoActive = useRef(false);
+  useEffect(() => {
+    if (wasAutoActive.current && !autoActive) setTimeout(refreshQuietly, 1200);
+    wasAutoActive.current = autoActive;
+  }, [autoActive]);
+
+  // ----- Welcome-back card: dismiss it, then celebrate a level-up it caused -----
+  const handleDismissAway = () => {
+    const gained = autoCollectAway?.levelsGained ?? [];
+    if (gained.length) setLevelUp({ level, levelUpTokens: getLevelUpBonus(gained), levelsGained: gained });
+    dispatch?.({ type: AUTO_COLLECT_DISMISSED, payload: {} });
+  };
 
   const setBusy = (key: string, isBusy: boolean) =>
     setBusyIds((current) => {
@@ -132,9 +216,10 @@ export const Materials = () => {
     if (xpResult?.levelsGained.length) setLevelUp(xpResult);
   };
 
+  // ----- Start button -----
   const handleStart = async (material: InventoryItemType) => {
     const { id, name, displayName } = material;
-    if (busyIds.has(id) || busyIds.has("all")) return;
+    if (autoActive || busyIds.has(id) || busyIds.has("all")) return;
     const previousTimer = visitorData?.materialGenerationStartedAt?.[name] ?? null;
 
     // Start the countdown right away; the server's reply confirms (or corrects) the start time
@@ -159,9 +244,10 @@ export const Materials = () => {
     }
   };
 
+  // ----- Collect button -----
   const handleCollect = async (material: InventoryItemType) => {
     const { id, name, displayName } = material;
-    if (busyIds.has(id) || busyIds.has("all") || id in collectsInFlight.current) return;
+    if (autoActive || busyIds.has(id) || busyIds.has("all") || id in collectsInFlight.current) return;
     const previousTimer = visitorData?.materialGenerationStartedAt?.[name] ?? null;
     const previousItem = ownedItem(material);
     let finishCollect: (collected: boolean) => void = () => undefined;
@@ -194,8 +280,9 @@ export const Materials = () => {
     }
   };
 
+  // ----- Collect All button -----
   const handleCollectAll = async () => {
-    if (busyIds.size > 0) return;
+    if (autoActive || busyIds.size > 0) return;
     const ready = stations.filter(({ canCollect }) => canCollect).map(({ material }) => material);
     if (ready.length === 0) return;
     const previous = ready.map((material) => ({
@@ -238,6 +325,7 @@ export const Materials = () => {
     }
   };
 
+  // ----- Players without a booth in this world can't use the stations yet -----
   if (!ownsBoothInThisWorld) {
     return (
       <PageContainer isLoading={isLoading}>
@@ -249,20 +337,25 @@ export const Materials = () => {
     );
   }
 
+  // ----- The page -----
   return (
     <PageContainer isLoading={isLoading}>
       <div className="tc-workshop">
         <div className="tc-workshop__top">
           <h2 className="tc-sign">{WORLD_OBJECTS.materials}</h2>
-          <p className="tc-hint">Start a station, wait, then collect!</p>
+          <p className="tc-hint">{autoActive ? "Sit back and watch your stations work!" : "Start a station, wait, then collect!"}</p>
+          {autoState && <AutoCollectBanner endsAt={autoState.endsAt} now={now} />}
           <PlayerStats visitorInventory={visitorInventory} />
         </div>
+
+        {/* What the Auto-Collector delivered since the player last looked */}
+        {autoCollectAway && !isLoading && <AutoCollectAwayCard summary={autoCollectAway} onDismiss={handleDismissAway} />}
 
         {allMaterials.length === 0 ? (
           <p className="tc-hint mx-4 mb-6">No materials are set up yet.</p>
         ) : (
           <ul className="tc-floor" aria-label="Material stations">
-            {stations.map(({ material, isLocked, isFull, state, secondsRemaining }) => (
+            {stations.map(({ material, owned, isLocked, isFull, state, secondsRemaining }) => (
               <MaterialStation
                 key={material.id}
                 material={material}
@@ -272,6 +365,9 @@ export const Materials = () => {
                 isFull={isFull}
                 isBusy={false}
                 isDisabled={busyIds.has(material.id) || busyIds.has("all")}
+                autoState={autoState}
+                now={now}
+                ownedCount={owned}
                 onStart={() => handleStart(material)}
                 onCollect={() => handleCollect(material)}
               />
@@ -300,7 +396,13 @@ export const Materials = () => {
             disabled={readyCount === 0 || busyIds.size > 0}
             onClick={handleCollectAll}
           >
-            {busyIds.has("all") ? "Collecting..." : readyCount > 0 ? `Collect All (${readyCount})` : "Collect All"}
+            {autoActive
+              ? "Auto-Collecting..."
+              : busyIds.has("all")
+                ? "Collecting..."
+                : readyCount > 0
+                  ? `Collect All (${readyCount})`
+                  : "Collect All"}
           </button>
           <MaterialsInventoryBar materials={materials} visitorInventory={visitorInventory} />
         </div>

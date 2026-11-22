@@ -8,6 +8,8 @@ export const SET_GAME_STATE = "SET_GAME_STATE";
 export const SET_ERROR = "SET_ERROR";
 // Merges just the parts of the game state a gameplay action changed (see GamePatchType)
 export const GAME_PATCHED = "GAME_PATCHED";
+// Clears the "Auto-Collector delivered" summary once the player has seen it
+export const AUTO_COLLECT_DISMISSED = "AUTO_COLLECT_DISMISSED";
 
 /**
  * A targeted change to game state: only the listed timers/items/fields are touched, so several actions in flight at
@@ -22,6 +24,13 @@ export type GamePatchType = {
   placedDecorations?: PlacedDecorationsType; // replaces the whole record (it's small)
   visitorData?: Partial<Pick<VisitorDataObjectType, "totalCoinsEarned" | "totalToysCrafted" | "totalToysSold">>;
   inventory?: Partial<Pick<VisitorInventoryType, "coins" | "xp" | "level">>;
+};
+
+// What the Auto-Collector granted when the server settled it (sent by /game-state as `autoCollect`)
+export type AutoCollectSummaryType = {
+  unitsCollected: number;
+  xpEarned: number;
+  levelsGained: number[];
 };
 
 export type InteractiveParams = {
@@ -58,11 +67,13 @@ export interface InitialState {
   serverTimeOffset?: number;
   serverTime?: number;
   ecosystemBoosters?: { [itemId: string]: InventoryItemType };
+  // Units the Auto-Collector delivered since the player last saw the summary (adds up across page loads)
+  autoCollectAway?: AutoCollectSummaryType;
 }
 
 export type ActionType = {
   type: string;
-  payload: Partial<InitialState> & { patch?: GamePatchType };
+  payload: Partial<InitialState> & { patch?: GamePatchType; autoCollect?: AutoCollectSummaryType | null };
 };
 
 export type ErrorType =

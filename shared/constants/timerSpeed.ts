@@ -6,7 +6,8 @@ export const TIMER_SPEED_PRESETS = [
   { id: "default", multiplier: 1, label: "Default", description: "The normal times" },
   { id: "slow", multiplier: 2, label: "Slow", description: "2 times as long" },
   { id: "verySlow", multiplier: 6, label: "Very slow", description: "6 times as long" },
-  { id: "testing", multiplier: 20, label: "Testing", description: "20 times as long, to slow play right down" },
+  // The id stays "testing" so the timerSpeedChanges-testing analytic keeps its name
+  { id: "testing", multiplier: 20, label: "Super slow", description: "20 times as long, to slow play right down" },
 ] as const;
 
 export const DEFAULT_TIMER_MULTIPLIER = 1;
